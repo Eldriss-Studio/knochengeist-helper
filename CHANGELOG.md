@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 32
+
+- When Show me walks you through adding a node, the answer now also says what you'll set or use on it next, like a Timer's timeout signal or a sound's Stream property. In the answer evals, every "add a node" question now passes all three tries.
+
 ## Version 31
 
 - The helper keeps a searchable copy of Godot's class reference, built from your own Godot the first time it starts (about 2 seconds, without making the editor wait), so it always matches your version. Settings says when it's ready. Nothing is downloaded. The ghost starts using it in its answers in the next version.
