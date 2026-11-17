@@ -69,6 +69,9 @@ var hello_planned := false
 var context_menus: Array = []
 var updates: Node
 var answers := Answers.new()
+var thread: Array = []             # this card's questions and answers, oldest first, for follow-ups
+const THREAD_KEPT := 3
+const THREAD_ANSWER_CHARS := 600
 var answer_record := ""            # the record of the answer on the card, for whether it helped and how the walk ended
 const SHARED_UNHELPFUL := 5
 var docs: Node
@@ -178,6 +181,7 @@ func _enter_tree() -> void:
 	ask_box.show_me.connect(_show_me)
 	ask_box.closed.connect(ask_stream.stop)          # he closed the card: the rest of the answer isn't wanted
 	ask_box.closed.connect(brain.stop)
+	ask_box.closed.connect(func(): thread.clear())
 	ask_box.rated.connect(func(helped: bool, note: String): answers.rated(answer_record, helped, note))
 	ask_box.closed.connect(func(): asking_about = "")
 	EditorInterface.get_base_control().add_child(ask_box)
@@ -296,8 +300,9 @@ func _show_up(up: bool) -> void:
 	var state := Menu.state(up, claude_state)
 	button.tooltip_text = "Knochengeist: %s." % state + (" %s to ask." % Menu.ask_keys() if can else " Click to see what's wrong.")
 	var newer := update_to if not up else ""
-	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer)
-	Menu.fill(tools_menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer)
+	var recent := PackedStringArray(answers.recent(Menu.RECENT).map(func(record): return str(record.get("question", "")).strip_edges()).filter(func(q): return q != ""))
+	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past)
+	Menu.fill(tools_menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past)
 
 
 func _claude_checked(state: String, path: String) -> void:
@@ -408,6 +413,32 @@ func _open_debug_info() -> void:
 	window.add_child(box)
 	window.confirmed.connect(func(): DisplayServer.clipboard_set(info.text))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
+
+
+# The conversation so far on this card, for a follow-up: its last few questions and answers.
+func _earlier() -> String:
+	if thread.is_empty():
+		return ""
+	var lines := PackedStringArray(["", "Earlier in this conversation:"])
+	for said in thread.slice(max(0, thread.size() - THREAD_KEPT)):
+		lines.append("They asked: " + str(said["question"]).strip_edges())
+		lines.append("You answered: " + str(said["answer"]).left(THREAD_ANSWER_CHARS).replace("\n", " "))
+	return "\n".join(lines) + "\n"
+
+
+# A question from Recent questions: its answer again, from this computer, ready for a follow-up.
+func _show_past(i: int) -> void:
+	var found: Array = answers.recent(Menu.RECENT)
+	if i >= found.size():
+		return
+	var record: Dictionary = found[i]
+	_open_ask()
+	answer_said = str(record.get("question", ""))
+	answer_record = str(record.get("id", ""))
+	answer_plan = []
+	thread = [{"question": answer_said, "answer": str(record.get("answer", ""))}]
+	ask_box.answered(str(record.get("answer", "")).replace("[", "[lb]"), false)
+	ask_box.position = _under_button(ask_box)
 
 
 # The answers he marked as not helpful, as he'll see them before copying.
@@ -820,6 +851,7 @@ func _open_ask() -> void:
 		hello.queue_free()
 	walk_ask = 0
 	asking_about = ""
+	thread.clear()
 	_stop_pointing()
 	ask_box.open(app_up)
 	ask_box.position = _under_button(ask_box)
@@ -856,16 +888,19 @@ func _ask(said: String) -> void:
 	ask_words = ""
 	ask_reply = null
 	answer_said = said
+	var earlier := _earlier()
 	if not app_up:
 		brain_for = "ask"
 		tags = Tags.new()
 		var about := ("\n" + asking_about + "\n") if asking_about != "" else ""
 		asking_about = ""
-		_run_claude(_prompt("godot"), _screen(_state(), "plan") + about + "\nTheir question: " + (said.strip_edges() if said.strip_edges() != "" else "They are stuck, and did not say on what."))
+		_run_claude(_prompt("godot"), _screen(_state(), "plan") + about + earlier + "\nTheir question: " + (said.strip_edges() if said.strip_edges() != "" else "They are stuck, and did not say on what."))
 		return
 	if asking_about != "":
 		said = said + "\n\n" + asking_about.left(COURSE_CODE_CHARS)
 		asking_about = ""
+	if earlier != "":
+		said = earlier.strip_edges() + "\n\nTheir question: " + said
 	if not ask_stream.post(host, port, "/api/godot/ask", _headers(true), JSON.stringify({"project": project, "said": said, "stream": true})):
 		ask_box.failed("That didn't work. Try again.")
 
@@ -911,6 +946,8 @@ func _answered(reply: Dictionary) -> void:
 	answer_target = _find(str(answer_plan[0].get("id", ""))) if answer_plan.size() > 0 else ""
 	var steps := PackedStringArray(answer_plan.map(func(step): return str(step.get("say", "")) if step is Dictionary else ""))
 	answer_record = answers.added(answer_said, _plain(answer_text), steps, brain.answered_by if not app_up else "the course page", _version())
+	thread.append({"question": answer_said, "answer": _plain(answer_text)})
+	_show_up(course_shown)
 	ask_box.answered(_plain(str(reply.get("answer", ""))), places.has(answer_target))
 	ask_box.position = _under_button(ask_box)
 

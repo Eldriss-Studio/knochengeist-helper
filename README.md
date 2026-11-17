@@ -58,6 +58,7 @@ Before it runs Claude Code for the first time in a project, the helper asks, wit
 > - the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes
 > - during a walk-through, what you clicked and typed in the boxes it pointed at
 > - when you ask about something you right-clicked: its name, or the code you selected
+> - in a follow-up, your last few questions and answers in that conversation
 >
 > It never sends passwords, stores no logins, and sends nothing else.
 >
@@ -107,6 +108,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 36 | 4.6 and newer (tested on 4.7) |
 | 35 | 4.6 and newer (tested on 4.7) |
 | 34 | 4.6 and newer (tested on 4.7) |
 | 33 | 4.6 and newer (tested on 4.7) |

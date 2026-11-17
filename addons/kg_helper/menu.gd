@@ -14,11 +14,13 @@ const LINES := {
 	"wont_start": "Claude Code won't start",
 }
 const SHORT_PATH := 40
+const RECENT := 5
+const RECENT_CHARS := 50
 const INSTALL_PAGE := "https://claude.com/claude-code"
 const ASK_SHORTCUT := "knochengeist/ask"
 
 
-static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: String, plan_lines := PackedStringArray(), update_to := "") -> void:
+static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: String, plan_lines := PackedStringArray(), update_to := "", recent := PackedStringArray(), show_past := Callable()) -> void:
 	menu.clear()
 	_line(menu, state(course_up, claude), STATE)
 	if not course_up and claude == "ready":
@@ -36,6 +38,18 @@ static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: 
 	var shortcuts := EditorInterface.get_editor_settings()
 	if shortcuts.has_shortcut(ASK_SHORTCUT):
 		menu.set_item_shortcut(menu.get_item_index(ASK), shortcuts.get_shortcut(ASK_SHORTCUT))
+	if not recent.is_empty():
+		var past: PopupMenu = menu.get_node_or_null("Recent")
+		if past == null:
+			past = PopupMenu.new()
+			past.name = "Recent"
+			menu.add_child(past)
+		past.clear()
+		for i in recent.size():
+			past.add_item(recent[i] if recent[i].length() <= RECENT_CHARS else recent[i].left(RECENT_CHARS - 1).strip_edges() + "…", i)
+		if show_past.is_valid() and not past.id_pressed.is_connected(show_past):
+			past.id_pressed.connect(show_past)
+		menu.add_submenu_node_item("Recent questions", past)
 	menu.add_item("Settings…", SETTINGS)
 	menu.add_item("Show log", SHOW_LOGS)
 	menu.add_item("Copy debug info…", DEBUG_INFO)

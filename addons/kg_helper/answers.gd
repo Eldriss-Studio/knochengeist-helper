@@ -28,6 +28,13 @@ func walk_ended(id: String, how: String) -> void:
 	_update(id, func(record: Dictionary): record["walk"] = how)
 
 
+## The last n answers, newest first.
+func recent(n: int) -> Array:
+	var all := _read()
+	all.reverse()
+	return all.slice(0, n)
+
+
 ## The last n answers he marked as not helpful, newest first.
 func recent_unhelpful(n: int) -> Array:
 	var out: Array = []

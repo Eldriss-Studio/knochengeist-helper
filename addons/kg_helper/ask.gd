@@ -10,12 +10,14 @@ signal closed
 signal rated(helped: bool, note: String)
 
 const CREAM := Color("fff8e4")
+const ASKING_HINT := "What is a shader? Where do I add a node?"
 
 var field: LineEdit
 var ask_button: Button
 var show_button: Button
 var close_button: Button
 var row: HBoxContainer
+var following := false             # the box under an answer, for a follow-up
 var rate_row: HBoxContainer        # Did this help? Yes / No, under a finished answer
 var note_row: HBoxContainer        # what was wrong, after No
 var note_field: LineEdit
@@ -25,7 +27,7 @@ func _init() -> void:
 	super()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	field = LineEdit.new()
-	field.placeholder_text = "What is a shader? Where do I add a node?"
+	field.placeholder_text = ASKING_HINT
 	var inside := StyleBoxFlat.new()
 	inside.bg_color = CREAM
 	inside.border_color = INK
@@ -166,6 +168,10 @@ func saying(so_far: String) -> void:
 func answered(answer: String, can_show: bool) -> void:
 	_show(answer, false, can_show)
 	rate_row.visible = true
+	following = true
+	field.placeholder_text = "Ask a follow-up…"
+	field.text = ""
+	field.visible = true
 	_fit()
 
 
@@ -197,6 +203,8 @@ func close() -> void:
 
 func _show(text: String, asking: bool, can_show: bool) -> void:
 	_hide_rating()
+	following = false
+	field.placeholder_text = ASKING_HINT
 	field.visible = asking
 	ask_button.visible = asking
 	show_button.visible = can_show
@@ -219,13 +227,18 @@ func _fit() -> void:
 	under = (field_h + gap if field.visible else 0.0) + row.size.y + gap + (rating.size.y + gap if rating else 0.0)
 	super()
 	var y := pad.y + words.size.y + gap
-	if field.visible:
+	if field.visible and not following:
 		field.position = Vector2(pad.x, y)
 		field.size = Vector2(wide, field_h)
 		y += field_h + gap
 	row.position = Vector2(pad.x, y)
+	y += row.size.y + gap
 	if rating:
-		rating.position = Vector2(pad.x, y + row.size.y + gap)
+		rating.position = Vector2(pad.x, y)
+		y += rating.size.y + gap
+	if field.visible and following:
+		field.position = Vector2(pad.x, y)
+		field.size = Vector2(wide, field_h)
 
 
 func _input(event: InputEvent) -> void:

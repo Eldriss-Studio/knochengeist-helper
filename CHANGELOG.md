@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 36
+
+- **Follow-up questions.** After an answer, the box at the bottom of the card takes a follow-up, and the ghost knows what you asked before, so "and how do I make it brighter?" works. Closing the card starts a new conversation.
+- **Recent questions** in the ghost's menu lists your last five questions in this project. Picking one shows its answer again, straight away, without asking Claude Code.
+
 ## Version 35
 
 - Under each finished answer, a quiet **Did this help? Yes / No**. After No, you can say what was wrong. Your marks stay on your computer, in the project's user data folder. When you report a problem, **Copy debug info…** can include your last five answers that didn't help, shown to you before anything is copied.
