@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 29
+
+- The helper updates itself from its menu: when a newer version is out, **Update to version…** shows what's new and installs it in one click. It checks GitHub once a day; turn that off in Settings.
+
 ## Version 28
 
 - Right-click a node, a file, an Inspector property or selected code and choose **Ask the ghost about this**: the card opens with a question about it, and the question carries what you picked.

@@ -2,6 +2,7 @@
 extends AcceptDialog
 
 const Brain := preload("brain.gd")
+const Updates := preload("updates.gd")
 const WIDTH := 440.0
 const GAP := 6
 const QUIET := Color(1, 1, 1, 0.7)
@@ -13,6 +14,7 @@ var how: Label
 var automatic: Button
 var model_list: OptionButton
 var less_motion: CheckBox
+var check_updates: CheckBox
 var pick: EditorFileDialog
 var s := 1.0
 signal sign_in
@@ -61,6 +63,12 @@ func _init(brain = null, claude_state := "") -> void:
 	box.add_child(less_motion)
 	box.add_child(_quiet("The ghost appears where it points instead of flying there, and stays still while it thinks."))
 	box.move_child(less_motion, box.get_child_count() - 1)
+	check_updates = CheckBox.new()
+	check_updates.text = "Check for updates"
+	check_updates.button_pressed = Updates.on()
+	box.add_child(_heading("Updates"))
+	box.add_child(check_updates)
+	box.add_child(_quiet("Once a day, the helper asks GitHub whether a newer version is out, and offers it in its menu. It never updates on its own."))
 	add_child(box)
 	confirmed.connect(_save)
 	_show_found()
@@ -149,3 +157,4 @@ func _save() -> void:
 	settings.set_setting(Brain.CLAUDE_PATH_SETTING, chosen_path)
 	settings.set_setting(Brain.MODEL_SETTING, Brain.MODELS[model_list.selected])
 	settings.set_setting(Brain.LESS_MOTION_SETTING, less_motion.button_pressed)
+	settings.set_setting(Updates.SETTING, check_updates.button_pressed)

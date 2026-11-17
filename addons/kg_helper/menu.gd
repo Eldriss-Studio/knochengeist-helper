@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
 
-enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABOUT, COURSE_PAGE }
+enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABOUT, COURSE_PAGE, UPDATE }
 
 const PLAN := 100                # the plan lines take ids from here on, one each
 
@@ -18,7 +18,7 @@ const INSTALL_PAGE := "https://claude.com/claude-code"
 const ASK_SHORTCUT := "knochengeist/ask"
 
 
-static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: String, plan_lines := PackedStringArray()) -> void:
+static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: String, plan_lines := PackedStringArray(), update_to := "") -> void:
 	menu.clear()
 	_line(menu, state(course_up, claude), STATE)
 	if not course_up and claude == "ready":
@@ -26,6 +26,8 @@ static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: 
 			_line(menu, plan_lines[i], PLAN + i)
 		_line(menu, short_path(claude_path), WHERE)
 	menu.add_separator()
+	if update_to != "":
+		menu.add_item("Update to version %s…" % update_to, UPDATE)
 	if not course_up and claude == "missing":
 		menu.add_item("Install Claude Code…", INSTALL)
 	if not course_up and claude == "signed_out":

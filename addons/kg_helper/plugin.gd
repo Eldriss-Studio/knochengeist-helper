@@ -30,12 +30,16 @@ const Tags := preload("tags.gd")
 const Menu := preload("menu.gd")
 const Settings := preload("settings.gd")
 const Context := preload("context.gd")
+const Updates := preload("updates.gd")
+const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
 const CODE_LINES_KEPT := 200
 const COURSE_CODE_CHARS := 1200
 const NOT_ALLOWED := "Claude Code wasn't run. Ask again to allow it."
 const CONSENT_TITLE := "Allow Knochengeist to use Claude Code?"
-const README := "https://github.com/Eldriss-Studio/knochengeist/blob/main/helper/README.md"
+const README := "https://github.com/Eldriss-Studio/knochengeist-helper#readme"
+const RELEASES := "https://github.com/Eldriss-Studio/knochengeist-helper/releases"
+const ISSUES := "https://github.com/Eldriss-Studio/knochengeist-helper/issues"
 const ALONE := -1
 const LOOK_S := 1.0              # how often it looks at what's on screen
 const STILL_HERE_S := 5.0        # sends at least this often
@@ -61,6 +65,9 @@ var claude_path := ""
 var consent_window: ConfirmationDialog
 var hello_planned := false
 var context_menus: Array = []
+var updates: Node
+var update_to := ""                # a newer version, once the check finds one
+var update_notes := ""
 var asking_about := ""             # what he right-clicked, added to the next question
 var hello: Control        # the one-time hello under the button
 var labels := {}                 # target id -> what to call it
@@ -140,6 +147,7 @@ func _enter_tree() -> void:
 	add_child(point_req)
 	Brain.offer_settings()
 	Menu.offer_shortcut()
+	Updates.offer_setting()
 	brain = Brain.new()
 	brain.piece.connect(_brain_piece)
 	brain.done.connect(_brain_done)
@@ -163,6 +171,17 @@ func _enter_tree() -> void:
 	ask_box.closed.connect(func(): asking_about = "")
 	EditorInterface.get_base_control().add_child(ask_box)
 	_make_button()
+	updates = Updates.new(int(_version()), (get_script() as Script).resource_path.get_base_dir())
+	updates.found.connect(func(version: String, notes: String):
+		update_to = version
+		update_notes = notes
+		_show_up(course_shown))
+	updates.installed.connect(_updated)
+	updates.failed.connect(_update_failed)
+	add_child(updates)
+	get_tree().create_timer(CHECK_UPDATES_AFTER_S).timeout.connect(func():
+		if is_instance_valid(updates) and not course_shown:      # the course page keeps its own copy in step
+			updates.check())
 	for slot in SLOTS:
 		var menu_plugin := Context.new(slot, _svg("icon.svg", 16.0))
 		menu_plugin.picked.connect(_ask_about)
@@ -206,7 +225,7 @@ func _disable_plugin() -> void:
 	var settings := EditorInterface.get_editor_settings()
 	if settings.has_shortcut(Menu.ASK_SHORTCUT):
 		settings.remove_shortcut(Menu.ASK_SHORTCUT)
-	for key in ["claude_allowed", "said_hello"]:
+	for key in ["claude_allowed", "said_hello", Updates.CHECKED_AT]:
 		settings.set_project_metadata("knochengeist", key, null)
 	_delete_folder(Brain.log_path().get_base_dir())
 
@@ -263,8 +282,9 @@ func _show_up(up: bool) -> void:
 	button.modulate = Color(1, 1, 1, 1.0 if can else 0.5)
 	var state := Menu.state(up, claude_state)
 	button.tooltip_text = "Knochengeist: %s." % state + (" %s to ask." % Menu.ask_keys() if can else " Click to see what's wrong.")
-	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray())
-	Menu.fill(tools_menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray())
+	var newer := update_to if not up else ""
+	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer)
+	Menu.fill(tools_menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer)
 
 
 func _claude_checked(state: String, path: String) -> void:
@@ -302,6 +322,8 @@ func _chose(id: int) -> void:
 			_open_debug_info()
 		Menu.ABOUT:
 			_open_about()
+		Menu.UPDATE:
+			_open_update()
 		Menu.COURSE_PAGE:
 			OS.shell_open(url + "/learn")
 
@@ -381,12 +403,46 @@ func _open_about() -> void:
 		about.hide()                  # Godot opens one exclusive window at a time
 		_open_disclosure.call_deferred())
 	box.add_child(sends)
-	var link := LinkButton.new()
-	link.text = "Read how it works"
-	link.uri = README
-	box.add_child(link)
+	for each in [["Read how it works", README], ["What's new in each version", RELEASES], ["Report a problem", ISSUES]]:
+		var link := LinkButton.new()
+		link.text = each[0]
+		link.uri = each[1]
+		box.add_child(link)
 	about.add_child(box)
 	EditorInterface.popup_dialog_centered(_closes_itself(about))
+
+
+func _open_update() -> void:
+	var window := ConfirmationDialog.new()
+	window.title = "Update Knochengeist"
+	window.ok_button_text = "Update"
+	window.cancel_button_text = "Not now"
+	var words := Label.new()
+	var notes := update_notes.replace("**", "").strip_edges()
+	words.text = "Version %s is out. You have version %s.\n\nWhat's new:\n%s\n\nUpdating replaces the helper's folder, then asks you to reload the project." % [update_to, _version(), notes if notes != "" else "See the release notes on GitHub."]
+	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	words.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
+	window.add_child(words)
+	window.confirmed.connect(updates.install)
+	EditorInterface.popup_dialog_centered(_closes_itself(window))
+
+
+func _updated(version: String) -> void:
+	update_to = ""
+	var window := ConfirmationDialog.new()
+	window.title = "Knochengeist updated"
+	window.ok_button_text = "Reload"
+	window.cancel_button_text = "Later"
+	window.dialog_text = "Version %s is installed. Reload the project to use it." % version
+	window.confirmed.connect(func(): EditorInterface.restart_editor(true))
+	EditorInterface.popup_dialog_centered(_closes_itself(window))
+
+
+func _update_failed(why: String) -> void:
+	var window := AcceptDialog.new()
+	window.title = "Knochengeist didn't update"
+	window.dialog_text = why + " Show log has the details."
+	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
 func _open_disclosure() -> void:

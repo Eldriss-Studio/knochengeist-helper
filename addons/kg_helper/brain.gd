@@ -18,7 +18,7 @@ const PROBLEMS := {
 	"billing": "Claude Code reports a billing problem with your account. Check it at claude.ai.",
 }
 
-const DISCLOSURE := "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n\nIt never sends passwords, stores no logins, and sends nothing else."
+const DISCLOSURE := "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n\nIt never sends passwords, stores no logins, and sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out. Turn that off in Settings."
 const GIVE_UP_S := 120.0
 const SHELL_GIVE_UP_S := 8.0
 const CHECK_GIVE_UP_S := 15.0
