@@ -33,6 +33,7 @@ const Context := preload("context.gd")
 const Updates := preload("updates.gd")
 const Answers := preload("answers.gd")
 const Names := preload("names.gd")
+const Errors := preload("errors.gd")
 const Docs := preload("docs.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
@@ -77,7 +78,15 @@ var answer_record := ""
 var ask_sent := ["", ""]           # the system prompt and question last sent for the card, for a name-check retry
 var name_retried := false          # this question was already asked again over a name
 var name_wrong := PackedStringArray()
-var unchecked := PackedStringArray()   # names still not in his Godot after the retry: the card says to check them            # the record of the answer on the card, for whether it helped and how the walk ended
+var unchecked := PackedStringArray()
+var errors := Errors.new()
+var errors_seen := 0               # error rows in the Debugger last time it looked
+var error_offered := false         # one offer per run of the game
+var was_playing := false
+var last_error := {}
+var errors_in := 0.0
+const LOOK_FOR_ERRORS_S := 1.0
+const OFFER_S := 12.0   # names still not in his Godot after the retry: the card says to check them            # the record of the answer on the card, for whether it helped and how the walk ended
 const SHARED_UNHELPFUL := 5
 var docs: Node
 var update_to := ""                # a newer version, once the check finds one
@@ -306,8 +315,8 @@ func _show_up(up: bool) -> void:
 	button.tooltip_text = "Knochengeist: %s." % state + (" %s to ask." % Menu.ask_keys() if can else " Click to see what's wrong.")
 	var newer := update_to if not up else ""
 	var recent := PackedStringArray(answers.recent(Menu.RECENT).map(func(record): return str(record.get("question", "")).strip_edges()).filter(func(q): return q != ""))
-	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past)
-	Menu.fill(tools_menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past)
+	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past, not last_error.is_empty())
+	Menu.fill(tools_menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past, not last_error.is_empty())
 
 
 func _claude_checked(state: String, path: String) -> void:
@@ -330,6 +339,8 @@ func _chose(id: int) -> void:
 	match id:
 		Menu.ASK:
 			_open_ask()
+		Menu.EXPLAIN_ERROR:
+			_explain_error()
 		Menu.SETTINGS:
 			var settings := Settings.new(brain, claude_state, docs)
 			settings.sign_in.connect(_sign_in)
@@ -554,6 +565,10 @@ func _process(delta: float) -> void:
 	if url == "":
 		return
 	_walk(delta)
+	errors_in -= delta
+	if errors_in <= 0.0:
+		errors_in = LOOK_FOR_ERRORS_S
+		_look_for_errors()
 	ask_stream.poll(delta)
 	brain.poll(delta)
 	if refused_for > 0.0:
@@ -887,6 +902,14 @@ func _ask_about(kind: String, what: Dictionary) -> void:
 		"property":
 			question = "What does the %s property%s do?" % [what["property"], (" of " + what["class"]) if what["class"] != "" else ""]
 			about = "They are asking about the %s property of a %s in the Inspector." % [what["property"], what["class"]]
+		"error":
+			question = "What does this error mean, and how do I fix it?"
+			var where := "line %d of %s" % [what["line"], str(what["file"]).get_file()] if str(what["file"]) != "" else ""
+			about = "They ran their game and it stopped with this error:\n%s" % str(what["details"]).strip_edges()
+			var code := Errors.lines_around(str(what["file"]), int(what["line"]))
+			if code != "":
+				about += "\nIn %s, around line %d (the line marked >):\n```gdscript\n%s\n```" % [what["file"], what["line"], code]
+			note = "With the error%s." % ((" and " + where) if where != "" else "")
 		"code":
 			var lines: PackedStringArray = str(what["code"]).split("\n")
 			var kept := "\n".join(lines.slice(0, CODE_LINES_KEPT))
@@ -896,6 +919,36 @@ func _ask_about(kind: String, what: Dictionary) -> void:
 	_open_ask()
 	asking_about = about
 	ask_box.ask_about(question, note)
+
+
+# Errors from a run of his game: the first one of a run gets an offer to explain it, never sent on its own.
+func _look_for_errors() -> void:
+	var playing := EditorInterface.is_playing_scene()
+	if playing and not was_playing:
+		error_offered = false          # a new run
+	was_playing = playing
+	var found: Array = errors.all()
+	if found.size() > errors_seen:
+		last_error = found[-1]
+		_show_up(course_shown)
+		if not error_offered and Menu.can_answer(course_shown, claude_state):
+			error_offered = true
+			Brain.log_line("Offered to explain an error.")
+			_note("Your game hit an error. Click me to have it explained.", OFFER_S)
+			note.mouse_filter = Control.MOUSE_FILTER_STOP
+			note.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			note.gui_input.connect(func(event: InputEvent):
+				if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+					_explain_error())
+	errors_seen = found.size()
+
+
+func _explain_error() -> void:
+	if last_error.is_empty():
+		return
+	if note and is_instance_valid(note):
+		note.queue_free()
+	_ask_about("error", last_error)
 
 
 # The class reference passages the question needs, as a block for the prompt: empty when it names

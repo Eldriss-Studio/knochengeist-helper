@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 39
+
+- **"Your game hit an error."** When a run of your game prints an error, the ghost offers to explain it, once per run. Click it, or pick **Explain the last error** in its menu, and the card opens with the question ready, the error and the lines of your script around it. Nothing is sent until you press Ask.
+
 ## Version 38
 
 - **The ghost checks its Godot names against your Godot.** If an answer names a class or method your Godot doesn't have, like a made-up node or a Godot 3 method, the ghost asks Claude Code again with the real reference pages, and shows the fixed answer. If a name still isn't there, the answer says to check that name.

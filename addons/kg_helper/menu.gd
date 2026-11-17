@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
 
-enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABOUT, COURSE_PAGE, UPDATE }
+enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABOUT, COURSE_PAGE, UPDATE, EXPLAIN_ERROR }
 
 const PLAN := 100                # the plan lines take ids from here on, one each
 
@@ -20,7 +20,7 @@ const INSTALL_PAGE := "https://claude.com/claude-code"
 const ASK_SHORTCUT := "knochengeist/ask"
 
 
-static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: String, plan_lines := PackedStringArray(), update_to := "", recent := PackedStringArray(), show_past := Callable()) -> void:
+static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: String, plan_lines := PackedStringArray(), update_to := "", recent := PackedStringArray(), show_past := Callable(), has_error := false) -> void:
 	menu.clear()
 	_line(menu, state(course_up, claude), STATE)
 	if not course_up and claude == "ready":
@@ -38,6 +38,8 @@ static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: 
 	var shortcuts := EditorInterface.get_editor_settings()
 	if shortcuts.has_shortcut(ASK_SHORTCUT):
 		menu.set_item_shortcut(menu.get_item_index(ASK), shortcuts.get_shortcut(ASK_SHORTCUT))
+	if has_error:
+		menu.add_item("Explain the last error", EXPLAIN_ERROR)
 	if not recent.is_empty():
 		var past: PopupMenu = menu.get_node_or_null("Recent")
 		if past == null:
