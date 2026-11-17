@@ -20,7 +20,7 @@ var s := 1.0
 signal sign_in
 
 
-func _init(brain = null, claude_state := "") -> void:
+func _init(brain = null, claude_state := "", docs = null) -> void:
 	title = "Knochengeist settings"
 	ok_button_text = "Save"
 	add_cancel_button("Cancel")
@@ -30,6 +30,8 @@ func _init(brain = null, claude_state := "") -> void:
 	box.add_theme_constant_override("separation", int(GAP * s))
 	if brain:
 		_your_ai(box, brain, claude_state)
+	if docs and docs.state != "off":
+		_docs_section(box, docs)
 	box.add_child(_heading("Claude Code location"))
 	chosen_path = Brain.saved_setting(Brain.CLAUDE_PATH_SETTING)
 	where = _label("")
@@ -158,3 +160,63 @@ func _save() -> void:
 	settings.set_setting(Brain.MODEL_SETTING, Brain.MODELS[model_list.selected])
 	settings.set_setting(Brain.LESS_MOTION_SETTING, less_motion.button_pressed)
 	settings.set_setting(Updates.SETTING, check_updates.button_pressed)
+
+
+# The class reference index: what it's doing now, a bar while it builds, and Try again if it failed.
+var docs_node: Node
+var docs_icon: TextureRect
+var docs_line: Label
+var docs_bar: ProgressBar
+var docs_retry: Button
+
+
+func _docs_section(box: VBoxContainer, docs: Node) -> void:
+	docs_node = docs
+	box.add_child(_heading("Godot docs"))
+	var row := HBoxContainer.new()
+	docs_icon = TextureRect.new()
+	docs_icon.name = "DocsIcon"
+	docs_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	row.add_child(docs_icon)
+	docs_line = Label.new()
+	docs_line.name = "DocsLine"
+	row.add_child(docs_line)
+	docs_retry = Button.new()
+	docs_retry.name = "DocsRetry"
+	docs_retry.text = "Try again"
+	docs_retry.pressed.connect(func(): docs_node.start())
+	row.add_child(docs_retry)
+	box.add_child(row)
+	docs_bar = ProgressBar.new()
+	docs_bar.name = "DocsBar"
+	docs_bar.max_value = 1.0
+	docs_bar.show_percentage = false
+	docs_bar.custom_minimum_size = Vector2(0, 6) * s
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = CANDLE
+	fill.set_corner_radius_all(int(3 * s))
+	docs_bar.add_theme_stylebox_override("fill", fill)
+	box.add_child(docs_bar)
+	box.add_child(_quiet("Made from your own Godot, so it always matches your version. It stays on this computer."))
+	docs.changed.connect(func(_state): _show_docs())
+	_show_docs()
+
+
+func _show_docs() -> void:
+	if not is_instance_valid(docs_node) or docs_line == null:
+		return
+	var state: String = docs_node.state
+	docs_line.text = docs_node.status_line()
+	var icons := {"ready": "StatusSuccess", "failed": "StatusError"}
+	docs_icon.texture = EditorInterface.get_editor_theme().get_icon(icons[state], "EditorIcons") if icons.has(state) else null
+	docs_icon.visible = icons.has(state)
+	docs_retry.visible = state == "failed"
+	docs_bar.visible = state == "building"
+	docs_bar.indeterminate = state == "building" and docs_node.reading == 0.0
+	docs_bar.value = docs_node.reading
+	set_process(state == "building")
+
+
+func _process(_delta: float) -> void:
+	_show_docs()
+

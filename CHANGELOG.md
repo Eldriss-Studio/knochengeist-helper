@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 31
+
+- The helper keeps a searchable copy of Godot's class reference, built from your own Godot the first time it starts (about 2 seconds, without making the editor wait), so it always matches your version. Settings says when it's ready. Nothing is downloaded. The ghost starts using it in its answers in the next version.
+
 ## Version 30
 
 - Show me no longer skips the step where you type in a search box or pick an item. When the ghost can't find that box under the name it planned, it finds the one that matches, or asks for the next click. Before, it could jump ahead to Create and add the wrong node.

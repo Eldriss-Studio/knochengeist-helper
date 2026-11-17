@@ -31,6 +31,7 @@ const Menu := preload("menu.gd")
 const Settings := preload("settings.gd")
 const Context := preload("context.gd")
 const Updates := preload("updates.gd")
+const Docs := preload("docs.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
 const CODE_LINES_KEPT := 200
@@ -66,6 +67,7 @@ var consent_window: ConfirmationDialog
 var hello_planned := false
 var context_menus: Array = []
 var updates: Node
+var docs: Node
 var update_to := ""                # a newer version, once the check finds one
 var update_notes := ""
 var asking_about := ""             # what he right-clicked, added to the next question
@@ -179,6 +181,8 @@ func _enter_tree() -> void:
 	updates.installed.connect(_updated)
 	updates.failed.connect(_update_failed)
 	add_child(updates)
+	docs = Docs.new()
+	add_child(docs)
 	get_tree().create_timer(CHECK_UPDATES_AFTER_S).timeout.connect(func():
 		if is_instance_valid(updates) and not course_shown:      # the course page keeps its own copy in step
 			updates.check())
@@ -291,6 +295,8 @@ func _claude_checked(state: String, path: String) -> void:
 	claude_state = state
 	claude_path = path
 	_show_up(course_shown)
+	if state != "checking" and docs:
+		docs.start()                     # after the check, so the two don't compete when Godot starts
 	if state != "checking" and not hello_planned:
 		hello_planned = true
 		get_tree().create_timer(0.5).timeout.connect(_say_hello)    # once the toolbar is laid out
@@ -306,7 +312,7 @@ func _chose(id: int) -> void:
 		Menu.ASK:
 			_open_ask()
 		Menu.SETTINGS:
-			var settings := Settings.new(brain, claude_state)
+			var settings := Settings.new(brain, claude_state, docs)
 			settings.sign_in.connect(_sign_in)
 			settings.confirmed.connect(brain.check)
 			EditorInterface.popup_dialog_centered(_closes_itself(settings))
