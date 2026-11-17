@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 33
+
+- Settings reads in the order you'd use it: your account, then the model (each one says what it's for), then the Godot docs and where Claude Code is, then motion and updates. Every hint sits under its control.
+
 ## Version 32
 
 - When Show me walks you through adding a node, the answer now also says what you'll set or use on it next, like a Timer's timeout signal or a sound's Stream property. In the answer evals, every "add a node" question now passes all three tries.

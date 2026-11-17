@@ -7,6 +7,12 @@ const WIDTH := 440.0
 const GAP := 6
 const QUIET := Color(1, 1, 1, 0.7)
 const CANDLE := Color("e3b44a")
+const MODEL_NAMES := {
+	"sonnet": "Sonnet (suits most questions)",
+	"fable": "Fable (answers best, uses your limit fastest)",
+	"opus": "Opus (strong, uses your limit fast)",
+	"haiku": "Haiku (lightest)",
+}
 
 var chosen_path := ""              # empty: found automatically
 var where: Label
@@ -30,6 +36,12 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_theme_constant_override("separation", int(GAP * s))
 	if brain:
 		_your_ai(box, brain, claude_state)
+	box.add_child(_heading("Model"))
+	model_list = OptionButton.new()
+	for id in Brain.MODELS:
+		model_list.add_item(MODEL_NAMES.get(id, id.capitalize()))     # each says what it's for, in the list itself
+	model_list.select(Brain.MODELS.find(Brain.model()))
+	box.add_child(model_list)
 	if docs and docs.state != "off":
 		_docs_section(box, docs)
 	box.add_child(_heading("Claude Code location"))
@@ -51,26 +63,18 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 		_show_found())
 	row.add_child(automatic)
 	box.add_child(row)
-	box.add_child(_heading("Model"))
-	model_list = OptionButton.new()
-	for id in Brain.MODELS:
-		model_list.add_item(id.capitalize())
-	model_list.select(Brain.MODELS.find(Brain.model()))
-	box.add_child(model_list)
-	box.add_child(_quiet("Fable is the most capable and uses your limit fastest, then Opus. Sonnet suits most questions. Haiku is the lightest."))
 	less_motion = CheckBox.new()
 	less_motion.text = "Reduce motion"
 	less_motion.button_pressed = Brain.less_motion()
 	box.add_child(_heading("Motion"))
 	box.add_child(less_motion)
 	box.add_child(_quiet("The ghost appears where it points instead of flying there, and stays still while it thinks."))
-	box.move_child(less_motion, box.get_child_count() - 1)
 	check_updates = CheckBox.new()
 	check_updates.text = "Check for updates"
 	check_updates.button_pressed = Updates.on()
 	box.add_child(_heading("Updates"))
 	box.add_child(check_updates)
-	box.add_child(_quiet("Once a day, the helper asks GitHub whether a newer version is out, and offers it in its menu. It never updates on its own."))
+	box.add_child(_quiet("Once a day, it checks GitHub for a newer helper and offers it in its menu. It never updates on its own."))
 	add_child(box)
 	confirmed.connect(_save)
 	_show_found()
@@ -83,7 +87,12 @@ func _your_ai(box: VBoxContainer, brain, claude_state: String) -> void:
 	box.add_child(_label(lines[0] if not lines.is_empty() else "Claude Code"))
 	var signed_in := claude_state == "ready"
 	var row := HBoxContainer.new()
-	var status := _quiet("Signed in to Claude Code" if signed_in else ("Not signed in" if claude_state == "signed_out" else "Not ready yet"))
+	var icon := TextureRect.new()
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	icon.texture = EditorInterface.get_editor_theme().get_icon("StatusSuccess" if signed_in else "StatusWarning", "EditorIcons")
+	row.add_child(icon)
+	var status := Label.new()
+	status.text = "Signed in to Claude Code" if signed_in else ("Not signed in" if claude_state == "signed_out" else "Not ready yet")
 	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(status)
 	if claude_state == "signed_out":
@@ -106,7 +115,6 @@ func _your_ai(box: VBoxContainer, brain, claude_state: String) -> void:
 		box.add_child(bar)
 	for line in lines.slice(1):
 		box.add_child(_quiet(line))
-	box.add_child(HSeparator.new())
 
 
 func _label(text: String) -> Label:
@@ -117,8 +125,12 @@ func _label(text: String) -> Label:
 	return label
 
 
+# Every section starts the same way: a little room above its bold heading (no dividers).
 func _heading(text: String) -> Label:
 	var label := _label(text)
+	label.add_theme_constant_override("line_spacing", 0)
+	label.custom_minimum_size.y = 28 * s
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM      # the room goes above it
 	label.add_theme_font_override("font", EditorInterface.get_editor_theme().get_font("bold", "EditorFonts"))
 	return label
 

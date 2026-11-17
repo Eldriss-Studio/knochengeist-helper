@@ -106,6 +106,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 33 | 4.6 and newer (tested on 4.7) |
 | 32 | 4.6 and newer (tested on 4.7) |
 | 31 | 4.6 and newer (tested on 4.7) |
 | 30 | 4.6 and newer (tested on 4.7) |
