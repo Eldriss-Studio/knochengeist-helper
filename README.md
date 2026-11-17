@@ -33,6 +33,8 @@ When a newer version is out, the ghost's menu shows **Update to version…**. It
 
 - Press **Option+G**, or click the ghost and pick **Ask the ghost**. Type your question and press Enter.
 - The answer appears as it's written. If it involves clicks, **Show me** appears: press it and the ghost points at the first thing to click, then the next, until it's done. Press Esc to stop it pointing.
+- **Follow up** in the box at the bottom of the answer: the ghost remembers the conversation until you close the card. **Recent questions**, in the ghost's menu, shows your last five answers again without asking Claude Code.
+- It answers in the language your Godot editor is set to, and names buttons the way your editor shows them.
 - **Right-click to ask about something:** in the Scene dock, the FileSystem dock, the Inspector or the script editor, choose **Ask the ghost about this**. The card opens with a question about what you picked, ready to send or change. In the script editor, it asks about the lines you selected.
 - The first time you ask in a project, a window says exactly what the helper sends and asks you to allow it (see [What it sends](#what-it-sends)).
 
@@ -108,6 +110,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 37 | 4.6 and newer (tested on 4.7) |
 | 36 | 4.6 and newer (tested on 4.7) |
 | 35 | 4.6 and newer (tested on 4.7) |
 | 34 | 4.6 and newer (tested on 4.7) |

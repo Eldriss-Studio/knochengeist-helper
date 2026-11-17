@@ -378,7 +378,22 @@ func busy() -> bool:
 	return pid != 0
 
 
+## For an editor not in English: answer in its language, and keep on-screen names as they are.
+static func language_line() -> String:
+	var locale := TranslationServer.get_tool_locale()   # what the editor shows, "auto" resolved to the Mac's language
+	if locale == "" or locale == "en" or locale.begins_with("en_"):
+		return ""
+	return "\n\nWrite everything you say to them in %s, the language their Godot editor is set to. Copy the names of buttons, fields and nodes exactly as they appear on screen, in tags and in words." % _language_name(locale)
+
+
+# "Portuguese, Brazil" reads as "Portuguese (Brazil)" in a sentence.
+static func _language_name(locale: String) -> String:
+	var parts := TranslationServer.get_locale_name(locale).split(", ", false, 1)
+	return parts[0] + (" (%s)" % parts[1] if parts.size() > 1 else "")
+
+
 func ask(system: String, prompt: String) -> void:
+	system += language_line()
 	stop()
 	var claude := find_claude()
 	if claude == "" or not FileAccess.file_exists(claude):

@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 37
+
+- **Answers in your editor's language.** With Godot set to Portuguese, the ghost answers in Portuguese, and Show me's steps are in Portuguese too, naming the buttons as your editor shows them. On the ten "add a node" questions with the editor in Portuguese, 29 of 30 tries pass.
+- Show me no longer skips "Create" and makes the wrong node. When a planned click wasn't on screen, it could jump ahead to the next search box, which is the same box as before, and pick the next node instead.
+
 ## Version 36
 
 - **Follow-up questions.** After an answer, the box at the bottom of the card takes a follow-up, and the ghost knows what you asked before, so "and how do I make it brighter?" works. Closing the card starts a new conversation.

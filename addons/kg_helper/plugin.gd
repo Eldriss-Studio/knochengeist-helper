@@ -727,6 +727,14 @@ func _walk(delta: float) -> void:
 			_ask_next()
 
 
+# Whether a plan step already done pointed at this same thing.
+func _used_before(id: String) -> bool:
+	for i in walk_i:
+		if str(walk_plan[i].get("id", "")) == id:
+			return true
+	return false
+
+
 func _ask_next() -> void:
 	if walk_ask == 0 or (walk_ask != ALONE and not app_up):
 		return
@@ -745,6 +753,8 @@ func _ask_next() -> void:
 			for j in range(walk_i + 1, walk_plan.size()):
 				if _changes_what_is_made(str(walk_plan[j - 1].get("id", ""))):
 					break              # skipping a box to type in or an item to pick would make the wrong thing
+				if _used_before(str(walk_plan[j].get("id", ""))):
+					break              # the same box or button as a done step: the screen hasn't moved on, so it's not that step yet
 				found = _find(str(walk_plan[j].get("id", "")))
 				if found != "":
 					at = j
