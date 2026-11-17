@@ -32,6 +32,7 @@ const Settings := preload("settings.gd")
 const Context := preload("context.gd")
 const Updates := preload("updates.gd")
 const Answers := preload("answers.gd")
+const Names := preload("names.gd")
 const Docs := preload("docs.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
@@ -72,7 +73,11 @@ var answers := Answers.new()
 var thread: Array = []             # this card's questions and answers, oldest first, for follow-ups
 const THREAD_KEPT := 3
 const THREAD_ANSWER_CHARS := 600
-var answer_record := ""            # the record of the answer on the card, for whether it helped and how the walk ended
+var answer_record := ""
+var ask_sent := ["", ""]           # the system prompt and question last sent for the card, for a name-check retry
+var name_retried := false          # this question was already asked again over a name
+var name_wrong := PackedStringArray()
+var unchecked := PackedStringArray()   # names still not in his Godot after the retry: the card says to check them            # the record of the answer on the card, for whether it helped and how the walk ended
 const SHARED_UNHELPFUL := 5
 var docs: Node
 var update_to := ""                # a newer version, once the check finds one
@@ -893,7 +898,27 @@ func _ask_about(kind: String, what: Dictionary) -> void:
 	ask_box.ask_about(question, note)
 
 
+# The class reference passages the question needs, as a block for the prompt: empty when it names
+# nothing in Godot, or when the index isn't ready.
+func _from_the_docs(text: String) -> String:
+	if docs == null:
+		return ""
+	var found: Array = docs.passages_for(text)
+	if found.is_empty():
+		return ""
+	var lines := PackedStringArray(["", "From the class reference of their Godot %s (trust these over memory when they disagree):" % _godot_version()])
+	for passage in found:
+		lines.append("- [%s] %s" % [passage["id"], passage["text"]])
+	return "\n".join(lines) + "\n"
+
+
+func _godot_version() -> String:
+	return (docs.version if docs and docs.version != "" else Docs.running_version()).rsplit(".", true, 1)[0]
+
+
 func _ask(said: String) -> void:
+	name_retried = false
+	unchecked = PackedStringArray()
 	ask_box.thinking()
 	ask_words = ""
 	ask_reply = null
@@ -903,14 +928,18 @@ func _ask(said: String) -> void:
 		brain_for = "ask"
 		tags = Tags.new()
 		var about := ("\n" + asking_about + "\n") if asking_about != "" else ""
+		about += _from_the_docs(said + "\n" + asking_about)
 		asking_about = ""
-		_run_claude(_prompt("godot"), _screen(_state(), "plan") + about + earlier + "\nTheir question: " + (said.strip_edges() if said.strip_edges() != "" else "They are stuck, and did not say on what."))
+		ask_sent = [_prompt("godot"), _screen(_state(), "plan") + about + earlier + "\nTheir question: " + (said.strip_edges() if said.strip_edges() != "" else "They are stuck, and did not say on what.")]
+		_run_claude(ask_sent[0], ask_sent[1])
 		return
+	var from_docs := _from_the_docs(said + "\n" + asking_about)
 	if asking_about != "":
 		said = said + "\n\n" + asking_about.left(COURSE_CODE_CHARS)
 		asking_about = ""
 	if earlier != "":
 		said = earlier.strip_edges() + "\n\nTheir question: " + said
+	said += from_docs
 	if not ask_stream.post(host, port, "/api/godot/ask", _headers(true), JSON.stringify({"project": project, "said": said, "stream": true})):
 		ask_box.failed("That didn't work. Try again.")
 
@@ -959,6 +988,8 @@ func _answered(reply: Dictionary) -> void:
 	thread.append({"question": answer_said, "answer": _plain(answer_text)})
 	_show_up(course_shown)
 	ask_box.answered(_plain(str(reply.get("answer", ""))), places.has(answer_target))
+	if not unchecked.is_empty():
+		ask_box.note("I couldn't find %s in your Godot %s, so check that name." % [", ".join(unchecked), _godot_version()])
 	ask_box.position = _under_button(ask_box)
 
 
@@ -999,7 +1030,35 @@ func _brain_done(whole: String, problem: String) -> void:
 	var steps: Array = plan["steps"]
 	if steps.is_empty() and tags.point != "":
 		steps = [{"id": tags.point, "say": ""}]
+	if _names_wrong(ask_words + "\n" + "\n".join(steps.map(func(step): return str(step.get("say", ""))))):
+		return
 	_answered({"ask": ALONE, "answer": ask_words.strip_edges(), "steps": steps, "closing": plan["closing"]})
+
+
+# The name check: Godot names in the answer that his Godot doesn't have. The first time, asks again
+# with the real reference and returns true; after that, the card shows the answer with a note.
+func _names_wrong(said: String) -> bool:
+	if docs == null or docs.state != "ready":
+		return false
+	var wrong := Names.missing(said, answer_said, docs.knows)
+	if name_retried:
+		Brain.log_line("Name check: %s isn't in Godot %s; asked again: %s." % [", ".join(name_wrong), _godot_version(), "still there" if not wrong.is_empty() else "fixed"])
+		unchecked = wrong
+		return false
+	if wrong.is_empty():
+		return false
+	name_retried = true
+	name_wrong = wrong
+	var lines := PackedStringArray(["", "", "Your last answer named these, but they aren't in their Godot %s: %s. Don't use them. From the class reference of their Godot, the closest real ones:" % [_godot_version(), ", ".join(wrong)]])
+	for passage in docs.search(answer_said + " " + " ".join(wrong), 5):
+		lines.append("- [%s] %s" % [passage["id"], passage["text"]])
+	lines.append("Answer their question again, with names from their Godot.")
+	ask_words = ""
+	tags = Tags.new()
+	brain_for = "ask"
+	ask_box.saying("Checking a name against your Godot…")
+	_run_claude(ask_sent[0], ask_sent[1] + "\n".join(lines))
+	return true
 
 
 func _prompt(name: String) -> String:

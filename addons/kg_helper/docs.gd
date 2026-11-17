@@ -9,7 +9,7 @@ const Brain := preload("brain.gd")
 const CHECK_EVERY_S := 1.0
 const K1 := 1.2
 const B := 0.75
-const MEMBER_TAGS := ["method", "member", "signal", "theme_item", "constant"]
+const MEMBER_TAGS := ["method", "member", "signal", "theme_item", "constant", "annotation"]
 # Words that tell a search nothing about Godot ("how do I...").
 const STOPWORDS := ["a", "an", "the", "i", "do", "does", "how", "what", "is", "are", "to", "in", "on", "of", "for", "and", "or", "it", "my", "me", "can", "you", "your", "with", "this", "that", "be", "if", "when", "by", "as", "at", "from", "make", "get", "set", "use", "want"]
 
@@ -20,6 +20,10 @@ var version := ""
 var passages: Array = []           # { id, class, text }
 var postings := {}                 # term -> PackedInt32Array of [passage, count, passage, count, ...]
 var lengths := PackedInt32Array()
+var known := {}                    # every class and member name in this Godot's reference, setters and parameters too
+var class_at := {}                 # class name -> its own passage
+var member_at := {}                # member name -> every passage of a member by that name
+const PER_MEMBER := 2              # a member many classes share (play, _process) brings at most this many
 var average := 1.0
 var dump_pid := 0
 var dump_dir := ""
@@ -38,7 +42,7 @@ static func running_version() -> String:
 
 
 func index_path() -> String:
-	return folder().path_join(version).path_join("index.bin")
+	return folder().path_join(version).path_join("index-2.bin")   # 2: with every name, for the name check
 
 
 ## What Settings says about it.
@@ -46,7 +50,7 @@ func status_line() -> String:
 	var godot := (version if version != "" else running_version()).rsplit(".", true, 1)[0]
 	match state:
 		"ready":
-			return "Ready: %s classes from Godot %s" % [_thousands(classes), godot]
+			return "Ready for Godot %s" % godot
 		"building":
 			return "Reading the class reference from Godot %s…" % godot if reading > 0.0 else "Asking Godot %s for its class reference…" % godot
 		"failed":
@@ -116,8 +120,9 @@ func _build() -> void:
 	var files: Array = []
 	_collect(dump_dir, files)
 	var found: Array = []
+	var names := {}
 	for k in files.size():
-		_read_class(files[k], found)
+		_read_class(files[k], found, names)
 		reading = float(k + 1) / files.size()
 	_remove(dump_dir)
 	if found.is_empty():
@@ -127,7 +132,8 @@ func _build() -> void:
 	DirAccess.make_dir_recursive_absolute(index_path().get_base_dir())
 	var file := FileAccess.open(index_path(), FileAccess.WRITE)
 	if file:
-		file.store_var({"version": version, "classes": classes, "passages": passages, "postings": postings, "lengths": lengths})
+		file.store_var({"version": version, "classes": classes, "passages": passages, "postings": postings, "lengths": lengths, "known": names})
+	known = names
 	call_deferred("_logged", "Built the class reference index for Godot %s: %d classes, %d passages." % [version, classes, passages.size()])
 
 
@@ -141,6 +147,8 @@ func _load_saved() -> void:
 	passages = saved["passages"]
 	postings = saved["postings"]
 	lengths = saved["lengths"]
+	known = saved.get("known", {})
+	_names()
 	var total := 0
 	for n in lengths:
 		total += n
@@ -157,7 +165,7 @@ func _collect(dir: String, into: Array) -> void:
 
 
 # One passage for the class (its brief description), and one per member, each starting with the class name.
-func _read_class(path: String, into: Array) -> void:
+func _read_class(path: String, into: Array, names: Dictionary) -> void:
 	var xml := XMLParser.new()
 	if xml.open(path) != OK:
 		return
@@ -171,8 +179,16 @@ func _read_class(path: String, into: Array) -> void:
 				var tag := xml.get_node_name()
 				if tag == "class":
 					name = xml.get_named_attribute_value_safe("name")
+					names[name] = true
+				elif tag == "param":
+					names[xml.get_named_attribute_value_safe("name")] = true
 				elif tag in MEMBER_TAGS:
 					member = xml.get_named_attribute_value_safe("name")
+					names[member] = true
+					names[member.trim_prefix("@")] = true      # @export_range is written export_range too
+					for also in ["setter", "getter"]:       # set_position() is a real call, though only position is listed
+						if xml.get_named_attribute_value_safe(also) != "":
+							names[xml.get_named_attribute_value_safe(also)] = true
 					text = ""
 					if tag == "member":
 						reading = "member"
@@ -216,6 +232,7 @@ func _index(found: Array) -> void:
 			list.append_array([i, counts[word]])
 			postings[word] = list
 	classes = names.size()
+	_names()
 	var total := 0
 	for n in lengths:
 		total += n
@@ -239,6 +256,79 @@ static func tokens(text: String) -> PackedStringArray:
 					if not p.get_string().to_lower() in STOPWORDS:
 						out.append(p.get_string().to_lower())
 	return out
+
+
+## Whether this Godot's reference has a class or member by this name.
+func knows(name: String) -> bool:
+	return known.has(name)
+
+
+func _names() -> void:
+	class_at = {}
+	member_at = {}
+	for i in passages.size():
+		var id := str(passages[i]["id"])
+		if not id.contains("."):
+			class_at[id] = i
+		else:
+			var member := id.get_slice(".", 1)
+			if not member_at.has(member):
+				member_at[member] = []
+			member_at[member].append(i)
+
+
+## The Godot names the text really uses: classes by their exact name, and members whose names have an
+## underscore (move_and_slide, _process). A plain word like "play" or "timer" names nothing.
+func named_in(text: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	for found in RegEx.create_from_string("\\b[A-Z][A-Za-z0-9]*\\b").search_all(text):
+		if class_at.has(found.get_string()) and not out.has(found.get_string()):
+			out.append(found.get_string())
+	for found in RegEx.create_from_string("\\b_?[a-z][a-z0-9]*(?:_[a-z0-9]+)+\\b|\\b_[a-z][a-z0-9]*\\b").search_all(text):
+		if member_at.has(found.get_string()) and not out.has(found.get_string()):
+			out.append(found.get_string())
+	return out
+
+
+## The passages a question needs, or none when it names nothing in Godot: the members it names first
+## (in the classes it names, if any), then the classes themselves, then the best keyword matches
+## from those classes, k at most.
+func passages_for(text: String, k := 5) -> Array:
+	if state != "ready":
+		return []
+	var names := named_in(text)
+	if names.is_empty():
+		return []
+	var in_classes := Array(names).filter(func(n): return class_at.has(n))
+	var picked: Array = []
+	for name in names:
+		if member_at.has(name):
+			var hits: Array = member_at[name].filter(func(i): return in_classes.is_empty() or in_classes.has(passages[i]["class"]))
+			hits.sort_custom(func(a, b): return str(passages[a]["class"]).length() < str(passages[b]["class"]).length())   # base classes (Node, Object) first
+			for i in hits.slice(0, PER_MEMBER):
+				if not picked.has(i):
+					picked.append(i)
+	for name in in_classes:
+		if not picked.has(class_at[name]):
+			picked.append(class_at[name])
+	if picked.size() < k and not in_classes.is_empty():
+		for hit in search(text, 20):
+			var i: int = class_at.get(hit["id"], -1) if not str(hit["id"]).contains(".") else _index_of(str(hit["id"]))
+			if i >= 0 and in_classes.has(passages[i]["class"]) and not picked.has(i):
+				picked.append(i)
+			if picked.size() >= k:
+				break
+	var out: Array = []
+	for i in picked.slice(0, k):
+		out.append({"id": passages[i]["id"], "class": passages[i]["class"], "text": passages[i]["text"]})
+	return out
+
+
+func _index_of(id: String) -> int:
+	for i in member_at.get(id.get_slice(".", 1), []):
+		if passages[i]["id"] == id:
+			return i
+	return -1
 
 
 ## The k passages that best match the words, best first (BM25).

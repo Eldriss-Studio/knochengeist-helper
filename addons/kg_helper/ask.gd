@@ -175,6 +175,13 @@ func answered(answer: String, can_show: bool) -> void:
 	_fit()
 
 
+## A quiet line under the answer.
+func note(text: String) -> void:
+	say(words.text + "\n[color=#1c221d99]%s[/color]" % text.replace("[", "[lb]"), 300.0)
+	show_part(1.0)
+	_fit()
+
+
 func _rated(helped: bool, note: String) -> void:
 	_hide_rating()
 	say(words.text + "\n[color=#1c221d99]Thanks.[/color]", 300.0)

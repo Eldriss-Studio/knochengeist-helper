@@ -209,7 +209,7 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	fill.set_corner_radius_all(int(3 * s))
 	docs_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(docs_bar)
-	box.add_child(_quiet("Made from your own Godot, so it always matches your version. It stays on this computer."))
+	box.add_child(_quiet("The ghost checks the Godot names in its answers against this, and reads the pages for anything your question names. It stays on this computer."))
 	docs.changed.connect(func(_state): _show_docs())
 	_show_docs()
 

@@ -2,6 +2,12 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 38
+
+- **The ghost checks its Godot names against your Godot.** If an answer names a class or method your Godot doesn't have, like a made-up node or a Godot 3 method, the ghost asks Claude Code again with the real reference pages, and shows the fixed answer. If a name still isn't there, the answer says to check that name.
+- **Questions that name something in Godot come with its reference pages,** from your own Godot, so newer features aren't guessed from memory.
+- Settings says what Godot docs does: "Ready for Godot 4.7.2", and that the ghost checks its names against it.
+
 ## Version 37
 
 - **Answers in your editor's language.** With Godot set to Portuguese, the ghost answers in Portuguese, and Show me's steps are in Portuguese too, naming the buttons as your editor shows them. On the ten "add a node" questions with the editor in Portuguese, 29 of 30 tries pass.

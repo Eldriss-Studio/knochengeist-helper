@@ -61,6 +61,7 @@ Before it runs Claude Code for the first time in a project, the helper asks, wit
 > - during a walk-through, what you clicked and typed in the boxes it pointed at
 > - when you ask about something you right-clicked: its name, or the code you selected
 > - in a follow-up, your last few questions and answers in that conversation
+> - when your question names something in Godot, its reference pages from your own Godot
 >
 > It never sends passwords, stores no logins, and sends nothing else.
 >
@@ -110,6 +111,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 38 | 4.6 and newer (tested on 4.7) |
 | 37 | 4.6 and newer (tested on 4.7) |
 | 36 | 4.6 and newer (tested on 4.7) |
 | 35 | 4.6 and newer (tested on 4.7) |
