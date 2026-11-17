@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 34
+
+- Show me no longer gets stuck on a search box it already had you type in. While it waited for the next click, it counted your typing again every second, until the walk gave up as "a long one". Now each typing counts once, and pointing back at a box that already holds what you typed moves on. On Haiku, the "add a node" walks now pass 28 of 30 tries (from 16).
+
 ## Version 33
 
 - Settings reads in the order you'd use it: your account, then the model (each one says what it's for), then the Godot docs and where Claude Code is, then motion and updates. Every hint sits under its control.

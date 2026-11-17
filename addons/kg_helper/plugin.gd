@@ -111,6 +111,10 @@ var answer_closing := ""
 var walk_target := ""
 var walk_typed := ""             # a field he's typing in: its text when last looked at
 var typed_for := 0.0
+var typed_changed := false        # he changed the text since the ghost pointed at the field
+var prefilled_for := 0.0          # how long a field the ghost points at has held its old text, untouched
+const ALREADY_TYPED_S := 2.5      # then it counts as already typed, and the walk goes on
+var typed_in := {}                # field id -> what he typed there earlier in this walk
 var next_in := -1.0              # counting down to asking for the next click
 var switching := false
 var places := {}                 # target id -> Callable giving its rect on screen now, or null
@@ -563,6 +567,7 @@ func _point_came(result: int, code: int, _headers: PackedStringArray, body: Pack
 		# he pressed Show me on the course page: start (or restart) the walk from that ask
 		walk_ask = int(answer["ask"]) if answer.get("ask") != null else 0
 		walk_clicked = []
+		typed_in = {}
 		walk_plan = []
 		_point(answer["target"], _say(answer["target"]))
 
@@ -591,7 +596,10 @@ func _point(id: String, text: String) -> void:
 	if note and is_instance_valid(note):
 		note.queue_free()
 	walk_target = id
-	walk_typed = ""
+	var field_now = (fields[id] as WeakRef).get_ref() if fields.has(id) else null
+	walk_typed = (field_now as LineEdit).text if field_now else ""      # what's already there isn't new typing
+	typed_changed = false
+	prefilled_for = 0.0
 	typed_for = 0.0
 	var win: Window = wins.get(id, EditorInterface.get_base_control().get_window())
 	var p := _pointer_in(win)
@@ -635,11 +643,23 @@ func _walk(delta: float) -> void:
 		var field = (fields[walk_target] as WeakRef).get_ref()
 		if field and (field as LineEdit).text != walk_typed:
 			walk_typed = (field as LineEdit).text
+			typed_changed = true
 			typed_for = 0.0
-		elif field and walk_typed != "":
+		elif field and not typed_changed and walk_typed != "" and typed_in.get(walk_target, "") == walk_typed:
+			# pointed back at a box that already holds text: if he leaves it, it was typed already
+			prefilled_for += delta
+			if prefilled_for > ALREADY_TYPED_S:
+				prefilled_for = -INF
+				_stop_pointing()
+				walk_i += 1
+				walk_tries = 0
+				next_in = 0.0
+		elif field and typed_changed and walk_typed != "":
 			typed_for += delta
 			if typed_for > 1.2:
 				walk_clicked.append("typed \"%s\" in %s" % [walk_typed, str(labels.get(walk_target, "the field"))])
+				typed_in[walk_target] = walk_typed
+				typed_changed = false             # counted once; waiting for the next click mustn't count it again
 				_stop_pointing()
 				walk_i += 1
 				walk_tries = 0
@@ -937,6 +957,7 @@ func _show_me() -> void:
 	walk_said = answer_said
 	walk_answer = answer_text
 	walk_clicked = []
+	typed_in = {}
 	# one click and no closing line isn't a plan (an "I'm stuck on my step" answer): ask as it goes
 	walk_plan = answer_plan if answer_plan.size() > 1 or answer_closing != "" else []
 	walk_closing = answer_closing
