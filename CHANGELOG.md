@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 30
+
+- Show me no longer skips the step where you type in a search box or pick an item. When the ghost can't find that box under the name it planned, it finds the one that matches, or asks for the next click. Before, it could jump ahead to Create and add the wrong node.
+
 ## Version 29
 
 - The helper updates itself from its menu: when a newer version is out, **Update to version…** shows what's new and installs it in one click. It checks GitHub once a day; turn that off in Settings.

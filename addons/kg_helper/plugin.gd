@@ -659,6 +659,8 @@ func _ask_next() -> void:
 		# Not at once: right after a click the old screen is still up, and a later step may be on it.
 		if found == "" and walk_tries >= LOOKS_BEFORE_SKIPPING_AHEAD:
 			for j in range(walk_i + 1, walk_plan.size()):
+				if _changes_what_is_made(str(walk_plan[j - 1].get("id", ""))):
+					break              # skipping a box to type in or an item to pick would make the wrong thing
 				found = _find(str(walk_plan[j].get("id", "")))
 				if found != "":
 					at = j
@@ -952,7 +954,22 @@ func _find(id: String) -> String:
 	for other in places:
 		if str(other).to_lower().trim_suffix(".").strip_edges() == want:
 			return other
-	return ""
+	# A box or an item planned before its dialog opened has a guessed name ("Search Nodes" for
+	# "Search"): take the one on screen of the same kind whose name holds the other, if only one does.
+	if not _changes_what_is_made(id):
+		return ""
+	var kind := want.get_slice(":", 0) + ":"
+	var name := want.trim_prefix(kind)
+	var near: Array = []
+	for other in places:
+		var theirs := str(other).to_lower().trim_suffix(".").strip_edges()
+		if theirs.begins_with(kind) and name != "" and (theirs.trim_prefix(kind).contains(name) or name.contains(theirs.trim_prefix(kind))):
+			near.append(other)
+	return near[0] if near.size() == 1 else ""
+
+
+func _changes_what_is_made(id: String) -> bool:
+	return id.begins_with("field:") or id.begins_with("item:")
 
 
 # What the ghost says beside the thing: the action, and the thing's own name.
