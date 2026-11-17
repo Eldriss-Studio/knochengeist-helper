@@ -1,0 +1,4 @@
+What they wanted: {wanted}
+The answer they were given: {answer}
+What they have clicked so far, in order: {clicked}
+{screen}

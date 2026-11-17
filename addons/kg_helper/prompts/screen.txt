@@ -1,0 +1,3 @@
+Godot is open in front of them right now. Open scene: {scene}. Selected node: {selected}.
+These are on their screen in Godot, each as id: what it is:
+{targets}

@@ -1,0 +1,1 @@
+If the one next thing to try is clicking one of these, end your answer with [POINT:<its id>] on its own line. They can then ask to be shown it in Godot. Name at most one, and only an id from this list.

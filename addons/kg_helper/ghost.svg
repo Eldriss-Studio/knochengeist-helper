@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Knochengeist">
+  <!-- The small cut: no hatching and plain lines, so it reads at 24 px. Buttons, Stuck?, the browser tab. Bone #F1EAD6, ink #1C221D. -->
+  <path d="M4.2 10 A6.8 6.8 0 0 1 17.8 10 C17.8 13.4 16.9 15.6 17.6 17.6 C18.2 19.3 19.8 20.3 21.4 20.5 C18.3 22.2 14.2 21.6 11.9 19.4 C10 20.3 7.3 19.6 5.9 17.6 C4.6 15.7 4.1 12.8 4.2 10 Z" fill="#F1EAD6" stroke="#1C221D" stroke-width="1.1" stroke-linejoin="round"/>
+  <g fill="#1C221D"><ellipse cx="8.6" cy="9" rx="1.7" ry="2.2"/><ellipse cx="13" cy="9" rx="1.7" ry="2.2"/><path d="M10.8 11.6l-.6 1.2h1.2z"/></g>
+  <g fill="none" stroke="#1C221D" stroke-width=".75" stroke-linecap="round"><path d="M10.9 13.6c.6 2 1.8 3.6 3.6 4.9 1.2.9 2.6 1.5 4 1.7"/><path d="M8 14.4c1.8-.5 3.8-.5 5.6 0M8.3 16c1.600-.4 3.4-.3 5 .3M9.3 17.6c1.2-.2 2.6 0 3.8.6"/></g>
+</svg>
