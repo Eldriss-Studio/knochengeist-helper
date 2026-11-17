@@ -69,6 +69,7 @@ Your answer is kept for that project, outside its folder, and it asks again if a
 - It starts it with your personal Claude settings, plugins and MCP servers left out (`--setting-sources "" --strict-mcp-config`) and its tools turned off, so it can only answer: it can't change your project or run commands.
 - It stops it when you close the card or Godot.
 - Besides that, the helper only asks GitHub once a day whether a newer version is out, and collects no usage data.
+- It keeps your answers, and whether you said they helped, in the project's user data folder, so you can include the ones that didn't help when you report a problem. Turning the helper off deletes them.
 - It keeps a searchable copy of Godot's class reference, built from your own Godot and kept in the project's user data folder. Turning the helper off deletes it. The class reference is part of the Godot Engine (MIT), by Juan Linietsky, Ariel Manzur and contributors.
 
 ## When something's wrong
@@ -106,6 +107,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 35 | 4.6 and newer (tested on 4.7) |
 | 34 | 4.6 and newer (tested on 4.7) |
 | 33 | 4.6 and newer (tested on 4.7) |
 | 32 | 4.6 and newer (tested on 4.7) |

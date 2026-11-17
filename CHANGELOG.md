@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 35
+
+- Under each finished answer, a quiet **Did this help? Yes / No**. After No, you can say what was wrong. Your marks stay on your computer, in the project's user data folder. When you report a problem, **Copy debug info…** can include your last five answers that didn't help, shown to you before anything is copied.
+
 ## Version 34
 
 - Show me no longer gets stuck on a search box it already had you type in. While it waited for the next click, it counted your typing again every second, until the walk gave up as "a long one". Now each typing counts once, and pointing back at a box that already holds what you typed moves on. On Haiku, the "add a node" walks now pass 28 of 30 tries (from 16).

@@ -31,6 +31,7 @@ const Menu := preload("menu.gd")
 const Settings := preload("settings.gd")
 const Context := preload("context.gd")
 const Updates := preload("updates.gd")
+const Answers := preload("answers.gd")
 const Docs := preload("docs.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
@@ -67,6 +68,9 @@ var consent_window: ConfirmationDialog
 var hello_planned := false
 var context_menus: Array = []
 var updates: Node
+var answers := Answers.new()
+var answer_record := ""            # the record of the answer on the card, for whether it helped and how the walk ended
+const SHARED_UNHELPFUL := 5
 var docs: Node
 var update_to := ""                # a newer version, once the check finds one
 var update_notes := ""
@@ -174,6 +178,7 @@ func _enter_tree() -> void:
 	ask_box.show_me.connect(_show_me)
 	ask_box.closed.connect(ask_stream.stop)          # he closed the card: the rest of the answer isn't wanted
 	ask_box.closed.connect(brain.stop)
+	ask_box.rated.connect(func(helped: bool, note: String): answers.rated(answer_record, helped, note))
 	ask_box.closed.connect(func(): asking_about = "")
 	EditorInterface.get_base_control().add_child(ask_box)
 	_make_button()
@@ -388,14 +393,34 @@ func _open_debug_info() -> void:
 	window.title = "Knochengeist debug info"
 	window.ok_button_text = "Copy"
 	window.add_cancel_button("Close")
+	var box := VBoxContainer.new()
 	var info := TextEdit.new()
-	info.text = brain.debug_info(_version())
+	var base: String = brain.debug_info(_version())
+	info.text = base
 	info.editable = false
 	info.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	info.custom_minimum_size = Vector2(520, 200) * EditorInterface.get_editor_scale()
-	window.add_child(info)
+	box.add_child(info)
+	var share := CheckBox.new()
+	share.text = "Include my last %d answers that didn't help" % SHARED_UNHELPFUL
+	share.toggled.connect(func(on: bool): info.text = base + (_unhelpful_text() if on else ""))
+	box.add_child(share)
+	window.add_child(box)
 	window.confirmed.connect(func(): DisplayServer.clipboard_set(info.text))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
+
+
+# The answers he marked as not helpful, as he'll see them before copying.
+func _unhelpful_text() -> String:
+	var found: Array = answers.recent_unhelpful(SHARED_UNHELPFUL)
+	if found.is_empty():
+		return "\n\nAnswers that didn't help: none yet."
+	var lines := PackedStringArray(["", "", "Answers that didn't help:"])
+	for i in found.size():
+		lines.append("%d. Question: %s" % [i + 1, found[i].get("question", "")])
+		lines.append("   Answer: %s" % str(found[i].get("answer", "")).replace("\n", " "))
+		lines.append("   Note: %s" % found[i].get("note", ""))
+	return "\n".join(lines)
 
 
 func _open_about() -> void:
@@ -624,6 +649,7 @@ func _pointed(clicked: bool, cancelled: bool, gave_up: bool) -> void:
 		return
 	if gave_up:
 		walk_ask = 0
+		answers.walk_ended(answer_record, "stopped")
 		_note("I'll stop here. Ask me again anytime.", 8.0)
 		return
 	if clicked:
@@ -677,6 +703,7 @@ func _ask_next() -> void:
 	if walk_plan.size() > 0:
 		if walk_i >= walk_plan.size():
 			walk_ask = 0
+			answers.walk_ended(answer_record, "finished")
 			_note(walk_closing if walk_closing != "" else "That's it.", 7.0)
 			return
 		_state()
@@ -702,6 +729,7 @@ func _ask_next() -> void:
 		walk_plan = []                 # the plan and the screen disagree: ask as it goes from here
 	if walk_clicked.size() >= WALK_MAX:
 		walk_ask = 0
+		answers.walk_ended(answer_record, "stopped")
 		_note("That was a long one. Ask me again if there's more to do.", 6.0)
 		return
 	var body := _state()
@@ -881,6 +909,8 @@ func _answered(reply: Dictionary) -> void:
 	answer_text = str(reply.get("answer", ""))
 	_state()
 	answer_target = _find(str(answer_plan[0].get("id", ""))) if answer_plan.size() > 0 else ""
+	var steps := PackedStringArray(answer_plan.map(func(step): return str(step.get("say", "")) if step is Dictionary else ""))
+	answer_record = answers.added(answer_said, _plain(answer_text), steps, brain.answered_by if not app_up else "the course page", _version())
 	ask_box.answered(_plain(str(reply.get("answer", ""))), places.has(answer_target))
 	ask_box.position = _under_button(ask_box)
 

@@ -7,6 +7,7 @@ extends "bubble.gd"
 signal asked(said: String)
 signal show_me
 signal closed
+signal rated(helped: bool, note: String)
 
 const CREAM := Color("fff8e4")
 
@@ -15,6 +16,9 @@ var ask_button: Button
 var show_button: Button
 var close_button: Button
 var row: HBoxContainer
+var rate_row: HBoxContainer        # Did this help? Yes / No, under a finished answer
+var note_row: HBoxContainer        # what was wrong, after No
+var note_field: LineEdit
 
 
 func _init() -> void:
@@ -48,7 +52,61 @@ func _init() -> void:
 	for b in [ask_button, show_button, close_button]:
 		row.add_child(b)
 	add_child(row)
+	rate_row = HBoxContainer.new()
+	rate_row.add_theme_constant_override("separation", int(8 * s))
+	var quiet := Label.new()
+	quiet.text = "Did this help?"
+	quiet.add_theme_color_override("font_color", Color(INK, 0.65))
+	quiet.add_theme_font_size_override("font_size", int(14 * s))
+	if _font(450):
+		quiet.add_theme_font_override("font", _font(450))
+	rate_row.add_child(quiet)
+	var helped := _quiet_button("Yes")
+	helped.pressed.connect(func(): _rated(true, ""))
+	var not_helped := _quiet_button("No")
+	not_helped.pressed.connect(func():
+		rate_row.visible = false
+		note_row.visible = true
+		_fit()
+		note_field.grab_focus())
+	rate_row.add_child(helped)
+	rate_row.add_child(not_helped)
+	add_child(rate_row)
+	note_row = HBoxContainer.new()
+	note_field = LineEdit.new()
+	note_field.placeholder_text = "What was wrong? (optional)"
+	for state in ["normal", "focus", "read_only"]:
+		note_field.add_theme_stylebox_override(state, field.get_theme_stylebox(state))
+	for color in ["font_color", "font_placeholder_color", "caret_color"]:
+		note_field.add_theme_color_override(color, field.get_theme_color(color))
+	note_field.add_theme_font_size_override("font_size", field.get_theme_font_size("font_size"))
+	if _font(450):
+		note_field.add_theme_font_override("font", _font(450))
+	note_row.add_theme_constant_override("separation", int(8 * s))
+	note_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	note_field.text_submitted.connect(func(text: String): _rated(false, text))
+	note_row.add_child(note_field)
+	var send := _button("Send", false)
+	send.pressed.connect(func(): _rated(false, note_field.text))
+	note_row.add_child(send)
+	add_child(note_row)
+	_hide_rating()
 	visible = false
+
+
+# A small text button for the rating, so it never competes with Show me and Close.
+func _quiet_button(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.flat = true
+	b.focus_mode = Control.FOCUS_NONE
+	b.tooltip_text = "Kept only on this computer"
+	for color in ["font_color", "font_hover_color", "font_pressed_color"]:
+		b.add_theme_color_override(color, Color(INK, 0.65) if color == "font_color" else OXBLOOD)
+	b.add_theme_font_size_override("font_size", int(14 * s))
+	if _font(750):
+		b.add_theme_font_override("font", _font(750))
+	return b
 
 
 # Buttons are in the readable serif, never blackletter: oxblood for the main one, an outline for the rest.
@@ -107,6 +165,21 @@ func saying(so_far: String) -> void:
 
 func answered(answer: String, can_show: bool) -> void:
 	_show(answer, false, can_show)
+	rate_row.visible = true
+	_fit()
+
+
+func _rated(helped: bool, note: String) -> void:
+	_hide_rating()
+	say(words.text + "\n[color=#1c221d99]Thanks.[/color]", 300.0)
+	show_part(1.0)
+	rated.emit(helped, note.strip_edges())
+
+
+func _hide_rating() -> void:
+	rate_row.visible = false
+	note_row.visible = false
+	note_field.text = ""
 
 
 ## The question stays in the field, so Ask again sends it as it was.
@@ -123,6 +196,7 @@ func close() -> void:
 
 
 func _show(text: String, asking: bool, can_show: bool) -> void:
+	_hide_rating()
 	field.visible = asking
 	ask_button.visible = asking
 	show_button.visible = can_show
@@ -137,7 +211,12 @@ func _fit() -> void:
 	var gap := 8 * s
 	row.reset_size()
 	var field_h := field.get_combined_minimum_size().y if field.visible else 0.0
-	under = (field_h + gap if field.visible else 0.0) + row.size.y + gap
+	var rating: Control = rate_row if rate_row.visible else (note_row if note_row.visible else null)
+	if rating:
+		rating.reset_size()
+		if rating == note_row:
+			rating.size.x = wide
+	under = (field_h + gap if field.visible else 0.0) + row.size.y + gap + (rating.size.y + gap if rating else 0.0)
 	super()
 	var y := pad.y + words.size.y + gap
 	if field.visible:
@@ -145,6 +224,8 @@ func _fit() -> void:
 		field.size = Vector2(wide, field_h)
 		y += field_h + gap
 	row.position = Vector2(pad.x, y)
+	if rating:
+		rating.position = Vector2(pad.x, y + row.size.y + gap)
 
 
 func _input(event: InputEvent) -> void:
