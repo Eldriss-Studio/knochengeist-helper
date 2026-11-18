@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 41
+
+- **The ghost shows when your plan is nearly used up.** Past 80% of your Claude plan's limit, the toolbar ghost wears a ring filled to how much is used, red from 95%, and its tooltip says when the limit resets.
+
 ## Version 40
 
 - **The ghost reads Godot's manual for your version.** Most questions are how-tos, and the manual answers those, so a question now comes with the matching manual pages for your Godot, with their links. The helper downloads the manual from GitHub once per Godot version and checks it. Settings says when a newer Godot's manual isn't out yet. With the manual, the full answer eval passes 110 of 114 tries.

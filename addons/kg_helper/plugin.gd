@@ -35,6 +35,7 @@ const Answers := preload("answers.gd")
 const Names := preload("names.gd")
 const Errors := preload("errors.gd")
 const Manual := preload("manual.gd")
+const Ring := preload("ring.gd")
 const Docs := preload("docs.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
@@ -91,6 +92,7 @@ const OFFER_S := 12.0   # names still not in his Godot after the retry: the card
 const SHARED_UNHELPFUL := 5
 var docs: Node
 var manual: Node
+var ring: Control                  # around the toolbar ghost, once the plan's limit is nearly used up
 var update_to := ""                # a newer version, once the check finds one
 var update_notes := ""
 var asking_about := ""             # what he right-clicked, added to the next question
@@ -291,6 +293,8 @@ func _make_button() -> void:
 	button.icon = _svg("icon.svg", 21.0)     # the ghost fills about three quarters of its box
 	button.add_theme_constant_override("icon_max_width", int(21 * scale))
 	button.focus_mode = Control.FOCUS_NONE
+	ring = Ring.new()
+	button.add_child(ring)
 	dot = Control.new()
 	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dot.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -318,6 +322,10 @@ func _show_up(up: bool) -> void:
 	button.modulate = Color(1, 1, 1, 1.0 if can else 0.5)
 	var state := Menu.state(up, claude_state)
 	button.tooltip_text = "Knochengeist: %s." % state + (" %s to ask." % Menu.ask_keys() if can else " Click to see what's wrong.")
+	if ring and brain and not up:
+		ring.show_used(float(brain.limit.get("used", -1.0)), brain.limit.get("status") == "allowed_warning")
+		if ring.visible:
+			button.tooltip_text += " " + brain.usage_line() + "."
 	var newer := update_to if not up else ""
 	var recent := PackedStringArray(answers.recent(Menu.RECENT).map(func(record): return str(record.get("question", "")).strip_edges()).filter(func(q): return q != ""))
 	Menu.fill(menu, up, claude_state, claude_path, brain.plan_lines() if brain else PackedStringArray(), newer, recent, _show_past, not last_error.is_empty())
@@ -1105,6 +1113,7 @@ func _brain_done(whole: String, problem: String) -> void:
 	if problem != "":
 		ask_box.failed(brain.problem_message(problem))
 		return
+	_show_up(course_shown)               # the ring and tooltip follow this run's limit
 	var heads_up: String = brain.warning()
 	if heads_up != "":
 		_note(heads_up, 10.0)

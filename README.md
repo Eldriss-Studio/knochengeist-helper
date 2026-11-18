@@ -41,6 +41,8 @@ When a newer version is out, the ghost's menu shows **Update to version…**. It
 
 ## The ghost's menu
 
+Past 80% of your Claude plan's limit, the ghost in the toolbar wears a ring filled to how much is used, and its tooltip says when it resets.
+
 Click the ghost, or open Project > Tools > Knochengeist. The first lines say where answers come from right now: your Claude plan (or that questions are billed to your API key), how much of its limit is used and when it resets, and where your Claude Code is. Under them:
 
 - **Ask the ghost**, with its keys. The keys are a Godot editor shortcut: change them in Editor Settings > Shortcuts, under `knochengeist`, and the menu names whatever you picked.
@@ -113,6 +115,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 41 | 4.6 and newer (tested on 4.7) |
 | 40 | 4.6 and newer (tested on 4.7) |
 | 39 | 4.6 and newer (tested on 4.7) |
 | 38 | 4.6 and newer (tested on 4.7) |
