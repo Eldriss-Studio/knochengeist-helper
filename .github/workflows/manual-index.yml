@@ -26,7 +26,7 @@ jobs:
             rm -rf godot-docs out
             git clone --quiet --depth 1 --branch "$version" https://github.com/godotengine/godot-docs.git godot-docs
             python3 tools/manual_index.py godot-docs "$version" out
-            gh release create "manual-$version" "out/manual-$version.json.gz" \
+            gh release create "manual-$version" "out/manual-$version.json.gz" --latest=false \
               --title "Godot $version manual index" \
               --notes "The Godot $version manual, split into sections for the Knochengeist helper. Godot Engine documentation by Juan Linietsky, Ariel Manzur and the Godot community, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Built from godot-docs' $version branch."
           done
