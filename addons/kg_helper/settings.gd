@@ -3,10 +3,12 @@ extends AcceptDialog
 
 const Brain := preload("brain.gd")
 const Updates := preload("updates.gd")
+const Menu := preload("menu.gd")
 const WIDTH := 440.0
 const GAP := 6
 const QUIET := Color(1, 1, 1, 0.7)
 const CANDLE := Color("e3b44a")
+const STATUS_WORDS := {"ready": "Signed in to %s", "signed_out": "Not signed in to %s", "checking": "Checking %s…"}
 const MODEL_NAMES := {
 	"sonnet": "Sonnet (suits most questions)",
 	"fable": "Fable (answers best, uses your limit fastest)",
@@ -19,6 +21,13 @@ var where: Label
 var how: Label
 var automatic: Button
 var model_list: OptionButton
+var tool_list: OptionButton
+var picked: GDScript               # the tool chosen in the list, saved or not
+var brain_ref                      # the brain, for whether the tool in use is ready
+var tool_state := ""               # the tool in use's check: ready, signed_out, checking…
+var status_box: VBoxContainer      # whether the picked tool is ready, under the list
+var model_hint: Label              # for a tool that picks its own model
+var where_heading: Label
 var less_motion: CheckBox
 var check_updates: CheckBox
 var pick: EditorFileDialog
@@ -34,20 +43,36 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	var box := VBoxContainer.new()
 	box.custom_minimum_size = Vector2(WIDTH, 0) * s
 	box.add_theme_constant_override("separation", int(GAP * s))
+	brain_ref = brain
+	tool_state = claude_state
+	picked = Brain.adapter()
+	box.add_child(_heading("AI tool"))
+	tool_list = OptionButton.new()
+	for id in Brain.TOOLS:
+		tool_list.add_item(Brain.TOOLS[id].LABEL)    # each says the plan it runs on
+	tool_list.select(Brain.TOOLS.keys().find(Brain.tool()))
+	tool_list.item_selected.connect(func(i: int): _pick(Brain.TOOLS.values()[i]))
+	box.add_child(tool_list)
+	status_box = VBoxContainer.new()
+	status_box.add_theme_constant_override("separation", int(GAP * s))
+	box.add_child(status_box)
+	box.add_child(_quiet("Answers come from the tool you pick, signed in with your own plan. Save, and the helper checks it."))
 	if brain:
-		_your_ai(box, brain, claude_state)
+		brain.checked.connect(func(state: String, _path: String):
+			tool_state = state
+			if is_instance_valid(status_box):
+				_show_status())
 	box.add_child(_heading("Model"))
 	model_list = OptionButton.new()
-	for id in Brain.MODELS:
-		model_list.add_item(MODEL_NAMES.get(id, id.capitalize()))     # each says what it's for, in the list itself
-	model_list.select(Brain.MODELS.find(Brain.model()))
 	box.add_child(model_list)
+	model_hint = _quiet("")
+	box.add_child(model_hint)
 	if docs and docs.state != "off":
 		_docs_section(box, docs)
-	box.add_child(_heading("Claude Code location"))
-	chosen_path = Brain.saved_setting(Brain.CLAUDE_PATH_SETTING)
+	where_heading = _heading("")
+	box.add_child(where_heading)
 	where = _label("")
-	where.name = "ClaudePath"
+	where.name = "ToolPath"
 	box.add_child(where)
 	how = _quiet("")
 	box.add_child(how)
@@ -77,44 +102,80 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_child(_quiet("Once a day, it checks GitHub for a newer helper and offers it in its menu. It never updates on its own."))
 	add_child(box)
 	confirmed.connect(_save)
-	_show_found()
+	_pick(picked)
 
 
 # Who answers: the AI, its plan and sign-in, and how much of its limit is used.
-func _your_ai(box: VBoxContainer, brain, claude_state: String) -> void:
-	box.add_child(_heading("Account"))
-	var lines: PackedStringArray = brain.plan_lines()
-	box.add_child(_label(lines[0] if not lines.is_empty() else "Claude Code"))
-	var signed_in := claude_state == "ready"
+# Everything below the list follows the picked tool at once: its readiness, model and location.
+func _pick(tool: GDScript) -> void:
+	picked = tool
+	chosen_path = Brain.saved_setting(picked.PATH_SETTING)
+	where_heading.text = "%s location" % picked.NAME
+	_show_status()
+	_show_model()
+	_show_found()
+	if visible:
+		reset_size.call_deferred()          # it fits the picked tool's sections, with no room left over
+
+
+func _show_status() -> void:
+	for old in status_box.get_children():
+		old.queue_free()
+	var tool_name: String = picked.NAME
+	if brain_ref == null:
+		return
+	if picked != Brain.adapter():
+		status_box.add_child(_label("Save to check %s." % tool_name))
+		return
+	var lines: PackedStringArray = brain_ref.plan_lines()
+	var text: String = STATUS_WORDS.get(tool_state, "")
+	text = text % tool_name if text != "" else Menu.state(false, tool_state)
 	var row := HBoxContainer.new()
 	var icon := TextureRect.new()
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	icon.texture = EditorInterface.get_editor_theme().get_icon("StatusSuccess" if signed_in else "StatusWarning", "EditorIcons")
-	row.add_child(icon)
+	if tool_state != "checking":
+		icon.texture = EditorInterface.get_editor_theme().get_icon("StatusSuccess" if tool_state == "ready" else "StatusWarning", "EditorIcons")
+		row.add_child(icon)
 	var status := Label.new()
-	status.text = "Signed in to Claude Code" if signed_in else ("Not signed in" if claude_state == "signed_out" else "Not ready yet")
+	status.text = text
 	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(status)
-	if claude_state == "signed_out":
+	if tool_state == "signed_out":
 		var button := Button.new()
 		button.text = "Sign in…"
 		button.pressed.connect(func(): sign_in.emit())
 		row.add_child(button)
-	box.add_child(row)
-	var usage: String = brain.usage_line()
+	if tool_state == "ready" and not lines.is_empty():
+		status_box.add_child(_label(lines[0]))      # the plan it runs on
+	status_box.add_child(row)
+	if tool_state != "ready":
+		return
+	var usage: String = brain_ref.usage_line()
 	if usage != "":
 		var bar := ProgressBar.new()
 		bar.max_value = 1.0
-		bar.value = float(brain.limit.get("used", 0.0))
+		bar.value = float(brain_ref.limit.get("used", 0.0))
 		bar.show_percentage = false
 		bar.custom_minimum_size = Vector2(0, 6) * s
 		var fill := StyleBoxFlat.new()
 		fill.bg_color = CANDLE
 		fill.set_corner_radius_all(int(3 * s))
 		bar.add_theme_stylebox_override("fill", fill)
-		box.add_child(bar)
+		status_box.add_child(bar)
 	for line in lines.slice(1):
-		box.add_child(_quiet(line))
+		status_box.add_child(_quiet(line))
+
+
+func _show_model() -> void:
+	model_list.clear()
+	var models: Array = picked.MODELS
+	model_list.visible = not models.is_empty()
+	model_hint.visible = models.is_empty()
+	model_hint.text = picked.MODEL_HINT if models.is_empty() else ""
+	for id in models:
+		model_list.add_item(MODEL_NAMES.get(id, id.capitalize()))     # each says what it's for, in the list itself
+	if not models.is_empty():
+		model_list.select(maxi(0, models.find(picked.model_from(Brain.saved_setting(picked.MODEL_SETTING)))))
 
 
 func _label(text: String) -> Label:
@@ -141,16 +202,16 @@ func _quiet(text: String) -> Label:
 	return label
 
 
-# Says which Claude Code is used and how it was picked, so nothing is an empty box to guess about.
+# Says which copy of the picked tool is used and how it was picked, so nothing is an empty box to guess about.
 func _show_found() -> void:
 	automatic.visible = chosen_path != ""
 	if chosen_path != "":
 		where.text = Brain._short(chosen_path)
 		how.text = "Set by you." if FileAccess.file_exists(chosen_path) else "There's no file at this path. Change it, or find it automatically."
 		return
-	var at := Brain.find_claude()
+	var at := Brain.find_for(picked)
 	where.text = Brain._short(at) if at != "" else "Not found"
-	how.text = "Found automatically." if at != "" else "Install Claude Code from claude.com/claude-code, or choose where it is."
+	how.text = "Found automatically." if at != "" else picked.INSTALL_HINT
 
 
 func _browse() -> void:
@@ -158,7 +219,7 @@ func _browse() -> void:
 		pick = EditorFileDialog.new()
 		pick.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
 		pick.access = EditorFileDialog.ACCESS_FILESYSTEM
-		pick.title = "Where is Claude Code?"
+		pick.title = "Where is %s?" % picked.NAME
 		pick.file_selected.connect(func(path: String):
 			chosen_path = path
 			_show_found())
@@ -168,8 +229,10 @@ func _browse() -> void:
 
 func _save() -> void:
 	var settings := EditorInterface.get_editor_settings()
-	settings.set_setting(Brain.CLAUDE_PATH_SETTING, chosen_path)
-	settings.set_setting(Brain.MODEL_SETTING, Brain.MODELS[model_list.selected])
+	settings.set_setting(picked.PATH_SETTING, chosen_path)
+	if not picked.MODELS.is_empty():
+		settings.set_setting(picked.MODEL_SETTING, picked.MODELS[model_list.selected])
+	settings.set_setting(Brain.TOOL_SETTING, picked.ID)
 	settings.set_setting(Brain.LESS_MOTION_SETTING, less_motion.button_pressed)
 	settings.set_setting(Updates.SETTING, check_updates.button_pressed)
 

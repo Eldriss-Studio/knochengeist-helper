@@ -14,9 +14,11 @@ It answers through your own Claude Code, so it has no account, key or server of 
 
 - **Godot 4.6 or newer.** It's built and tested on 4.7.
 - **A Mac, Linux or Windows.**
-- **Claude Code**, installed and signed in with your Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once. It's the only AI the helper uses today; Codex (ChatGPT plans) is next.
+- **An AI tool you're signed in to**, picked under **AI tool** in Settings:
+  - **Claude Code**, with a Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once.
+  - **Codex**, with a ChatGPT plan. The ChatGPT app for Mac comes with it, and the helper finds it there. Otherwise install it with `npm install -g @openai/codex`, then run `codex login` once in a terminal.
 
-Each question is one Claude Code run, so it counts toward your plan's usage like any other. If you sign Claude Code in with an API key instead of a plan, each question is billed to that key.
+Each question is one run of that tool, so it counts toward your plan's usage like any other. With an API key instead of a plan, each question is billed to that key. Codex answers all at once rather than word by word, and doesn't report how much of the plan is left.
 
 ## Install
 
@@ -57,7 +59,7 @@ Before it runs Claude Code for the first time in a project, the helper asks, wit
 
 > To answer, Knochengeist runs your Claude Code on this computer.
 >
-> Each question sends to Anthropic, using your account:
+> Each question sends to Anthropic (Claude Code) or OpenAI (Codex), using your account:
 > - your question
 > - the open scene's file name and the selected node
 > - the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes

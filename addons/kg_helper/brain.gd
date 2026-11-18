@@ -27,15 +27,25 @@ const STOP_GRACE_S := 2.0
 const UNKNOWN_KEPT := 400
 const LOG_KEPT_CHARS := 32768
 const ERRORS_KEPT := 2000
-const SIGNED_OUT_EXIT := 1
-const MODELS := ["sonnet", "fable", "opus", "haiku"]
+const MODELS := ["sonnet", "fable", "opus", "haiku"]      # Claude Code's, which Settings lists
 const CLAUDE_PATH_SETTING := "knochengeist/claude_path"
 const MODEL_SETTING := "knochengeist/model"
 const LESS_MOTION_SETTING := "knochengeist/less_motion"
 const EXIT_UNKNOWN := -1
-const INSTALL_PLACES := ["/.local/bin/claude", "/.claude/local/claude"]
-const SYSTEM_PLACES := ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
 const NEWLINE := 10
+const Claude := preload("claude.gd")
+const Codex := preload("codex.gd")
+# Every AI tool the helper can answer through, by id. To add one (Copilot CLI, Cursor CLI…): copy
+# codex.gd, give it every name below, add it here, and give its tests a stand-in like fake-codex.ts.
+# A test checks each tool here has the whole surface.
+const TOOLS := {"claude": Claude, "codex": Codex}
+const ADAPTER_CONSTANTS := ["ID", "NAME", "LABEL", "COMPANY", "PATH_SETTING", "MODEL_SETTING", "ENV", "COMMAND",
+	"INSTALL_PAGE", "INSTALL_HINT", "LOGIN_HINT", "AUTH_ARGS", "MODELS", "MODEL_HINT", "REPORTS_RESETS",
+	"SIGN_IN_CAN_BE_SKIPPED", "PROBLEMS"]
+const ADAPTER_FUNCTIONS := ["find_automatically", "model_from", "login_args", "check_state", "start", "read"]
+const TOOL_SETTING := "knochengeist/tool"
+# Codex reads its question from stdin to the end, so a shell hands it the question's file.
+const RUN_FROM_FILE := "cd \"$1\" && f=\"$2\" && shift 2 && exec \"$0\" \"$@\" < \"$f\""
 # Godot's one pipe can't close the tool's input on its own, so a shell hands it the prompt file.
 const RUN := "cd \"$1\" && shift && exec \"$0\" \"$@\""   # in the helper's own folder, not the game's
 
@@ -58,7 +68,6 @@ var windows := {}                  # every usage window the last run reported: n
 var warned := false
 const LIMIT_NAMES := {"seven_day": "weekly limit", "five_hour": "5-hour limit"}
 const NEAR_LIMIT := 0.8
-var knew_a_line := false
 var unknown_lines := ""
 var ran_version := ""
 var ran_key_source := ""
@@ -66,8 +75,10 @@ var stopping := {}                 # pid: seconds left before a hard kill, for r
 var claude_version := ""
 var check_step := ""
 var check_io: FileAccess
+var check_err: FileAccess                       # Codex says whether it's signed in on stderr
 var waited := 0.0
 var asked := ""                   # this question's system prompt file, removed when it's over
+var asking_file := ""              # Codex's question file, removed with it
 var got_result := false            # Claude Code said its result: the run is done, though it waits on stdin
 var question := 0                 # goes up with each question, so a late answer to an old one is dropped
 var state := "checking"
@@ -79,43 +90,46 @@ var check_waited := 0.0
 static var from_login_shell := ""
 
 
+## The adapter for the AI tool the person picked (Claude Code unless they picked another).
+static func adapter() -> GDScript:
+	return TOOLS.get(saved_setting(TOOL_SETTING), Claude)
+
+
+static func tool() -> String:
+	return adapter().ID
+
+
+static func tool_name() -> String:
+	return adapter().NAME
+
+
+static func company() -> String:
+	return adapter().COMPANY
+
+
+static func path_setting() -> String:
+	return adapter().PATH_SETTING
+
+
+static func _path_from_env() -> String:
+	return OS.get_environment(adapter().ENV)
+
+
+## Where the picked tool is: told by the environment, chosen in Settings, or found.
 static func find_claude() -> String:
-	var from_env := OS.get_environment("KG_HELPER_CLAUDE")
+	return find_for(adapter())
+
+
+## Where this tool is: told by the environment, chosen in Settings, or found.
+static func find_for(tool: GDScript) -> String:
+	var from_env := OS.get_environment(tool.ENV)
 	if from_env != "":
 		return from_env
-	var chosen := saved_setting(CLAUDE_PATH_SETTING)
+	var chosen := saved_setting(tool.PATH_SETTING)
 	if chosen != "":
 		return chosen
-	return find_claude_automatically()
-
-
-## Where Claude Code is when nobody chose a path: the usual places, the PATH, then the login shell.
-static func find_claude_automatically() -> String:
-	if OS.get_name() == "Windows":
-		return _find_on_windows()
-	var home := OS.get_environment("HOME")
-	for place in INSTALL_PLACES:
-		if FileAccess.file_exists(home + place):
-			return home + place
-	for place in SYSTEM_PLACES:
-		if FileAccess.file_exists(place):
-			return place
-	for dir in OS.get_environment("PATH").split(":", false):
-		if FileAccess.file_exists(dir.path_join("claude")):
-			return dir.path_join("claude")
-	return from_login_shell
-
-
-# Windows: the native install under the profile, npm's shim, then the PATH (split on ;).
-static func _find_on_windows() -> String:
-	var places := [OS.get_environment("USERPROFILE").path_join(".local/bin/claude.exe"), OS.get_environment("APPDATA").path_join("npm/claude.cmd")]
-	for dir in OS.get_environment("PATH").split(";", false):
-		for name in ["claude.exe", "claude.cmd"]:
-			places.append(dir.path_join(name))
-	for place in places:
-		if FileAccess.file_exists(place):
-			return place
-	return ""
+	var found: String = tool.find_automatically()
+	return found if found != "" or OS.get_name() == "Windows" or tool != adapter() else from_login_shell
 
 
 static func offer_settings() -> void:
@@ -148,20 +162,10 @@ static func saved_setting(name: String) -> String:
 
 
 static func model() -> String:
-	var chosen := saved_setting(MODEL_SETTING)
-	return chosen if chosen in MODELS else MODELS[0]
+	return adapter().model_from(saved_setting(adapter().MODEL_SETTING))
 
 
 # The plan from `claude auth status`. Its email and organization are never read.
-static func _plan_name(status: Dictionary) -> String:
-	var tier := str(status.get("planTier", status.get("subscriptionType", "")))
-	if tier == "" or tier == "<null>":
-		return ""
-	var words := tier.split("_")
-	var named := "Claude " + words[0].capitalize()
-	return named + (" " + " ".join(words.slice(1)) if words.size() > 1 else "")
-
-
 func _read_limit(info) -> void:
 	if not (info is Dictionary):
 		return
@@ -232,7 +236,7 @@ func warning() -> String:
 
 
 func problem_message(problem: String) -> String:
-	if problem == "limit" and float(limit.get("resets_at", 0.0)) > 0.0:
+	if problem == "limit" and adapter().REPORTS_RESETS and float(limit.get("resets_at", 0.0)) > 0.0:
 		return "You've used all of your Claude plan's %s. It resets %s." % [_limit_name(), _when(limit["resets_at"])]
 	return problem_text(problem)
 
@@ -251,7 +255,14 @@ static func _when(resets_at: float) -> String:
 
 
 static func problem_text(problem: String) -> String:
-	return PROBLEMS.get(problem, PROBLEMS["failed"])
+	if adapter().PROBLEMS.has(problem):
+		return adapter().PROBLEMS[problem]
+	return PROBLEMS.get(problem, PROBLEMS["failed"]).replace("Claude Code", tool_name())
+
+
+## What a question sends, and to whom, for the tool in use.
+static func disclosure() -> String:
+	return DISCLOSURE.replace("Claude Code", tool_name()).replace("Anthropic", company())
 
 
 func check() -> void:
@@ -259,7 +270,7 @@ func check() -> void:
 	if state == "checking":
 		_now("checking", "")
 	var claude := find_claude()
-	if claude == "" and OS.get_environment("KG_HELPER_CLAUDE") == "" and OS.get_name() != "Windows":
+	if claude == "" and _path_from_env() == "" and OS.get_name() != "Windows":
 		_ask_login_shell()                # Windows has no login shell to ask
 	else:
 		_check_sign_in(claude)
@@ -268,7 +279,7 @@ func check() -> void:
 # A Godot opened from the Dock doesn't get the PATH his Terminal has, so his login shell is asked.
 func _ask_login_shell() -> void:
 	var shell := OS.get_environment("SHELL")
-	var started := OS.execute_with_pipe(shell if shell != "" else ("/bin/zsh" if OS.get_name() == "macOS" else "/bin/bash"), ["-lc", "command -v claude"], false)
+	var started := OS.execute_with_pipe(shell if shell != "" else ("/bin/zsh" if OS.get_name() == "macOS" else "/bin/bash"), ["-lc", "command -v " + adapter().COMMAND], false)
 	if started.is_empty():
 		_check_sign_in("")
 		return
@@ -290,6 +301,7 @@ func _start_check(claude: String, args: Array, step: String) -> void:
 		started = OS.execute_with_pipe("cmd.exe", PackedStringArray(["/d", "/c", claude] + args), false)
 	else:
 		started = OS.execute_with_pipe(claude, PackedStringArray(args), false)
+	check_err = started.get("stderr")
 	check_waited = 0.0
 	if started.is_empty():
 		_now(_missing(), claude)
@@ -300,7 +312,7 @@ func _start_check(claude: String, args: Array, step: String) -> void:
 
 
 func _missing() -> String:
-	var set_in_settings := OS.get_environment("KG_HELPER_CLAUDE") == "" and saved_setting(CLAUDE_PATH_SETTING) != ""
+	var set_in_settings := _path_from_env() == "" and saved_setting(path_setting()) != ""
 	return "not_there" if set_in_settings else "missing"
 
 
@@ -329,16 +341,12 @@ func _poll_check(delta: float) -> void:
 		stop_check()
 		if step == "version":
 			claude_version = said.strip_edges().get_slice("\n", 0)
-			_start_check(find_claude(), ["auth", "status"], "auth")
+			_start_check(find_claude(), adapter().AUTH_ARGS, "auth")
 			return
-		var status = JSON.parse_string(said)
-		auth_method = str(status.get("authMethod", "")) if status is Dictionary else ""
-		plan_name = _plan_name(status) if status is Dictionary else ""
-		# Signed out only when Claude Code says so ({"loggedIn": false}); any other failure means it won't start.
-		var says_signed_out: bool = status is Dictionary and status.get("loggedIn") == false
-		var now := "ready" if exit_code in [0, EXIT_UNKNOWN] else ("signed_out" if exit_code == SIGNED_OUT_EXIT and says_signed_out else "wont_start")
+		var also := check_err.get_buffer(check_err.get_length()).get_string_from_utf8() if check_err else ""
+		var now: String = adapter().check_state(self, exit_code, said, also)
 		if now == "wont_start":
-			log_line("Claude Code check: it exited with %d. It said: %s" % [exit_code, said.strip_edges().left(300).replace("\n", " ")])
+			log_line("%s check: it exited with %d. It said: %s" % [tool_name(), exit_code, (said + also).strip_edges().left(300).replace("\n", " ")])
 		_now(now, find_claude())
 
 
@@ -355,7 +363,7 @@ func stop_check() -> void:
 
 func _now(new_state: String, path: String) -> void:
 	if new_state != "checking":
-		log_line("Claude Code check: %s %s" % [new_state, _short(path)])
+		log_line("%s check: %s %s" % [tool_name(), new_state, _short(path)])
 	state = new_state
 	checked.emit(state, path)
 
@@ -382,8 +390,8 @@ func debug_info(helper_version: String) -> String:
 		"Knochengeist helper %s" % helper_version,
 		"Godot %s" % Engine.get_version_info().string,
 		"%s %s" % [OS.get_name(), OS.get_version()],
-		"Claude Code: %s" % (claude if claude != "" else "not found"),
-		"Claude Code version: %s" % version,
+		"%s: %s" % [tool_name(), claude if claude != "" else "not found"],
+		"%s version: %s" % [tool_name(), version],
 		"Signed in with: %s" % (auth_method if auth_method != "" else "unknown"),
 		"State: %s" % state,
 	])
@@ -429,18 +437,12 @@ func ask(system: String, prompt: String) -> void:
 		return
 	file.store_string(system)
 	file.close()
-	# The question goes in as a stream-json line on stdin and the system prompt from a file, so no
-	# shell has to carry them: the same on every computer.
-	var flags := PackedStringArray(["-p", "--model", model(), "--tools=",
-		"--setting-sources=", "--strict-mcp-config", "--no-session-persistence", "--input-format", "stream-json",
-		"--output-format", "stream-json", "--verbose", "--include-partial-messages", "--system-prompt-file", asked])
-	var started := _start(claude, dir, flags)
+	var started: Dictionary = adapter().start(self, claude, dir, asked, prompt, model())
 	if started.is_empty():
 		_finish.call_deferred("failed", question)
 		return
 	pid = started["pid"]
 	io = started["stdio"]
-	io.store_string(JSON.stringify({"type": "user", "message": {"role": "user", "content": prompt}}) + "\n")
 	got_result = false
 	errors = started["stderr"]
 	unread = PackedByteArray()
@@ -450,7 +452,6 @@ func ask(system: String, prompt: String) -> void:
 	hit_limit = false
 	billing_failed = false
 	said_wrong = ""
-	knew_a_line = false
 	unknown_lines = ""
 	ran_version = ""
 	ran_key_source = ""
@@ -469,6 +470,20 @@ static func _start(claude: String, dir: String, flags: PackedStringArray) -> Dic
 			return OS.execute_with_pipe("cmd.exe", through, true)
 		return OS.execute_with_pipe(claude, flags, true)
 	var args := PackedStringArray(["-c", RUN, claude, dir])
+	args.append_array(flags)
+	return OS.execute_with_pipe("/bin/sh", args, false)
+
+
+# A tool that reads its question from stdin to the end: stdin is the question's file.
+static func _start_from_file(program: String, dir: String, flags: PackedStringArray, input: String) -> Dictionary:
+	if OS.get_name() == "Windows":
+		var line := PackedStringArray(["\"%s\"" % program])
+		for flag in flags:
+			line.append("\"%s\"" % flag.replace("\"", "") if flag.contains(" ") else flag)
+		line.append("< \"%s\"" % input)
+		# Godot already wraps an argument with spaces in quotes, which /s takes off again: one more pair breaks it
+		return OS.execute_with_pipe("cmd.exe", PackedStringArray(["/d", "/s", "/c", " ".join(line)]), true)
+	var args := PackedStringArray(["-c", RUN_FROM_FILE, program, dir, input])
 	args.append_array(flags)
 	return OS.execute_with_pipe("/bin/sh", args, false)
 
@@ -494,6 +509,9 @@ func stop() -> void:
 	if asked != "":
 		DirAccess.remove_absolute(asked)
 		asked = ""
+	if asking_file != "":
+		DirAccess.remove_absolute(asking_file)
+		asking_file = ""
 
 
 ## Ends at once whatever was asked to stop, for when the plugin leaves.
@@ -520,7 +538,7 @@ func poll(delta: float) -> void:
 	_keep_errors()
 	if OS.is_process_running(pid) and not got_result:
 		if waited > GIVE_UP_S:
-			log_line("A question ended: no answer after %d s. Claude Code said: %s" % [GIVE_UP_S, said_wrong.strip_edges().replace("\n", " ")])
+			log_line("A question ended: no answer after %d s. %s said: %s" % [GIVE_UP_S, tool_name(), said_wrong.strip_edges().replace("\n", " ")])
 			_end("failed")
 		return
 	_read()
@@ -534,13 +552,13 @@ func poll(delta: float) -> void:
 	var billing := failed and billing_failed and (wrong.contains("billing") or wrong.contains("credit"))
 	var at_limit: bool = limit_hit or (failed and limit.get("status", "") == "rejected")
 	var problem := "signed_out" if auth_failed else ("limit" if at_limit else ("billing" if billing else ("failed" if failed else "")))
-	if auth_failed and state == "ready":
+	if auth_failed and state == "ready" and adapter().SIGN_IN_CAN_BE_SKIPPED:
 		problem = "login_skipped"
-	elif failed and not knew_a_line and unknown_lines != "":
+	elif problem == "failed" and text.strip_edges() == "" and unknown_lines != "":   # no answer, and lines it didn't know: likely a newer format
 		problem = "unknown"
 		said_wrong += unknown_lines
 	if problem != "":
-		log_line("A question ended: %s (Claude Code %s, sign-in %s). Claude Code said: %s" % [problem, ran_version if ran_version != "" else "?", ran_key_source if ran_key_source != "" else "?", said_wrong.strip_edges().replace("\n", " ")])
+		log_line("A question ended: %s (%s %s, sign-in %s). It said: %s" % [problem, tool_name(), ran_version if ran_version != "" else "?", ran_key_source if ran_key_source != "" else "?", said_wrong.strip_edges().replace("\n", " ")])
 	_end(problem)
 
 
@@ -564,38 +582,18 @@ func _read() -> void:
 
 func _line(raw: String) -> void:
 	var event = JSON.parse_string(raw)
-	if not (event is Dictionary) or not (event.get("type") in ["system", "stream_event", "assistant", "user", "result", "rate_limit_event"]):
+	if not (event is Dictionary) or not adapter().read(self, event):
 		if unknown_lines.length() < UNKNOWN_KEPT:
 			unknown_lines += raw.left(UNKNOWN_KEPT) + "\n"
 		return
-	knew_a_line = true
-	if event.get("type") == "system" and event.get("subtype") == "init":
-		ran_version = str(event.get("claude_code_version", ""))
-		if event.get("model") is String:
-			answered_by = event["model"]
-		ran_key_source = str(event.get("apiKeySource", ""))
-	elif event.get("type") == "stream_event":
-		var delta = event.get("event", {}).get("delta", {})
-		if delta is Dictionary and delta.get("type") == "text_delta" and delta.get("text") is String:
-			text += delta["text"]
-			piece.emit(delta["text"])
-	elif event.get("type") == "assistant" and event.get("error") == "authentication_failed":
-		auth_failed = true
-	elif event.get("type") == "system" and event.get("subtype") == "api_retry":
-		hit_limit = hit_limit or event.get("error") == "rate_limit"
-		billing_failed = billing_failed or event.get("error") == "billing_error"
-	elif event.get("type") == "rate_limit_event":
-		_read_limit(event.get("rate_limit_info", {}))
-	elif event.get("type") == "result":
-		got_result = true
-		ended_badly = event.get("is_error") == true
-		if event.get("total_cost_usd") is float or event.get("total_cost_usd") is int:
-			last_cost = float(event["total_cost_usd"])
-		if ended_badly and event.get("result") is String:
-			said_wrong += event["result"] + "\n"
-		if text == "" and not ended_badly and event.get("result") is String:
-			text = event["result"]
-			piece.emit(text)
+
+
+## A piece of the answer, as it comes.
+func add_text(more: String) -> void:
+	if more == "":
+		return
+	text += more
+	piece.emit(more)
 
 
 # The question is over: everything about it goes, then the answer is given.

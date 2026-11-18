@@ -2,6 +2,12 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 44
+
+- **Codex, for ChatGPT plans.** Pick **AI tool** in Settings: Claude Code or Codex. With Codex, the helper answers through `codex exec` with its shell and web search turned off, so only your question is sent, to OpenAI. Show me, follow-ups and the name check work the same. Codex answers all at once, and doesn't report your plan's usage, so the ring stays hidden.
+- The helper finds the Codex that comes with the ChatGPT app, so with the app installed and signed in there's nothing else to set up.
+- Settings follows the tool you pick before you save: its model, its location, and whether it's signed in ("Signed in to Codex", or Sign in…).
+
 ## Version 43
 
 - **Works on Windows.** The helper finds Claude Code (`claude.exe` under your profile, npm's `claude.cmd`, or the PATH), answers, stops when you close the card, and opens a console to sign in. Its tests now run on Windows, Linux and macOS.

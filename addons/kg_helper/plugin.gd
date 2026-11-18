@@ -361,7 +361,7 @@ func _chose(id: int) -> void:
 			settings.confirmed.connect(brain.check)
 			EditorInterface.popup_dialog_centered(_closes_itself(settings))
 		Menu.INSTALL:
-			OS.shell_open(Menu.INSTALL_PAGE)
+			OS.shell_open(Brain.adapter().INSTALL_PAGE)
 		Menu.SIGN_IN:
 			_sign_in()
 		Menu.SHOW_LOGS:
@@ -379,21 +379,38 @@ func _chose(id: int) -> void:
 
 
 func _sign_in() -> void:
+	# Claude Code signs in when it's run; Codex with "codex login".
+	var run: PackedStringArray = Brain.adapter().login_args(claude_path)
 	var terminal := OS.get_environment("KG_HELPER_TERMINAL")
 	if terminal != "":
-		OS.create_process(terminal, [claude_path])
+		OS.create_process(terminal, run)
 	elif OS.get_name() == "macOS":
-		OS.create_process("open", ["-a", "Terminal", claude_path])
+		if run.size() == 1:
+			OS.create_process("open", ["-a", "Terminal", claude_path])
+		else:
+			# Terminal opens a file, not a command line: a small .command file runs it.
+			var script := OS.get_user_data_dir().path_join("kg_helper").path_join("sign-in.command")
+			DirAccess.make_dir_recursive_absolute(script.get_base_dir())
+			var file := FileAccess.open(script, FileAccess.WRITE)
+			if file:
+				file.store_string("#!/bin/sh\nexec '%s' login\n" % claude_path.replace("'", "'\\''"))
+				file.close()
+				OS.execute("chmod", ["+x", script])
+				OS.create_process("open", ["-a", "Terminal", script])
 	elif OS.get_name() == "Windows":
-		OS.create_process("cmd.exe", ["/c", "start", "", "cmd.exe", "/k", claude_path])
+		var console := PackedStringArray(["/c", "start", "", "cmd.exe", "/k"])
+		console.append_array(run)
+		OS.create_process("cmd.exe", console)
 	else:
 		# Linux: the default terminal, or the first common one there is
 		for app in [["x-terminal-emulator", "-e"], ["gnome-terminal", "--"], ["konsole", "-e"], ["xterm", "-e"]]:
 			var found := _on_path(app[0])
 			if found != "":
-				OS.create_process(found, [app[1], claude_path])
+				var args := PackedStringArray([app[1]])
+				args.append_array(run)
+				OS.create_process(found, args)
 				return
-		_note("Open a terminal, run claude, and sign in. Then ask again.", 10.0)
+		_note("Open a terminal, run %s, and sign in. Then ask again." % Brain.adapter().LOGIN_HINT, 10.0)
 
 
 static func _on_path(app: String) -> String:
@@ -414,8 +431,8 @@ func _run_claude(system: String, prompt: String) -> void:
 	var window := ConfirmationDialog.new()
 	consent_window = window
 	var asked_for := brain_for
-	window.title = CONSENT_TITLE
-	window.dialog_text = Brain.DISCLOSURE
+	window.title = CONSENT_TITLE.replace("Claude Code", Brain.tool_name())
+	window.dialog_text = Brain.disclosure()
 	window.dialog_autowrap = true
 	window.ok_button_text = "Allow"
 	window.cancel_button_text = "Don't allow"
@@ -427,10 +444,10 @@ func _run_claude(system: String, prompt: String) -> void:
 			brain.ask(system, prompt))
 	window.canceled.connect(func():
 		if asked_for == "ask":
-			ask_box.failed(NOT_ALLOWED)
+			ask_box.failed(NOT_ALLOWED.replace("Claude Code", Brain.tool_name()))
 		else:
 			walk_ask = 0
-			_note(NOT_ALLOWED, 6.0))
+			_note(NOT_ALLOWED.replace("Claude Code", Brain.tool_name()), 6.0))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
@@ -506,7 +523,7 @@ func _open_about() -> void:
 	about.title = "About Knochengeist"
 	var box := VBoxContainer.new()
 	var words := Label.new()
-	words.text = "Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your Claude Code, or from the course page when it's running." % [_version(), Menu.ask_keys()]
+	words.text = "Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your %s, or from the course page when it's running." % [_version(), Menu.ask_keys(), Brain.tool_name()]
 	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	words.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
 	box.add_child(words)
@@ -572,7 +589,7 @@ func _open_disclosure() -> void:
 	var window := AcceptDialog.new()
 	window.title = "What Knochengeist sends"
 	var words := Label.new()
-	words.text = Brain.DISCLOSURE
+	words.text = Brain.disclosure()
 	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	words.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
 	window.add_child(words)
@@ -594,7 +611,7 @@ func _say_hello() -> void:
 	if Menu.can_answer(course_shown, claude_state):
 		hello.say("[b]I'm here.[/b] Press %s to ask me anything about Godot, and I'll show you where to click." % Menu.ask_keys(), 260.0)
 	else:
-		hello.say("[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it." % Menu.state(course_shown, claude_state).to_lower().replace("claude code", "Claude Code"), 260.0)
+		hello.say("[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it." % Menu.state(course_shown, claude_state).to_lower().replace(Brain.tool_name().to_lower(), Brain.tool_name()), 260.0)
 	var base := EditorInterface.get_base_control()
 	base.add_child(hello)
 	hello.position = _under_button(hello)

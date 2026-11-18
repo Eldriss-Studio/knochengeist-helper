@@ -1,6 +1,8 @@
 @tool
 extends RefCounted
 
+const Brain := preload("brain.gd")
+
 enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABOUT, COURSE_PAGE, UPDATE, EXPLAIN_ERROR }
 
 const PLAN := 100                # the plan lines take ids from here on, one each
@@ -16,7 +18,7 @@ const LINES := {
 const SHORT_PATH := 40
 const RECENT := 5
 const RECENT_CHARS := 50
-const INSTALL_PAGE := "https://claude.com/claude-code"
+
 const ASK_SHORTCUT := "knochengeist/ask"
 
 
@@ -31,9 +33,9 @@ static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: 
 	if update_to != "":
 		menu.add_item("Update to version %s…" % update_to, UPDATE)
 	if not course_up and claude == "missing":
-		menu.add_item("Install Claude Code…", INSTALL)
+		menu.add_item("Install %s…" % Brain.tool_name(), INSTALL)
 	if not course_up and claude == "signed_out":
-		menu.add_item("Sign in to Claude Code…", SIGN_IN)
+		menu.add_item("Sign in to %s…" % Brain.tool_name(), SIGN_IN)
 	menu.add_item("Ask the ghost", ASK)
 	var shortcuts := EditorInterface.get_editor_settings()
 	if shortcuts.has_shortcut(ASK_SHORTCUT):
@@ -78,7 +80,7 @@ static func short_path(path: String) -> String:
 
 
 static func state(course_up: bool, claude: String) -> String:
-	return "Using the course page" if course_up else LINES.get(claude, LINES["checking"])
+	return "Using the course page" if course_up else LINES.get(claude, LINES["checking"]).replace("Claude Code", Brain.tool_name())
 
 
 static func can_answer(course_up: bool, claude: String) -> bool:
