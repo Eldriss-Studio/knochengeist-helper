@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 42
+
+- **Works on Linux.** Sign in to Claude Code opens your default terminal (or GNOME Terminal, Konsole or xterm), and the helper's whole test set now runs on Linux too. Windows is next.
+
 ## Version 41
 
 - **The ghost shows when your plan is nearly used up.** Past 80% of your Claude plan's limit, the toolbar ghost wears a ring filled to how much is used, red from 95%, and its tooltip says when the limit resets.

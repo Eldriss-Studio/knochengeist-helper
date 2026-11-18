@@ -13,8 +13,8 @@ It answers through your own Claude Code, so it has no account, key or server of 
 ## What you need
 
 - **Godot 4.6 or newer.** It's built and tested on 4.7.
-- **A Mac**, for now.
-- **Claude Code**, installed and signed in with your Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open Terminal, type `claude` and sign in once. It's the only AI the helper uses today; Codex (ChatGPT plans) is next.
+- **A Mac or Linux.** Windows is next.
+- **Claude Code**, installed and signed in with your Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once. It's the only AI the helper uses today; Codex (ChatGPT plans) is next.
 
 Each question is one Claude Code run, so it counts toward your plan's usage like any other. If you sign Claude Code in with an API key instead of a plan, each question is billed to that key.
 
@@ -115,6 +115,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 42 | 4.6 and newer (tested on 4.7) |
 | 41 | 4.6 and newer (tested on 4.7) |
 | 40 | 4.6 and newer (tested on 4.7) |
 | 39 | 4.6 and newer (tested on 4.7) |

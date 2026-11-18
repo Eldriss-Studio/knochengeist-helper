@@ -382,8 +382,23 @@ func _sign_in() -> void:
 	var terminal := OS.get_environment("KG_HELPER_TERMINAL")
 	if terminal != "":
 		OS.create_process(terminal, [claude_path])
-	else:
+	elif OS.get_name() == "macOS":
 		OS.create_process("open", ["-a", "Terminal", claude_path])
+	else:
+		# Linux: the default terminal, or the first common one there is
+		for app in [["x-terminal-emulator", "-e"], ["gnome-terminal", "--"], ["konsole", "-e"], ["xterm", "-e"]]:
+			var found := _on_path(app[0])
+			if found != "":
+				OS.create_process(found, [app[1], claude_path])
+				return
+		_note("Open a terminal, run claude, and sign in. Then ask again.", 10.0)
+
+
+static func _on_path(app: String) -> String:
+	for dir in OS.get_environment("PATH").split(":", false):
+		if FileAccess.file_exists(dir.path_join(app)):
+			return dir.path_join(app)
+	return ""
 
 
 func _run_claude(system: String, prompt: String) -> void:
@@ -1061,7 +1076,7 @@ func _answer_came(ok: bool, code: int) -> void:
 	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
 		_refused()
 	if code != 200 or reply.has("code"):
-		var claude := {"signed_out": "Claude isn't signed in. Open Terminal, type claude, and sign in. Then ask again.", "missing": "The claude command isn't installed on this Mac yet."}
+		var claude := {"signed_out": "Claude isn't signed in. Open a terminal, type claude, and sign in. Then ask again.", "missing": "The claude command isn't installed on this computer yet."}
 		ask_box.failed(claude.get(reply.get("code", ""), str(reply.get("message", "That didn't work. Try again."))))
 		return
 	_answered(reply)

@@ -8,8 +8,8 @@ signal done(text: String, problem: String)      # problem: "", "missing", "signe
 signal checked(state: String, path: String)     # state: "checking", "ready", "missing", "signed_out" or "not_there"
 
 const PROBLEMS := {
-	"missing": "Claude Code isn't installed. Install it from claude.com/claude-code, sign in once in Terminal, then ask again.",
-	"signed_out": "Claude Code isn't signed in. Open Terminal, run claude, and sign in. Then ask again.",
+	"missing": "Claude Code isn't installed. Install it from claude.com/claude-code, sign in once in a terminal, then ask again.",
+	"signed_out": "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again.",
 	"failed": "That didn't work. Try again, or open Show log in the ghost's menu to see why.",
 	"limit": "You've reached your Claude plan's limit. Try again later.",
 	"not_there": "There's no Claude Code at the path in Settings. Open Settings in the ghost's menu to change it.",
@@ -253,7 +253,7 @@ func check() -> void:
 # A Godot opened from the Dock doesn't get the PATH his Terminal has, so his login shell is asked.
 func _ask_login_shell() -> void:
 	var shell := OS.get_environment("SHELL")
-	var started := OS.execute_with_pipe(shell if shell != "" else "/bin/zsh", ["-lc", "command -v claude"], false)
+	var started := OS.execute_with_pipe(shell if shell != "" else ("/bin/zsh" if OS.get_name() == "macOS" else "/bin/bash"), ["-lc", "command -v claude"], false)
 	if started.is_empty():
 		_check_sign_in("")
 		return
