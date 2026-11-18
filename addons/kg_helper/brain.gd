@@ -37,7 +37,7 @@ const INSTALL_PLACES := ["/.local/bin/claude", "/.claude/local/claude"]
 const SYSTEM_PLACES := ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
 const NEWLINE := 10
 # Godot's one pipe can't close the tool's input on its own, so a shell hands it the prompt file.
-const RUN := "cd \"$1\" && f=\"$2\" && shift 2 && exec \"$0\" \"$@\" < \"$f\""
+const RUN := "cd \"$1\" && shift && exec \"$0\" \"$@\""   # in the helper's own folder, not the game's
 
 var pid := 0
 var io: FileAccess
@@ -67,7 +67,8 @@ var claude_version := ""
 var check_step := ""
 var check_io: FileAccess
 var waited := 0.0
-var asked := ""                   # this question's prompt file, removed when it's over
+var asked := ""                   # this question's system prompt file, removed when it's over
+var got_result := false            # Claude Code said its result: the run is done, though it waits on stdin
 var question := 0                 # goes up with each question, so a late answer to an old one is dropped
 var state := "checking"
 var check_pid := 0
@@ -90,6 +91,8 @@ static func find_claude() -> String:
 
 ## Where Claude Code is when nobody chose a path: the usual places, the PATH, then the login shell.
 static func find_claude_automatically() -> String:
+	if OS.get_name() == "Windows":
+		return _find_on_windows()
 	var home := OS.get_environment("HOME")
 	for place in INSTALL_PLACES:
 		if FileAccess.file_exists(home + place):
@@ -101,6 +104,18 @@ static func find_claude_automatically() -> String:
 		if FileAccess.file_exists(dir.path_join("claude")):
 			return dir.path_join("claude")
 	return from_login_shell
+
+
+# Windows: the native install under the profile, npm's shim, then the PATH (split on ;).
+static func _find_on_windows() -> String:
+	var places := [OS.get_environment("USERPROFILE").path_join(".local/bin/claude.exe"), OS.get_environment("APPDATA").path_join("npm/claude.cmd")]
+	for dir in OS.get_environment("PATH").split(";", false):
+		for name in ["claude.exe", "claude.cmd"]:
+			places.append(dir.path_join(name))
+	for place in places:
+		if FileAccess.file_exists(place):
+			return place
+	return ""
 
 
 static func offer_settings() -> void:
@@ -244,8 +259,8 @@ func check() -> void:
 	if state == "checking":
 		_now("checking", "")
 	var claude := find_claude()
-	if claude == "" and OS.get_environment("KG_HELPER_CLAUDE") == "":
-		_ask_login_shell()
+	if claude == "" and OS.get_environment("KG_HELPER_CLAUDE") == "" and OS.get_name() != "Windows":
+		_ask_login_shell()                # Windows has no login shell to ask
 	else:
 		_check_sign_in(claude)
 
@@ -270,7 +285,11 @@ func _check_sign_in(claude: String) -> void:
 
 
 func _start_check(claude: String, args: Array, step: String) -> void:
-	var started := OS.execute_with_pipe(claude, PackedStringArray(args), false)
+	var started := {}
+	if OS.get_name() == "Windows" and claude.get_extension().to_lower() in ["cmd", "bat"]:
+		started = OS.execute_with_pipe("cmd.exe", PackedStringArray(["/d", "/c", claude] + args), false)
+	else:
+		started = OS.execute_with_pipe(claude, PackedStringArray(args), false)
 	check_waited = 0.0
 	if started.is_empty():
 		_now(_missing(), claude)
@@ -315,7 +334,9 @@ func _poll_check(delta: float) -> void:
 		var status = JSON.parse_string(said)
 		auth_method = str(status.get("authMethod", "")) if status is Dictionary else ""
 		plan_name = _plan_name(status) if status is Dictionary else ""
-		var now := "ready" if exit_code in [0, EXIT_UNKNOWN] else ("signed_out" if exit_code == SIGNED_OUT_EXIT else "wont_start")
+		# Signed out only when Claude Code says so ({"loggedIn": false}); any other failure means it won't start.
+		var says_signed_out: bool = status is Dictionary and status.get("loggedIn") == false
+		var now := "ready" if exit_code in [0, EXIT_UNKNOWN] else ("signed_out" if exit_code == SIGNED_OUT_EXIT and says_signed_out else "wont_start")
 		if now == "wont_start":
 			log_line("Claude Code check: it exited with %d. It said: %s" % [exit_code, said.strip_edges().left(300).replace("\n", " ")])
 		_now(now, find_claude())
@@ -401,22 +422,26 @@ func ask(system: String, prompt: String) -> void:
 		return
 	var dir := OS.get_user_data_dir().path_join("kg_helper")
 	DirAccess.make_dir_recursive_absolute(dir)
-	asked = dir.path_join("question-%d-%d.txt" % [OS.get_process_id(), question])
+	asked = dir.path_join("system-%d-%d.txt" % [OS.get_process_id(), question])
 	var file := FileAccess.open(asked, FileAccess.WRITE)
 	if file == null:
 		_finish.call_deferred("failed", question)
 		return
-	file.store_string(prompt)
+	file.store_string(system)
 	file.close()
-	var args := PackedStringArray(["-c", RUN, claude, dir, asked, "-p", "--model", model(), "--tools", "",
-		"--setting-sources", "", "--strict-mcp-config", "--no-session-persistence",
-		"--output-format", "stream-json", "--verbose", "--include-partial-messages", "--system-prompt", system])
-	var started := OS.execute_with_pipe("/bin/sh", args, false)
+	# The question goes in as a stream-json line on stdin and the system prompt from a file, so no
+	# shell has to carry them: the same on every computer.
+	var flags := PackedStringArray(["-p", "--model", model(), "--tools=",
+		"--setting-sources=", "--strict-mcp-config", "--no-session-persistence", "--input-format", "stream-json",
+		"--output-format", "stream-json", "--verbose", "--include-partial-messages", "--system-prompt-file", asked])
+	var started := _start(claude, dir, flags)
 	if started.is_empty():
 		_finish.call_deferred("failed", question)
 		return
 	pid = started["pid"]
 	io = started["stdio"]
+	io.store_string(JSON.stringify({"type": "user", "message": {"role": "user", "content": prompt}}) + "\n")
+	got_result = false
 	errors = started["stderr"]
 	unread = PackedByteArray()
 	text = ""
@@ -432,10 +457,36 @@ func ask(system: String, prompt: String) -> void:
 	waited = 0.0
 
 
+# Claude Code in the helper's folder: through sh on a Mac or Linux; on Windows straight, since its
+# arguments are all plain flags and paths now.
+static func _start(claude: String, dir: String, flags: PackedStringArray) -> Dictionary:
+	if OS.get_name() == "Windows":
+		# Blocking pipes: a non-blocking one on Windows makes Claude Code's first read of an empty stdin
+		# look like its end, so the question never arrives. The helper only reads what's already there.
+		if claude.get_extension().to_lower() in ["cmd", "bat"]:
+			var through := PackedStringArray(["/d", "/c", claude])
+			through.append_array(flags)
+			return OS.execute_with_pipe("cmd.exe", through, true)
+		return OS.execute_with_pipe(claude, flags, true)
+	var args := PackedStringArray(["-c", RUN, claude, dir])
+	args.append_array(flags)
+	return OS.execute_with_pipe("/bin/sh", args, false)
+
+
+## Ends a run and everything it started.
+static func end_process(running: int, gently: bool) -> void:
+	if OS.get_name() == "Windows":
+		OS.create_process("taskkill", ["/PID", str(running), "/T", "/F"])
+	elif gently:
+		OS.create_process("/bin/kill", ["-INT", str(running)])      # SIGINT ends Claude Code's turn cleanly; OS.kill can't be caught
+	else:
+		OS.kill(running)
+
+
 func stop() -> void:
 	question += 1
 	if pid != 0 and OS.is_process_running(pid):
-		OS.create_process("/bin/kill", ["-INT", str(pid)])      # SIGINT ends Claude Code's turn cleanly; OS.kill can't be caught
+		end_process(pid, true)
 		stopping[pid] = STOP_GRACE_S
 	pid = 0
 	io = null
@@ -449,7 +500,7 @@ func stop() -> void:
 func kill_all() -> void:
 	for running in stopping.keys():
 		if OS.is_process_running(running):
-			OS.kill(running)
+			end_process(running, false)
 	stopping.clear()
 
 
@@ -460,14 +511,14 @@ func poll(delta: float) -> void:
 		if not OS.is_process_running(running):
 			stopping.erase(running)
 		elif stopping[running] <= 0.0:
-			OS.kill(running)
+			end_process(running, false)
 			stopping.erase(running)
 	if pid == 0:
 		return
 	waited += delta
 	_read()
 	_keep_errors()
-	if OS.is_process_running(pid):
+	if OS.is_process_running(pid) and not got_result:
 		if waited > GIVE_UP_S:
 			log_line("A question ended: no answer after %d s. Claude Code said: %s" % [GIVE_UP_S, said_wrong.strip_edges().replace("\n", " ")])
 			_end("failed")
@@ -476,7 +527,7 @@ func poll(delta: float) -> void:
 	if unread.size() > 0:
 		_line(unread.get_string_from_utf8())
 	_keep_errors()
-	var crashed := OS.get_process_exit_code(pid) not in [0, EXIT_UNKNOWN]
+	var crashed := not got_result and OS.get_process_exit_code(pid) not in [0, EXIT_UNKNOWN]
 	var failed := ended_badly or crashed or text.strip_edges() == ""
 	var wrong := said_wrong.to_lower()
 	var limit_hit := failed and (wrong.contains("usage limit") or (hit_limit and (wrong.contains("limit") or wrong.contains("429"))))
@@ -536,6 +587,7 @@ func _line(raw: String) -> void:
 	elif event.get("type") == "rate_limit_event":
 		_read_limit(event.get("rate_limit_info", {}))
 	elif event.get("type") == "result":
+		got_result = true
 		ended_badly = event.get("is_error") == true
 		if event.get("total_cost_usd") is float or event.get("total_cost_usd") is int:
 			last_cost = float(event["total_cost_usd"])

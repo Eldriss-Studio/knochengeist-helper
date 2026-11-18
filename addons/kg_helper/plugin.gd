@@ -384,6 +384,8 @@ func _sign_in() -> void:
 		OS.create_process(terminal, [claude_path])
 	elif OS.get_name() == "macOS":
 		OS.create_process("open", ["-a", "Terminal", claude_path])
+	elif OS.get_name() == "Windows":
+		OS.create_process("cmd.exe", ["/c", "start", "", "cmd.exe", "/k", claude_path])
 	else:
 		# Linux: the default terminal, or the first common one there is
 		for app in [["x-terminal-emulator", "-e"], ["gnome-terminal", "--"], ["konsole", "-e"], ["xterm", "-e"]]:

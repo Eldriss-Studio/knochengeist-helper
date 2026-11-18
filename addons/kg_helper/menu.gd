@@ -72,8 +72,9 @@ static func short_path(path: String) -> String:
 	var shown := "~" + path.substr(home.length()) if home != "" and path.begins_with(home) else path
 	if shown.length() <= SHORT_PATH:
 		return shown
-	var parts := shown.split("/")
-	return "…/" + "/".join(parts.slice(parts.size() - 2))
+	var slash := "\\" if shown.contains("\\") else "/"     # a Windows path keeps its own slashes
+	var parts := shown.split(slash)
+	return "…" + slash + slash.join(parts.slice(parts.size() - 2))
 
 
 static func state(course_up: bool, claude: String) -> String:

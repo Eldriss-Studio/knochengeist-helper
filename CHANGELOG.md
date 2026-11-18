@@ -2,6 +2,12 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 43
+
+- **Works on Windows.** The helper finds Claude Code (`claude.exe` under your profile, npm's `claude.cmd`, or the PATH), answers, stops when you close the card, and opens a console to sign in. Its tests now run on Windows, Linux and macOS.
+- Claude Code now starts the same way on every computer, and empty flags like "no tools" can't swallow the next one anymore.
+- A Claude Code that fails without saying it's signed out is shown as one that won't start, so the menu points at the real problem.
+
 ## Version 42
 
 - **Works on Linux.** Sign in to Claude Code opens your default terminal (or GNOME Terminal, Konsole or xterm), and the helper's whole test set now runs on Linux too. Windows is next.

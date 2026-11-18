@@ -80,7 +80,11 @@ func start() -> void:
 	dump_dir = OS.get_cache_dir().path_join("kg_helper_doctool_%d" % OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(dump_dir)
 	var godot := OS.get_environment("KG_HELPER_DOCTOOL")
-	dump_pid = OS.create_process(godot if godot != "" else OS.get_executable_path(), ["--headless", "--doctool", dump_dir])
+	var program := godot if godot != "" else OS.get_executable_path()
+	if OS.get_name() == "Windows" and program.get_extension().to_lower() in ["cmd", "bat"]:
+		dump_pid = OS.create_process("cmd.exe", ["/d", "/c", program, "--headless", "--doctool", dump_dir])
+	else:
+		dump_pid = OS.create_process(program, ["--headless", "--doctool", dump_dir])
 	if dump_pid <= 0:
 		_fail("Couldn't start Godot to write its class reference.")
 		return
