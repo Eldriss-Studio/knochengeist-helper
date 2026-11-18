@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 40
+
+- **The ghost reads Godot's manual for your version.** Most questions are how-tos, and the manual answers those, so a question now comes with the matching manual pages for your Godot, with their links. The helper downloads the manual from GitHub once per Godot version and checks it. Settings says when a newer Godot's manual isn't out yet. With the manual, the full answer eval passes 110 of 114 tries.
+- The name check no longer mistakes `@GlobalScope` for a made-up name.
+
 ## Version 39
 
 - **"Your game hit an error."** When a run of your game prints an error, the ghost offers to explain it, once per run. Click it, or pick **Explain the last error** in its menu, and the card opens with the question ready, the error and the lines of your script around it. Nothing is sent until you press Ask.

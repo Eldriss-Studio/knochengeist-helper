@@ -74,7 +74,7 @@ Your answer is kept for that project, outside its folder, and it asks again if a
 - It runs your own, unmodified `claude`, signed in by you. It never reads, stores or sends your login.
 - It starts it with your personal Claude settings, plugins and MCP servers left out (`--setting-sources "" --strict-mcp-config`) and its tools turned off, so it can only answer: it can't change your project or run commands.
 - It stops it when you close the card or Godot.
-- Besides that, the helper only asks GitHub once a day whether a newer version is out, and collects no usage data.
+- Besides that, the helper only asks GitHub once a day whether a newer version is out, downloads Godot's manual for your Godot version from GitHub once, and collects no usage data.
 - It keeps your answers, and whether you said they helped, in the project's user data folder, so you can include the ones that didn't help when you report a problem. Turning the helper off deletes them.
 - It keeps a searchable copy of Godot's class reference, built from your own Godot and kept in the project's user data folder. Turning the helper off deletes it. The class reference is part of the Godot Engine (MIT), by Juan Linietsky, Ariel Manzur and contributors.
 
@@ -113,6 +113,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 40 | 4.6 and newer (tested on 4.7) |
 | 39 | 4.6 and newer (tested on 4.7) |
 | 38 | 4.6 and newer (tested on 4.7) |
 | 37 | 4.6 and newer (tested on 4.7) |
@@ -130,7 +131,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 | 25 | 4.6 and newer (tested on 4.7) |
 | 24 | 4.6 and newer (tested on 4.7) |
 
-What changed in each version is in [CHANGELOG.md](CHANGELOG.md). The helper is MIT licensed ([LICENSE](LICENSE)).
+What changed in each version is in [CHANGELOG.md](CHANGELOG.md). The helper is MIT licensed ([LICENSE](LICENSE)). The Godot manual pages it reads are the [Godot Engine documentation](https://docs.godotengine.org) by Juan Linietsky, Ariel Manzur and the Godot community, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), split into sections by `tools/manual_index.py`.
 
 ## For developers
 

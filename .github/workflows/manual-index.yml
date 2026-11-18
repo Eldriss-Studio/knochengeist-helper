@@ -1,0 +1,32 @@
+# Builds the Godot manual index for each Godot version that doesn't have one yet, and releases it as
+# manual-<version> here, where the helper downloads it. The manual is godot-docs' branch for that
+# version (by Juan Linietsky, Ariel Manzur and the Godot community, CC BY 3.0).
+name: Manual index
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and release the manual for each new Godot version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for version in $(git ls-remote --heads https://github.com/godotengine/godot-docs.git | sed -n 's#.*refs/heads/\(4\.[0-9][0-9]*\)$#\1#p' | sort -V); do
+            [ "${version#4.}" -ge 6 ] || continue
+            gh release view "manual-$version" >/dev/null 2>&1 && continue
+            rm -rf godot-docs out
+            git clone --quiet --depth 1 --branch "$version" https://github.com/godotengine/godot-docs.git godot-docs
+            python3 tools/manual_index.py godot-docs "$version" out
+            gh release create "manual-$version" "out/manual-$version.json.gz" \
+              --title "Godot $version manual index" \
+              --notes "The Godot $version manual, split into sections for the Knochengeist helper. Godot Engine documentation by Juan Linietsky, Ariel Manzur and the Godot community, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Built from godot-docs' $version branch."
+          done

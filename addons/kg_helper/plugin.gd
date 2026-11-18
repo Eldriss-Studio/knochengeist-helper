@@ -34,6 +34,7 @@ const Updates := preload("updates.gd")
 const Answers := preload("answers.gd")
 const Names := preload("names.gd")
 const Errors := preload("errors.gd")
+const Manual := preload("manual.gd")
 const Docs := preload("docs.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
@@ -89,6 +90,7 @@ const LOOK_FOR_ERRORS_S := 1.0
 const OFFER_S := 12.0   # names still not in his Godot after the retry: the card says to check them            # the record of the answer on the card, for whether it helped and how the walk ended
 const SHARED_UNHELPFUL := 5
 var docs: Node
+var manual: Node
 var update_to := ""                # a newer version, once the check finds one
 var update_notes := ""
 var asking_about := ""             # what he right-clicked, added to the next question
@@ -210,6 +212,9 @@ func _enter_tree() -> void:
 	add_child(updates)
 	docs = Docs.new()
 	add_child(docs)
+	manual = Manual.new()
+	add_child(manual)
+	docs.manual = manual
 	get_tree().create_timer(CHECK_UPDATES_AFTER_S).timeout.connect(func():
 		if is_instance_valid(updates) and not course_shown:      # the course page keeps its own copy in step
 			updates.check())
@@ -325,6 +330,7 @@ func _claude_checked(state: String, path: String) -> void:
 	_show_up(course_shown)
 	if state != "checking" and docs:
 		docs.start()                     # after the check, so the two don't compete when Godot starts
+		manual.start()
 	if state != "checking" and not hello_planned:
 		hello_planned = true
 		get_tree().create_timer(0.5).timeout.connect(_say_hello)    # once the toolbar is laid out
@@ -490,6 +496,16 @@ func _open_about() -> void:
 		link.text = each[0]
 		link.uri = each[1]
 		box.add_child(link)
+	var credit := Label.new()
+	credit.text = "The Godot manual pages: CC BY 3.0, by Juan Linietsky, Ariel Manzur and the Godot community."
+	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	credit.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
+	credit.modulate = Color(1, 1, 1, 0.7)
+	box.add_child(credit)
+	var license := LinkButton.new()
+	license.text = "The CC BY 3.0 license"
+	license.uri = "https://creativecommons.org/licenses/by/3.0/"
+	box.add_child(license)
 	about.add_child(box)
 	EditorInterface.popup_dialog_centered(_closes_itself(about))
 
@@ -965,6 +981,20 @@ func _from_the_docs(text: String) -> String:
 	return "\n".join(lines) + "\n"
 
 
+# The manual's pages that answer the question, as a block for the prompt, with their links: empty
+# when none matches, or when the manual isn't there.
+func _from_the_manual(text: String) -> String:
+	if manual == null:
+		return ""
+	var found: Array = manual.search(text)
+	if found.is_empty():
+		return ""
+	var lines := PackedStringArray(["", "From the Godot manual for their Godot %s (trust these over memory when they disagree; link a page when it helps):" % manual.minor])
+	for page in found:
+		lines.append("- %s (%s): %s" % [page.get("title", ""), page.get("url", ""), str(page.get("text", "")).replace("\n", " ").left(900)])
+	return "\n".join(lines) + "\n"
+
+
 func _godot_version() -> String:
 	return (docs.version if docs and docs.version != "" else Docs.running_version()).rsplit(".", true, 1)[0]
 
@@ -981,7 +1011,7 @@ func _ask(said: String) -> void:
 		brain_for = "ask"
 		tags = Tags.new()
 		var about := ("\n" + asking_about + "\n") if asking_about != "" else ""
-		about += _from_the_docs(said + "\n" + asking_about)
+		about += _from_the_docs(said + "\n" + asking_about) + _from_the_manual(said)
 		asking_about = ""
 		ask_sent = [_prompt("godot"), _screen(_state(), "plan") + about + earlier + "\nTheir question: " + (said.strip_edges() if said.strip_edges() != "" else "They are stuck, and did not say on what.")]
 		_run_claude(ask_sent[0], ask_sent[1])
@@ -992,7 +1022,7 @@ func _ask(said: String) -> void:
 		asking_about = ""
 	if earlier != "":
 		said = earlier.strip_edges() + "\n\nTheir question: " + said
-	said += from_docs
+	said += from_docs + _from_the_manual(said)
 	if not ask_stream.post(host, port, "/api/godot/ask", _headers(true), JSON.stringify({"project": project, "said": said, "stream": true})):
 		ask_box.failed("That didn't work. Try again.")
 

@@ -211,6 +211,8 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	box.add_child(docs_bar)
 	box.add_child(_quiet("The ghost checks the Godot names in its answers against this, and reads the pages for anything your question names. It stays on this computer."))
 	docs.changed.connect(func(_state): _show_docs())
+	if docs.manual:
+		docs.manual.changed.connect(func(_state): _show_docs())
 	_show_docs()
 
 

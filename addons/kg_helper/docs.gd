@@ -6,12 +6,9 @@ extends Node
 signal changed(state: String)
 
 const Brain := preload("brain.gd")
+const Bm25 := preload("bm25.gd")
 const CHECK_EVERY_S := 1.0
-const K1 := 1.2
-const B := 0.75
 const MEMBER_TAGS := ["method", "member", "signal", "theme_item", "constant", "annotation"]
-# Words that tell a search nothing about Godot ("how do I...").
-const STOPWORDS := ["a", "an", "the", "i", "do", "does", "how", "what", "is", "are", "to", "in", "on", "of", "for", "and", "or", "it", "my", "me", "can", "you", "your", "with", "this", "that", "be", "if", "when", "by", "as", "at", "from", "make", "get", "set", "use", "want"]
 
 var state := "off"                 # off, building, ready or failed
 var reading := 0.0                 # while building: 0 while Godot writes the reference, then how much is read (0 to 1)
@@ -20,6 +17,7 @@ var version := ""
 var passages: Array = []           # { id, class, text }
 var postings := {}                 # term -> PackedInt32Array of [passage, count, passage, count, ...]
 var lengths := PackedInt32Array()
+var manual: Node                   # the Godot manual for this version, which Settings reports with it
 var known := {}                    # every class and member name in this Godot's reference, setters and parameters too
 var class_at := {}                 # class name -> its own passage
 var member_at := {}                # member name -> every passage of a member by that name
@@ -42,7 +40,7 @@ static func running_version() -> String:
 
 
 func index_path() -> String:
-	return folder().path_join(version).path_join("index-2.bin")   # 2: with every name, for the name check
+	return folder().path_join(version).path_join("index-3.bin")   # 3: with every name, @ classes without their @ too, for the name check
 
 
 ## What Settings says about it.
@@ -50,7 +48,7 @@ func status_line() -> String:
 	var godot := (version if version != "" else running_version()).rsplit(".", true, 1)[0]
 	match state:
 		"ready":
-			return "Ready for Godot %s" % godot
+			return "Ready for Godot %s%s" % [godot, manual.status() if manual else ""]
 		"building":
 			return "Reading the class reference from Godot %s…" % godot if reading > 0.0 else "Asking Godot %s for its class reference…" % godot
 		"failed":
@@ -149,10 +147,7 @@ func _load_saved() -> void:
 	lengths = saved["lengths"]
 	known = saved.get("known", {})
 	_names()
-	var total := 0
-	for n in lengths:
-		total += n
-	average = max(1.0, float(total) / max(1, lengths.size()))
+	average = Bm25.average_of(lengths)
 	call_deferred("_logged", "Loaded the class reference index for Godot %s." % version)
 
 
@@ -180,6 +175,7 @@ func _read_class(path: String, into: Array, names: Dictionary) -> void:
 				if tag == "class":
 					name = xml.get_named_attribute_value_safe("name")
 					names[name] = true
+					names[name.trim_prefix("@")] = true       # @GlobalScope is written GlobalScope too
 				elif tag == "param":
 					names[xml.get_named_attribute_value_safe("name")] = true
 				elif tag in MEMBER_TAGS:
@@ -217,45 +213,20 @@ func _plain(text: String) -> String:
 
 func _index(found: Array) -> void:
 	passages = found
-	postings = {}
-	lengths = PackedInt32Array()
 	var names := {}
-	for i in passages.size():
-		names[passages[i]["class"]] = true
-		var counts := {}
-		var words := tokens(str(passages[i]["text"]))
-		for word in words:
-			counts[word] = int(counts.get(word, 0)) + 1
-		lengths.append(words.size())
-		for word in counts:
-			var list: PackedInt32Array = postings.get(word, PackedInt32Array())   # a copy: packed arrays are values
-			list.append_array([i, counts[word]])
-			postings[word] = list
+	for passage in passages:
+		names[passage["class"]] = true
+	var built := Bm25.build(passages.map(func(passage): return passage["text"]))
+	postings = built["postings"]
+	lengths = built["lengths"]
+	average = built["average"]
 	classes = names.size()
 	_names()
-	var total := 0
-	for n in lengths:
-		total += n
-	average = max(1.0, float(total) / max(1, lengths.size()))
 
 
 ## Lowercased words, with CamelCase and snake_case names split into their parts and kept whole too.
 static func tokens(text: String) -> PackedStringArray:
-	var out := PackedStringArray()
-	var word := RegEx.create_from_string("[A-Za-z_][A-Za-z0-9_]*|[0-9]+")
-	var part := RegEx.create_from_string("[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+[A-Za-z]?")
-	for found in word.search_all(text):
-		var whole := found.get_string()
-		if whole.to_lower() in STOPWORDS:
-			continue
-		out.append(whole.to_lower())
-		for piece in whole.split("_", false):
-			var pieces := part.search_all(piece)
-			if pieces.size() > 1 or piece != whole:
-				for p in pieces:
-					if not p.get_string().to_lower() in STOPWORDS:
-						out.append(p.get_string().to_lower())
-	return out
+	return Bm25.tokens(text)
 
 
 ## Whether this Godot's reference has a class or member by this name.
@@ -335,24 +306,10 @@ func _index_of(id: String) -> int:
 func search(query: String, k := 5) -> Array:
 	if state != "ready":
 		return []
-	var scores := {}
-	var n := float(passages.size())
-	for word in tokens(query):
-		if not postings.has(word):
-			continue
-		var list: PackedInt32Array = postings[word]
-		var df := float(list.size() / 2)
-		var idf := log(1.0 + (n - df + 0.5) / (df + 0.5))
-		for j in range(0, list.size(), 2):
-			var i := list[j]
-			var tf := float(list[j + 1])
-			var norm := tf * (K1 + 1.0) / (tf + K1 * (1.0 - B + B * lengths[i] / average))
-			scores[i] = float(scores.get(i, 0.0)) + idf * norm
-	var best := scores.keys()
-	best.sort_custom(func(a, b): return scores[a] > scores[b])
 	var out: Array = []
-	for i in best.slice(0, k):
-		out.append({"id": passages[i]["id"], "class": passages[i]["class"], "text": passages[i]["text"], "score": scores[i]})
+	for hit in Bm25.rank(query, postings, lengths, average, k):
+		var i: int = hit[0]
+		out.append({"id": passages[i]["id"], "class": passages[i]["class"], "text": passages[i]["text"], "score": hit[1]})
 	return out
 
 
