@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 52
+
+- **No more stutter while the course page is running.** The editor used to hitch once a second, because each look at the screen took about 36 ms. A look now takes under half a millisecond.
+
 ## Version 51
 
 - **Works on Godot 4.6.** Versions 28 to 50 did not load at all on 4.6. They used the Inspector's right-click spot, which only exists from Godot 4.7. Version 51 loads on 4.6 and leaves that one spot out. Right-click in the Scene dock, the FileSystem dock and the script editor works there as before. On 4.7 all four spots work. Each release is now checked to load with no errors or warnings on 4.7 and 4.6.

@@ -14,11 +14,30 @@ var nodes := {}                  # target id -> the control or tree it's in (a w
 # The window he's working in: a dialog when one is open (Create New Node, a file dialog), else the editor.
 static func front_window() -> Window:
 	var main := EditorInterface.get_base_control().get_window()
-	var front := main
+	# The open windows, from Godot itself: drawn inside the editor's window (single-window mode, or no
+	# display), or windows of their own. Searching the editor's 18,000 controls for them took 6 ms a look.
+	var open: Array = []
+	for w in main.get_embedded_subwindows() + _own_windows(main):
+		if w is AcceptDialog and (w as Window).visible:
+			open.append(w)
+	if open.size() == 1:
+		return open[0]
+	if open.is_empty():
+		return main
+	var front := main             # two dialogs at once (one opened from the other): the later one in the tree
 	for w in main.find_children("*", "AcceptDialog", true, false):
 		if (w as Window).visible:
 			front = w
 	return front
+
+
+static func _own_windows(main: Window) -> Array:
+	var found := []
+	for id in DisplayServer.get_window_list():
+		var w = instance_from_id(DisplayServer.window_get_attached_instance_id(id))
+		if w is Window and w != main:
+			found.append(w)
+	return found
 
 
 ## Reads the screen now, leaving out the helper's own button and card.
@@ -34,7 +53,9 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 	var root: Node = base if front == base.get_window() else front
 	var screen := Rect2(Vector2.ZERO, front.size)
 	var here := func(c: Control) -> bool: return c.is_visible_in_tree() and c.get_window() == front and screen.intersects(c.get_global_rect())
-	for b in root.find_children("*", "BaseButton", true, false):
+	var shown: Array = []
+	_shown(root, shown)          # one walk, not one per kind: the editor holds some 18,000 controls, most of them hidden
+	for b in shown.filter(func(c): return c is BaseButton):
 		if b == own_button or (b as BaseButton).disabled:
 			continue              # not the helper's own button, nor one that can't be pressed
 		var found: BaseButton = b
@@ -47,7 +68,7 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 		if name == "":
 			continue
 		_add(targets, "button:" + name, "the \"%s\" button" % name, _control_place(found), front, found)
-	for t in root.find_children("*", "Tree", true, false):
+	for t in shown.filter(func(c): return c is Tree):
 		var tree: Tree = t
 		if not here.call(tree):
 			continue
@@ -70,7 +91,7 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 					_add(targets, "item:" + row, "\"%s\" in the list" % row, _row_place(tree, row), front, tree)
 					listed += 1
 			item = item.get_next_in_tree()
-	for f in root.find_children("*", "LineEdit", true, false):
+	for f in shown.filter(func(c): return c is LineEdit):
 		var field: LineEdit = f
 		if field.secret:
 			continue
@@ -80,7 +101,7 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 		if here.call(field) and field.editable and hint != "" and not (ask_box and ask_box.is_ancestor_of(field)):
 			_add(targets, "field:" + hint, "the \"%s\" text field" % hint, _control_place(field), front, field)
 			fields["field:" + hint] = weakref(field)
-	for p in root.find_children("*", "EditorProperty", true, false):
+	for p in shown.filter(func(c): return c is EditorProperty):
 		var prop: EditorProperty = p
 		if here.call(prop):
 			var label := prop.label if prop.label != "" else str(prop.get_edited_property())
@@ -94,6 +115,17 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 		"window": front.title if front != base.get_window() else "",
 		"targets": targets,
 	}
+
+
+# Every shown control under `node`, in tree order. A hidden control's children are hidden too, so its
+# branch is skipped; so is any other window (a dialog is read on its own when it's in front).
+static func _shown(node: Node, into: Array) -> void:
+	for child in node.get_children(true):
+		if child is Window or (child is CanvasItem and not (child as CanvasItem).visible):
+			continue
+		if child is Control:
+			into.append(child)
+		_shown(child, into)
 
 
 func _add(targets: Array, id: String, label: String, place: Callable, win: Window, node: Object) -> void:

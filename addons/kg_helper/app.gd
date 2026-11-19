@@ -11,7 +11,7 @@ signal refused                        # the app speaks another contract version
 signal pointed(answer: Dictionary)    # he pressed Show me on the course page
 signal next_came(result: int, code: int, reply)   # the next click of a walk-through, or why there's none
 
-const LOOK_S := 1.0              # how often it looks at what's on screen
+const LOOK_S := 1.0              # looks every second; one look costs well under a millisecond
 const STILL_HERE_S := 5.0        # sends at least this often
 const RETRY_S := 2.0
 const NOT_THE_APP_RETRY_S := 30.0
