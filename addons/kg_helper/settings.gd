@@ -12,6 +12,11 @@ const QUIET := Color(1, 1, 1, 0.7)
 const CANDLE := Color("e3b44a")
 const UNCHECKED_SIGN_IN := "%s is installed. Your first question checks that you're signed in."
 const STATUS_WORDS := {"ready": "Signed in to %s", "signed_out": "Not signed in to %s", "checking": "Checking %s…"}
+const EFFORT_NAMES := {
+	"low": "Low (answers soonest)",
+	"medium": "Medium",
+	"high": "High (thinks longest, answers slowest)",
+}
 const MODEL_NAMES := {
 	"sonnet": "Sonnet (suits most questions)",
 	"fable": "Fable (answers best, uses your limit fastest)",
@@ -32,6 +37,8 @@ var preview: RefCounted            # a check of a picked tool that isn't the one
 var preview_state := ""
 var status_box: VBoxContainer      # whether the picked tool is ready, under the list
 var model_hint: Label              # for a tool that picks its own model
+var effort_list: OptionButton
+var effort_hint: Label             # for a tool that decides how long it thinks
 var where_heading: Label
 var less_motion: CheckBox
 var check_updates: CheckBox
@@ -73,6 +80,11 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_child(model_list)
 	model_hint = _quiet("")
 	box.add_child(model_hint)
+	box.add_child(_heading(L.t("Effort")))
+	effort_list = OptionButton.new()
+	box.add_child(effort_list)
+	effort_hint = _quiet("")
+	box.add_child(effort_hint)
 	if docs and docs.state != "off":
 		_docs_section(box, docs)
 	where_heading = _heading("")
@@ -199,6 +211,12 @@ func _show_model() -> void:
 		model_list.add_item(L.t(MODEL_NAMES.get(id, id.capitalize())))     # each says what it's for, in the list itself
 	if not models.is_empty():
 		model_list.select(maxi(0, models.find(picked.model_from(Brain.saved_setting(picked.MODEL_SETTING)))))
+	effort_list.clear()
+	effort_list.visible = not picked.EFFORTS.is_empty()
+	effort_hint.text = L.t(picked.EFFORT_HINT) if picked.EFFORTS.is_empty() else L.t("Lower effort answers sooner. Higher effort thinks longer before it answers.")
+	for level in picked.EFFORTS:
+		effort_list.add_item(L.t(EFFORT_NAMES.get(level, level.capitalize())))
+	effort_list.select(maxi(0, picked.EFFORTS.find(Brain.saved_setting(picked.EFFORT_SETTING))))
 
 
 func _label(text: String) -> Label:
@@ -255,6 +273,8 @@ func _save() -> void:
 	settings.set_setting(picked.PATH_SETTING, chosen_path)
 	if not picked.MODELS.is_empty():
 		settings.set_setting(picked.MODEL_SETTING, picked.MODELS[model_list.selected])
+	if not picked.EFFORTS.is_empty():
+		settings.set_setting(picked.EFFORT_SETTING, picked.EFFORTS[effort_list.selected])
 	settings.set_setting(Brain.TOOL_SETTING, picked.ID)
 	settings.set_setting(Brain.LESS_MOTION_SETTING, less_motion.button_pressed)
 	settings.set_setting(Updates.SETTING, check_updates.button_pressed)

@@ -21,6 +21,9 @@ const INSTALL_HINT := "Not installed yet. Click Install…, or choose its file."
 const LOGIN_HINT := "codex login"
 const AUTH_ARGS := ["login", "status"]
 const MODEL_HINT := "Codex chooses the model. You can't change it here."
+const EFFORT_SETTING := "knochengeist/codex_effort"
+const EFFORTS := ["low", "medium", "high"]   # how long it thinks before answering; low answers soonest
+const EFFORT_HINT := ""
 const MODELS := []                  # Codex picks its model for the plan
 const REPORTS_RESETS := false
 const CHECKS_SIGN_IN := true
@@ -83,7 +86,7 @@ static func start(brain, program: String, dir: String, system_file: String, prom
 	file.close()
 	var flags := PackedStringArray(["exec", "--json", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config",
 		"--ignore-rules", "--sandbox", "read-only", "--disable", "shell_tool", "-c", "web_search=\"disabled\"",
-		"-c", "model_instructions_file=%s" % system_file])
+		"-c", "model_instructions_file=%s" % system_file, "-c", "model_reasoning_effort=\"%s\"" % brain.effort()])
 	if model != "":
 		flags.append_array(["-m", model])
 	flags.append("-")

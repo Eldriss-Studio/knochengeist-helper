@@ -9,18 +9,19 @@ signal piece(text: String)
 signal done(text: String, problem: String)      # problem: "", "missing", "signed_out" or "failed"
 signal checked(state: String, path: String)     # state: "checking", "ready", "missing", "signed_out" or "not_there"
 
+# What a problem says for a tool that doesn't word its own (each tool's adapter has its PROBLEMS); %s is the tool.
 const PROBLEMS := {
-	"missing": "Claude Code isn't installed. Click the ghost and choose Install Claude Code… from its menu. Then sign in once, and ask again.",
-	"signed_out": "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again.",
+	"missing": "%s isn't installed. Click the ghost and choose Install %s… from its menu. Then sign in once, and ask again.",
+	"signed_out": "%s isn't signed in. Click the ghost and choose Sign in to %s… from its menu. Then ask again.",
 	"failed": "That didn't work. Try again, or open Show log in the ghost's menu to see why.",
-	"limit": "You've reached your Claude plan's limit. Try again later.",
-	"not_there": "Claude Code isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically.",
-	"login_skipped": "Claude Code didn't use your sign-in for this question, though it says you're signed in. This helper may need an update. Show log has the details.",
-	"unknown": "Claude Code sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said.",
-	"billing": "Claude Code reports a billing problem with your account. Check it at claude.ai.",
+	"limit": "You've reached your plan's limit for %s. Try again later.",
+	"not_there": "%s isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically.",
+	"login_skipped": "%s didn't use your sign-in for this question, though it says you're signed in. Knochengeist may need an update. Show log has the details.",
+	"unknown": "%s sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said.",
+	"billing": "%s reports a billing problem with your account. Check your plan on its website.",
 }
 
-const DISCLOSURE := "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+const DISCLOSURE := "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\nEach question goes to {company}, with your account. It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
 const GIVE_UP_S := 120.0
 const SHELL_GIVE_UP_S := 8.0
 const CHECK_GIVE_UP_S := 15.0
@@ -43,7 +44,7 @@ const Copilot := preload("copilot.gd")
 # A test checks each tool here has the whole surface.
 const TOOLS := {"claude": Claude, "codex": Codex, "copilot": Copilot}
 const ADAPTER_CONSTANTS := ["ID", "NAME", "LABEL", "COMPANY", "PATH_SETTING", "MODEL_SETTING", "ENV", "COMMAND",
-	"INSTALL_PAGE", "INSTALL_HINT", "LOGIN_HINT", "AUTH_ARGS", "MODELS", "MODEL_HINT", "REPORTS_RESETS",
+	"INSTALL_PAGE", "INSTALL_HINT", "LOGIN_HINT", "AUTH_ARGS", "MODELS", "MODEL_HINT", "EFFORTS", "EFFORT_SETTING", "EFFORT_HINT", "REPORTS_RESETS",
 	"SIGN_IN_CAN_BE_SKIPPED", "CHECKS_SIGN_IN", "SIGNED_OUT_SAYS", "PROBLEMS"]
 const ADAPTER_FUNCTIONS := ["find_automatically", "model_from", "login_args", "check_state", "start", "read", "process_env", "install_args"]
 const TOOL_SETTING := "knochengeist/tool"
@@ -169,6 +170,13 @@ static func model() -> String:
 	return adapter().model_from(saved_setting(adapter().MODEL_SETTING))
 
 
+## How long the tool in use thinks before answering, as picked in Settings: low unless he chose more.
+static func effort() -> String:
+	var levels: Array = adapter().EFFORTS
+	var saved := saved_setting(adapter().EFFORT_SETTING)
+	return saved if saved in levels else (levels[0] if not levels.is_empty() else "")
+
+
 # The plan from `claude auth status`. Its email and organization are never read.
 func _read_limit(info) -> void:
 	if not (info is Dictionary):
@@ -241,7 +249,7 @@ func warning() -> String:
 
 func problem_message(problem: String) -> String:
 	if problem == "limit" and adapter().REPORTS_RESETS and float(limit.get("resets_at", 0.0)) > 0.0:
-		return L.t("You've used all of your Claude plan's %s. It resets %s.") % [_limit_name(), _when(limit["resets_at"])]
+		return L.t("You've used all of your plan's %s. It resets %s.") % [_limit_name(), _when(limit["resets_at"])]
 	return problem_text(problem)
 
 
@@ -262,12 +270,13 @@ static func _when(resets_at: float) -> String:
 static func problem_text(problem: String) -> String:
 	if adapter().PROBLEMS.has(problem):
 		return L.t(adapter().PROBLEMS[problem])
-	return L.t(PROBLEMS.get(problem, PROBLEMS["failed"])).replace("Claude Code", tool_name())
+	var said := L.t(PROBLEMS.get(problem, PROBLEMS["failed"]))
+	return said.replace("%s", tool_name()) if said.contains("%s") else said
 
 
 ## What a question sends, and to whom, for the tool in use.
 static func disclosure() -> String:
-	return L.t(DISCLOSURE).replace("Claude Code", tool_name()).replace("Anthropic", company())
+	return L.t(DISCLOSURE).format({"tool": tool_name(), "company": company()})
 
 
 ## The tool this brain checks: the one in use, or one Settings shows before it's saved.

@@ -53,6 +53,7 @@ Click the ghost, or open Project > Tools > Knochengeist. The first line says whi
 - **Settings…**:
   - **AI tool**: Claude Code, Codex or Copilot, each with the plan it runs on. Picking one checks it at once and says whether it's installed and signed in, with an **Install…** or **Sign in…** button when it isn't.
   - **Model**: with Claude Code, Sonnet, Fable, Opus or Haiku (Fable and Opus use up your plan's limit faster). Codex and Copilot choose their own model, so there's nothing to pick.
+  - **Effort**: how long the AI thinks before answering, with Claude Code and Codex. Low (the default) answers soonest; High thinks longest. Copilot decides this itself.
   - **Location**: where the tool is, with **Choose file…** to pick it yourself or **Find automatically**.
   - **Godot docs**, **Motion** (Reduce motion makes the ghost appear where it points instead of flying there) and **Updates** (Check for updates).
 
@@ -65,9 +66,9 @@ Click the ghost, or open Project > Tools > Knochengeist. The first line says whi
 
 Before it runs your AI tool for the first time in a project, the helper asks, with this text. It names the tool and company you picked: Claude Code and Anthropic, Codex and OpenAI, or Copilot and GitHub. Here it's shown for Claude Code.
 
-> To answer, Knochengeist runs your Claude Code on this computer.
+> To answer, Knochengeist runs the AI tool you picked in Settings, Claude Code, on this computer.
 >
-> Each question sends to Anthropic, using your account:
+> Each question goes to Anthropic, with your account. It sends:
 > - your question
 > - the open scene's file name and the selected node
 > - the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes

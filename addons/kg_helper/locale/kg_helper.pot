@@ -3,13 +3,43 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Project-Id-Version: Knochengeist helper\n"
 
+msgid "%s didn't use your sign-in for this question, though it says you're signed in. Knochengeist may need an update. Show log has the details."
+msgstr ""
+
 msgid "%s is installed. Your first question checks that you're signed in."
+msgstr ""
+
+msgid "%s isn't at the file you chose"
+msgstr ""
+
+msgid "%s isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr ""
+
+msgid "%s isn't installed. Click the ghost and choose Install %s… from its menu. Then sign in once, and ask again."
+msgstr ""
+
+msgid "%s isn't signed in. Click the ghost and choose Sign in to %s… from its menu. Then ask again."
 msgstr ""
 
 msgid "%s location"
 msgstr ""
 
+msgid "%s not found"
+msgstr ""
+
+msgid "%s reports a billing problem with your account. Check your plan on its website."
+msgstr ""
+
+msgid "%s sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr ""
+
 msgid "%s to ask."
+msgstr ""
+
+msgid "%s wasn't run. Ask again to allow it."
+msgstr ""
+
+msgid "%s won't start"
 msgstr ""
 
 msgid "%s: %d%% used"
@@ -45,13 +75,16 @@ msgstr ""
 msgid "Allow"
 msgstr ""
 
-msgid "Allow Knochengeist to use Claude Code?"
+msgid "Allow Knochengeist to use %s?"
 msgstr ""
 
 msgid "Almost have it..."
 msgstr ""
 
 msgid "Answers come from the AI tool you pick. You sign in to it with your own plan."
+msgstr ""
+
+msgid "Anything about Godot."
 msgstr ""
 
 msgid "Ask"
@@ -111,19 +144,13 @@ msgstr ""
 msgid "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again."
 msgstr ""
 
-msgid "Claude Code not found"
-msgstr ""
-
 msgid "Claude Code reports a billing problem with your account. Check it at claude.ai."
 msgstr ""
 
 msgid "Claude Code sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
 msgstr ""
 
-msgid "Claude Code wasn't run. Ask again to allow it."
-msgstr ""
-
-msgid "Claude Code won't start"
+msgid "Click here:"
 msgstr ""
 
 msgid "Click to see what's wrong."
@@ -157,6 +184,9 @@ msgid "Copilot (GitHub Copilot plan)"
 msgstr ""
 
 msgid "Copilot chooses the model. You can't change it here."
+msgstr ""
+
+msgid "Copilot decides how long it thinks."
 msgstr ""
 
 msgid "Copilot isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
@@ -195,13 +225,28 @@ msgstr ""
 msgid "Drifting through the manual..."
 msgstr ""
 
+msgid "Effort"
+msgstr ""
+
+msgid "Enter to ask, Esc to close."
+msgstr ""
+
 msgid "Explain the last error"
+msgstr ""
+
+msgid "Explain this code from %s."
+msgstr ""
+
+msgid "Explain this code."
 msgstr ""
 
 msgid "Fable (answers best, uses your limit fastest)"
 msgstr ""
 
 msgid "Find automatically"
+msgstr ""
+
+msgid "First:"
 msgstr ""
 
 msgid "Found automatically."
@@ -217,6 +262,12 @@ msgid "Haunting the docs..."
 msgstr ""
 
 msgid "Heads up: you've used %d%% of your %s. It resets %s."
+msgstr ""
+
+msgid "High (thinks longest, answers slowest)"
+msgstr ""
+
+msgid "I couldn't find %s in your Godot %s, so check that name."
 msgstr ""
 
 msgid "I lost track of where we were. Ask me again with %s."
@@ -264,7 +315,19 @@ msgstr ""
 msgid "Later"
 msgstr ""
 
-msgid "Looking for Claude Code…"
+msgid "Leave it empty if you're stuck on your lesson step."
+msgstr ""
+
+msgid "Looking for %s…"
+msgstr ""
+
+msgid "Low (answers soonest)"
+msgstr ""
+
+msgid "Lower effort answers sooner. Higher effort thinks longer before it answers."
+msgstr ""
+
+msgid "Medium"
 msgstr ""
 
 msgid "Model"
@@ -273,7 +336,10 @@ msgstr ""
 msgid "Motion"
 msgstr ""
 
-msgid "No Claude Code at the path in Settings"
+msgid "Next:"
+msgstr ""
+
+msgid "No"
 msgstr ""
 
 msgid "Not found"
@@ -286,9 +352,6 @@ msgid "Not now"
 msgstr ""
 
 msgid "Not signed in to %s"
-msgstr ""
-
-msgid "Not signed in to Claude Code"
 msgstr ""
 
 msgid "Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."
@@ -336,10 +399,16 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
+msgid "Send"
+msgstr ""
+
 msgid "Settings…"
 msgstr ""
 
 msgid "Show log"
+msgstr ""
+
+msgid "Show log has the details."
 msgstr ""
 
 msgid "Show me"
@@ -357,6 +426,12 @@ msgstr ""
 msgid "Sonnet (suits most questions)"
 msgstr ""
 
+msgid "Step %d of %d:"
+msgstr ""
+
+msgid "Thanks."
+msgstr ""
+
 msgid "That didn't work. Is the course page still running?"
 msgstr ""
 
@@ -367,6 +442,9 @@ msgid "That didn't work. Try again."
 msgstr ""
 
 msgid "That was a long one. Ask me again if there's more to do."
+msgstr ""
+
+msgid "That's it."
 msgstr ""
 
 msgid "The 5-hour window"
@@ -399,13 +477,25 @@ msgstr ""
 msgid "There's no file at this location. Choose another file, or use Find automatically."
 msgstr ""
 
+msgid "This node:"
+msgstr ""
+
+msgid "This one:"
+msgstr ""
+
+msgid "This property:"
+msgstr ""
+
 msgid "This week"
 msgstr ""
 
-msgid "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+msgid "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\nEach question goes to {company}, with your account. It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
 msgstr ""
 
 msgid "Try again"
+msgstr ""
+
+msgid "Type here:"
 msgstr ""
 
 msgid "Update"
@@ -420,7 +510,7 @@ msgstr ""
 msgid "Updates"
 msgstr ""
 
-msgid "Using Claude Code"
+msgid "Using %s"
 msgstr ""
 
 msgid "Using the course page"
@@ -433,6 +523,21 @@ msgid "Version %s is out. You have version %s.\n\nWhat's new:\n%s\n\nUpdating re
 msgstr ""
 
 msgid "What Knochengeist sends"
+msgstr ""
+
+msgid "What does the %s node (%s) do, and what can I do with it?"
+msgstr ""
+
+msgid "What does the %s property do?"
+msgstr ""
+
+msgid "What does the %s property of %s do?"
+msgstr ""
+
+msgid "What does this error mean, and how do I fix it?"
+msgstr ""
+
+msgid "What is %s for?"
 msgstr ""
 
 msgid "What is a shader? Where do I add a node?"
@@ -458,6 +563,9 @@ msgstr ""
 msgid "With the error."
 msgstr ""
 
+msgid "Yes"
+msgstr ""
+
 msgid "You chose this file."
 msgstr ""
 
@@ -467,10 +575,13 @@ msgstr ""
 msgid "You've reached your Claude plan's limit. Try again later."
 msgstr ""
 
-msgid "You've used all of your Claude plan's %s. It resets %s."
+msgid "You've reached your plan's limit for %s. Try again later."
 msgstr ""
 
 msgid "You've used all of your Copilot plan for now. Wait a bit, then ask again."
+msgstr ""
+
+msgid "You've used all of your plan's %s. It resets %s."
 msgstr ""
 
 msgid "Your game hit an error. Click me to have it explained."

@@ -403,8 +403,8 @@ msgstr "Não tem nenhum arquivo neste local. Escolha outro arquivo ou use Encont
 msgid "This week"
 msgstr "Esta semana"
 
-msgid "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
-msgstr "Para responder, o Knochengeist roda o seu Claude Code neste computador.\n\nA cada pergunta, ele envia para Anthropic, usando a sua conta:\n• a sua pergunta\n• o nome do arquivo da cena aberta e o nó selecionado\n• os nomes do que está na sua tela no Godot: botões, nós no painel Cena, arquivos e pastas em listas, propriedades do Inspetor e dicas em caixas de texto\n• durante um passo a passo, o que você clicou e digitou nas caixas que ele apontou\n• quando você pergunta sobre algo em que clicou com o botão direito: o nome, ou o código que você selecionou\n• numa pergunta de continuação, suas últimas perguntas e respostas naquela conversa\n• quando a sua pergunta cita algo do Godot, as páginas de referência disso, tiradas do seu próprio Godot\n• quando você pergunta sobre um erro do seu jogo: o texto do erro e as linhas do script em volta dele\n\nEle nunca envia a sua senha nem os seus dados de login, e não envia mais nada.\n\nÀ parte disso, uma vez por dia ele pergunta ao GitHub se saiu um assistente mais novo (dá para desligar isso nas Configurações), e uma vez por versão do Godot ele baixa o manual do Godot do GitHub."
+msgid "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\nEach question goes to {company}, with your account. It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+msgstr "Para responder, o Knochengeist roda a ferramenta de IA que você escolheu nas Configurações, {tool}, neste computador.\n\nCada pergunta vai para {company}, com a sua conta. Ele envia:\n• a sua pergunta\n• o nome do arquivo da cena aberta e o nó selecionado\n• os nomes do que está na sua tela no Godot: botões, nós no painel Cena, arquivos e pastas em listas, propriedades do Inspetor e dicas em caixas de texto\n• durante um passo a passo, o que você clicou e digitou nas caixas que ele apontou\n• quando você pergunta sobre algo em que clicou com o botão direito: o nome, ou o código que você selecionou\n• numa pergunta de continuação, suas últimas perguntas e respostas naquela conversa\n• quando a sua pergunta cita algo do Godot, as páginas de referência disso, tiradas do seu próprio Godot\n• quando você pergunta sobre um erro do seu jogo: o texto do erro e as linhas do script em volta dele\n\nEle nunca envia a sua senha nem os seus dados de login, e não envia mais nada.\n\nÀ parte disso, uma vez por dia ele pergunta ao GitHub se saiu um assistente mais novo (dá para desligar isso nas Configurações), e uma vez por versão do Godot ele baixa o manual do Godot do GitHub."
 
 msgid "Try again"
 msgstr "Tentar de novo"
@@ -505,3 +505,141 @@ msgstr "limite semanal"
 
 msgid "[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it."
 msgstr "[b]Estou aqui[/b], mas há um problema: %s. Clique no fantasma acima para resolver."
+
+msgid "Effort"
+msgstr "Esforço"
+
+msgid "Lower effort answers sooner. Higher effort thinks longer before it answers."
+msgstr "Menos esforço responde mais rápido. Mais esforço pensa mais antes de responder."
+
+msgid "Low (answers soonest)"
+msgstr "Baixo (responde mais rápido)"
+
+msgid "Medium"
+msgstr "Médio"
+
+msgid "High (thinks longest, answers slowest)"
+msgstr "Alto (pensa mais, responde mais devagar)"
+
+msgid "Copilot decides how long it thinks."
+msgstr "O Copilot decide quanto tempo pensa."
+
+msgid "Anything about Godot."
+msgstr "Qualquer coisa sobre o Godot."
+
+msgid "Click here:"
+msgstr "Clique aqui:"
+
+msgid "Enter to ask, Esc to close."
+msgstr "Enter para perguntar, Esc para fechar."
+
+msgid "Explain this code from %s."
+msgstr "Explique este código de %s."
+
+msgid "Explain this code."
+msgstr "Explique este código."
+
+msgid "First:"
+msgstr "Primeiro:"
+
+msgid "I couldn't find %s in your Godot %s, so check that name."
+msgstr "Não encontrei %s no seu Godot %s, então confira esse nome."
+
+msgid "Leave it empty if you're stuck on your lesson step."
+msgstr "Deixe em branco se você travou no passo da lição."
+
+msgid "Next:"
+msgstr "Próximo:"
+
+msgid "No"
+msgstr "Não"
+
+msgid "Send"
+msgstr "Enviar"
+
+msgid "Show log has the details."
+msgstr "Mostrar log tem os detalhes."
+
+msgid "Step %d of %d:"
+msgstr "Passo %d de %d:"
+
+msgid "Thanks."
+msgstr "Obrigado."
+
+msgid "That's it."
+msgstr "Pronto."
+
+msgid "This node:"
+msgstr "Este nó:"
+
+msgid "This one:"
+msgstr "Este aqui:"
+
+msgid "This property:"
+msgstr "Esta propriedade:"
+
+msgid "Type here:"
+msgstr "Digite aqui:"
+
+msgid "What does the %s node (%s) do, and what can I do with it?"
+msgstr "O que o nó %s (%s) faz, e o que posso fazer com ele?"
+
+msgid "What does the %s property do?"
+msgstr "O que a propriedade %s faz?"
+
+msgid "What does the %s property of %s do?"
+msgstr "O que a propriedade %s de %s faz?"
+
+msgid "What does this error mean, and how do I fix it?"
+msgstr "O que significa este erro, e como eu corrijo?"
+
+msgid "What is %s for?"
+msgstr "Para que serve %s?"
+
+msgid "Yes"
+msgstr "Sim"
+
+msgid "%s didn't use your sign-in for this question, though it says you're signed in. Knochengeist may need an update. Show log has the details."
+msgstr "%s não usou a sua conta nesta pergunta, embora diga que você está conectado. O Knochengeist talvez precise de uma atualização. Mostrar log tem os detalhes."
+
+msgid "%s isn't at the file you chose"
+msgstr "%s não está no arquivo que você escolheu"
+
+msgid "%s isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr "%s não está no arquivo que você escolheu. Abra Configurações no menu do fantasma e escolha o arquivo de novo ou use Encontrar automaticamente."
+
+msgid "%s isn't installed. Click the ghost and choose Install %s… from its menu. Then sign in once, and ask again."
+msgstr "%s não está instalado. Clique no fantasma e escolha Instalar %s… no menu dele. Depois entre uma vez e pergunte de novo."
+
+msgid "%s isn't signed in. Click the ghost and choose Sign in to %s… from its menu. Then ask again."
+msgstr "%s não está conectado. Clique no fantasma e escolha Entrar no %s… no menu dele. Depois pergunte de novo."
+
+msgid "%s not found"
+msgstr "%s não encontrado"
+
+msgid "%s reports a billing problem with your account. Check your plan on its website."
+msgstr "%s informa um problema de cobrança na sua conta. Confira o seu plano no site dele."
+
+msgid "%s sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr "%s mandou uma resposta que o Knochengeist ainda não consegue ler. Atualize o Knochengeist ou abra Mostrar log para ver o que ele disse."
+
+msgid "%s wasn't run. Ask again to allow it."
+msgstr "O %s não foi executado. Pergunte de novo para permitir."
+
+msgid "%s won't start"
+msgstr "O %s não inicia"
+
+msgid "Allow Knochengeist to use %s?"
+msgstr "Permitir que o Knochengeist use o %s?"
+
+msgid "Looking for %s…"
+msgstr "Procurando o %s…"
+
+msgid "Using %s"
+msgstr "Usando o %s"
+
+msgid "You've reached your plan's limit for %s. Try again later."
+msgstr "Você chegou ao limite do seu plano para %s. Tente de novo mais tarde."
+
+msgid "You've used all of your plan's %s. It resets %s."
+msgstr "Você usou todo o %s do seu plano. Ele renova %s."

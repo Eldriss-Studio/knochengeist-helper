@@ -43,8 +43,8 @@ const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
 const CODE_LINES_KEPT := 200
 const COURSE_CODE_CHARS := 1200
-const NOT_ALLOWED := "Claude Code wasn't run. Ask again to allow it."
-const CONSENT_TITLE := "Allow Knochengeist to use Claude Code?"
+const NOT_ALLOWED := "%s wasn't run. Ask again to allow it."
+const CONSENT_TITLE := "Allow Knochengeist to use %s?"
 const README := "https://github.com/Eldriss-Studio/knochengeist-helper#readme"
 const RELEASES := "https://github.com/Eldriss-Studio/knochengeist-helper/releases"
 const ISSUES := "https://github.com/Eldriss-Studio/knochengeist-helper/issues"
@@ -435,7 +435,7 @@ func _run_claude(system: String, prompt: String) -> void:
 	var window := ConfirmationDialog.new()
 	consent_window = window
 	var asked_for := brain_for
-	window.title = L.t(CONSENT_TITLE).replace("Claude Code", Brain.tool_name())
+	window.title = L.t(CONSENT_TITLE) % Brain.tool_name()
 	window.dialog_text = Brain.disclosure()
 	window.dialog_autowrap = true
 	window.ok_button_text = L.t("Allow")
@@ -448,10 +448,10 @@ func _run_claude(system: String, prompt: String) -> void:
 			brain.ask(system, prompt))
 	window.canceled.connect(func():
 		if asked_for == "ask":
-			ask_box.failed(L.t(NOT_ALLOWED).replace("Claude Code", Brain.tool_name()))
+			ask_box.failed(L.t(NOT_ALLOWED) % Brain.tool_name())
 		else:
 			walk_ask = 0
-			_note(L.t(NOT_ALLOWED).replace("Claude Code", Brain.tool_name()), 6.0))
+			_note(L.t(NOT_ALLOWED) % Brain.tool_name(), 6.0))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
@@ -585,7 +585,7 @@ func _updated(version: String) -> void:
 func _update_failed(why: String) -> void:
 	var window := AcceptDialog.new()
 	window.title = L.t("Knochengeist didn't update")
-	window.dialog_text = why + " Show log has the details."
+	window.dialog_text = why + " " + L.t("Show log has the details.")
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
@@ -725,16 +725,16 @@ func _ask_about(kind: String, what: Dictionary) -> void:
 	var about := ""
 	match kind:
 		"node":
-			question = "What does the %s node (%s) do, and what can I do with it?" % [what["name"], what["type"]]
+			question = L.t("What does the %s node (%s) do, and what can I do with it?") % [what["name"], what["type"]]
 			about = "They are asking about the node %s (a %s) at %s in the open scene." % [what["name"], what["type"], what["path"]]
 		"file":
-			question = "What is %s for?" % what["path"]
+			question = L.t("What is %s for?") % what["path"]
 			about = "They are asking about the file %s." % what["path"]
 		"property":
-			question = "What does the %s property%s do?" % [what["property"], (" of " + what["class"]) if what["class"] != "" else ""]
+			question = L.t("What does the %s property of %s do?") % [what["property"], what["class"]] if what["class"] != "" else L.t("What does the %s property do?") % what["property"]
 			about = "They are asking about the %s property of a %s in the Inspector." % [what["property"], what["class"]]
 		"error":
-			question = "What does this error mean, and how do I fix it?"
+			question = L.t("What does this error mean, and how do I fix it?")
 			var where := L.t("line %d of %s") % [what["line"], str(what["file"]).get_file()] if str(what["file"]) != "" else ""
 			about = "They ran their game and it stopped with this error:\n%s" % str(what["details"]).strip_edges()
 			var code := Errors.lines_around(str(what["file"]), int(what["line"]))
@@ -744,7 +744,7 @@ func _ask_about(kind: String, what: Dictionary) -> void:
 		"code":
 			var lines: PackedStringArray = str(what["code"]).split("\n")
 			var kept := "\n".join(lines.slice(0, CODE_LINES_KEPT))
-			question = "Explain this code%s." % ((" from " + what["path"]) if what["path"] != "" else "")
+			question = L.t("Explain this code from %s.") % what["path"] if what["path"] != "" else L.t("Explain this code.")
 			about = "They are asking about these lines%s:\n```gdscript\n%s\n```" % [(" of " + what["path"]) if what["path"] != "" else "", kept]
 			note = L.t_n("With %d selected line.", "With %d selected lines.", mini(lines.size(), CODE_LINES_KEPT)) % mini(lines.size(), CODE_LINES_KEPT)
 	_open_ask()
@@ -887,7 +887,7 @@ func _answered(reply: Dictionary) -> void:
 	_show_up(course_shown)
 	ask_box.answered(_plain(str(reply.get("answer", ""))), places.has(answer_target))
 	if not unchecked.is_empty():
-		ask_box.note("I couldn't find %s in your Godot %s, so check that name." % [", ".join(unchecked), _godot_version()])
+		ask_box.note(L.t("I couldn't find %s in your Godot %s, so check that name.") % [", ".join(unchecked), _godot_version()])
 	ask_box.position = _under_button(ask_box)
 
 
@@ -998,7 +998,7 @@ func _show_me() -> void:
 	walk_closing = answer_closing
 	walk_i = 0
 	var first := str(answer_plan[0].get("say", "")) if answer_plan.size() > 0 else ""
-	var label := ("[b]Step 1 of %d:[/b] " % walk_plan.size()) if walk_plan.size() > 1 else "[b]First:[/b] "
+	var label := ("[b]%s[/b] " % (L.t("Step %d of %d:") % [1, walk_plan.size()])) if walk_plan.size() > 1 else "[b]%s[/b] " % L.t("First:")
 	_point(answer_target, (label + first.replace("[", "[lb]")) if first != "" else _say(answer_target))
 	if answer_ask != ALONE:
 		app.tell_shown(answer_ask)
@@ -1039,11 +1039,11 @@ func _say(id: String) -> String:
 	var kind := id.get_slice(":", 0)
 	var name := id.substr(kind.length() + 1).trim_suffix(".")
 	match kind:
-		"button": return "[b]Click here:[/b] " + name
-		"row": return "[b]This node:[/b] " + name
-		"prop": return "[b]This property:[/b] " + name
-		"item": return "[b]This one:[/b] " + name
-		"field": return "[b]Type here:[/b] " + name
+		"button": return "[b]%s[/b] " % L.t("Click here:") + name
+		"row": return "[b]%s[/b] " % L.t("This node:") + name
+		"prop": return "[b]%s[/b] " % L.t("This property:") + name
+		"item": return "[b]%s[/b] " % L.t("This one:") + name
+		"field": return "[b]%s[/b] " % L.t("Type here:") + name
 	return name
 
 

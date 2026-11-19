@@ -46,7 +46,7 @@ func _init() -> void:
 	add_child(field)
 	row = HBoxContainer.new()
 	row.add_theme_constant_override("separation", int(8 * s))
-	ask_button = _button("Ask", true)
+	ask_button = _button(L.t("Ask"), true)
 	ask_button.pressed.connect(func(): asked.emit(field.text))
 	show_button = _button(L.t("Show me"), true)
 	show_button.pressed.connect(func(): show_me.emit())
@@ -64,9 +64,9 @@ func _init() -> void:
 	if _font(450):
 		quiet.add_theme_font_override("font", _font(450))
 	rate_row.add_child(quiet)
-	var helped := _quiet_button("Yes")
+	var helped := _quiet_button(L.t("Yes"))
 	helped.pressed.connect(func(): _rated(true, ""))
-	var not_helped := _quiet_button("No")
+	var not_helped := _quiet_button(L.t("No"))
 	not_helped.pressed.connect(func():
 		rate_row.visible = false
 		note_row.visible = true
@@ -89,7 +89,7 @@ func _init() -> void:
 	note_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	note_field.text_submitted.connect(func(text: String): _rated(false, text))
 	note_row.add_child(note_field)
-	var send := _button("Send", false)
+	var send := _button(L.t("Send"), false)
 	send.pressed.connect(func(): _rated(false, note_field.text))
 	note_row.add_child(send)
 	add_child(note_row)
@@ -140,7 +140,7 @@ func _button(text: String, main: bool) -> Button:
 
 ## Opens ready for a question.
 func open(course: bool) -> void:
-	_show("[b]Ask the ghost[/b]\nAnything about Godot." + (" Leave it empty if you're stuck on your lesson step." if course else "") + "\n[color=#1c221d99]Enter to ask, Esc to close.[/color]", true, false)
+	_show("[b]%s[/b]\n%s" % [L.t("Ask the ghost"), L.t("Anything about Godot.")] + (" " + L.t("Leave it empty if you're stuck on your lesson step.") if course else "") + "\n[color=#1c221d99]%s[/color]" % L.t("Enter to ask, Esc to close."), true, false)
 	ask_button.text = L.t("Ask")
 	field.text = ""
 	field.grab_focus()
@@ -149,7 +149,7 @@ func open(course: bool) -> void:
 ## Opens with a question already written about what he right-clicked; typing replaces it.
 func ask_about(question: String, note: String) -> void:
 	if note != "":
-		say("[b]Ask the ghost[/b]\n%s\n[color=#1c221d99]Enter to ask, Esc to close.[/color]" % note, 300.0)
+		say("[b]%s[/b]\n%s\n[color=#1c221d99]%s[/color]" % [L.t("Ask the ghost"), note, L.t("Enter to ask, Esc to close.")], 300.0)
 	field.text = question
 	field.select_all()
 	field.grab_focus()
@@ -185,7 +185,7 @@ func note(text: String) -> void:
 
 func _rated(helped: bool, note: String) -> void:
 	_hide_rating()
-	say(words.text + "\n[color=#1c221d99]Thanks.[/color]", 300.0)
+	say(words.text + "\n[color=#1c221d99]%s[/color]" % L.t("Thanks."), 300.0)
 	show_part(1.0)
 	rated.emit(helped, note.strip_edges())
 

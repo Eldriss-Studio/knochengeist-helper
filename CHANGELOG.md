@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 49
+
+- **Answers come sooner, and you choose how hard the AI thinks.** Settings has a new **Effort** choice for Claude Code and Codex: Low (the default), Medium or High. At Low, Claude Code's whole answer with Show me is ready in about 4.3 seconds instead of 5.8 (median of ten real runs), and the answer evals pass the same. Pick High when you'd rather it think longer. Copilot decides this itself, so it has no choice to make.
+- **Fully in your language, whichever AI tool you use.** The ghost's card, the walk-through labels and right-click questions are now translated too. The Allow screen names the tool you picked and its company, instead of always Claude Code and Anthropic.
+
 ## Version 48
 
 - **In your editor's language.** The menu, the ghost's cards, Settings and every message now follow the language you set for the Godot editor: Brazilian Portuguese and Spanish to start, English otherwise. The ghost already answered in your language; now everything around it does too. Your game's own translations aren't touched.

@@ -10,12 +10,12 @@ enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABO
 const PLAN := 100                # the plan lines take ids from here on, one each
 
 const LINES := {
-	"checking": "Looking for Claude Code…",
-	"ready": "Using Claude Code",
-	"missing": "Claude Code not found",
-	"signed_out": "Not signed in to Claude Code",
-	"not_there": "No Claude Code at the path in Settings",
-	"wont_start": "Claude Code won't start",
+	"checking": "Looking for %s…",
+	"ready": "Using %s",
+	"missing": "%s not found",
+	"signed_out": "Not signed in to %s",
+	"not_there": "%s isn't at the file you chose",
+	"wont_start": "%s won't start",
 }
 const SHORT_PATH := 40
 const RECENT := 5
@@ -83,7 +83,7 @@ static func short_path(path: String) -> String:
 
 ## The line that says what's answering. `tool_name` names another tool than the one in use (Settings).
 static func state(course_up: bool, claude: String, tool_name := "") -> String:
-	return L.t("Using the course page") if course_up else L.t(LINES.get(claude, LINES["checking"])).replace("Claude Code", tool_name if tool_name != "" else Brain.tool_name())
+	return L.t("Using the course page") if course_up else L.t(LINES.get(claude, LINES["checking"])) % (tool_name if tool_name != "" else Brain.tool_name())
 
 
 static func can_answer(course_up: bool, claude: String) -> bool:

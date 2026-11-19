@@ -150,7 +150,7 @@ func _ask_next() -> void:
 		if walk_i >= walk_plan.size():
 			walk_ask = 0
 			h.answers.walk_ended(h.answer_record, "finished")
-			h._note(walk_closing if walk_closing != "" else "That's it.", 7.0)
+			h._note(walk_closing if walk_closing != "" else L.t("That's it."), 7.0)
 			return
 		h._state()
 		var found: String = h._find(str(walk_plan[walk_i].get("id", "")))
@@ -168,7 +168,7 @@ func _ask_next() -> void:
 					break
 		if found != "":
 			walk_i = at
-			point(found, "[b]Step %d of %d:[/b] " % [at + 1, walk_plan.size()] + str(walk_plan[at].get("say", "")).replace("[", "[lb]"))
+			point(found, "[b]%s[/b] " % (L.t("Step %d of %d:") % [at + 1, walk_plan.size()]) + str(walk_plan[at].get("say", "")).replace("[", "[lb]"))
 			return
 		walk_tries += 1
 		if walk_tries < LOOKS_BEFORE_ASKING:
@@ -218,7 +218,7 @@ func next_reply(reply: Dictionary) -> void:
 	var say := str(reply.get("say", "")).replace("[", "[lb]")
 	h._state()                                  # where things are now
 	if reply.get("target") is String and h.places.has(reply["target"]) and walk_clicked.count(str(h.labels.get(reply["target"], ""))) < 2:
-		point(reply["target"], "[b]Next:[/b] " + say)
+		point(reply["target"], "[b]%s[/b] " % L.t("Next:") + say)
 	else:
 		walk_ask = 0
-		h._note(say if say != "" else "That's it.", 7.0)
+		h._note(say if say != "" else L.t("That's it."), 7.0)

@@ -18,13 +18,24 @@ const INSTALL_HINT := "Not installed yet. Click Install…, or choose its file."
 const LOGIN_HINT := "claude"
 const AUTH_ARGS := ["auth", "status"]
 const MODEL_HINT := ""
+const EFFORT_SETTING := "knochengeist/effort"
+const EFFORTS := ["low", "medium", "high"]   # how long it thinks before answering; low answers soonest
+const EFFORT_HINT := ""
 const MODELS := ["sonnet", "fable", "opus", "haiku"]
 const REPORTS_RESETS := true        # its limit events say when the limit resets
 const CHECKS_SIGN_IN := true
 const SIGNED_OUT_SAYS := []          # it says so in its events, which read() handles
 const SIGN_IN_CAN_BE_SKIPPED := true    # it can answer with an API key though its sign-in says otherwise
 const SIGNED_OUT_EXIT := 1
-const PROBLEMS := {}                # the brain's wording, which is Claude Code's
+const PROBLEMS := {
+	"missing": "Claude Code isn't installed. Click the ghost and choose Install Claude Code… from its menu. Then sign in once, and ask again.",
+	"signed_out": "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again.",
+	"limit": "You've reached your Claude plan's limit. Try again later.",
+	"not_there": "Claude Code isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically.",
+	"login_skipped": "Claude Code didn't use your sign-in for this question, though it says you're signed in. This helper may need an update. Show log has the details.",
+	"unknown": "Claude Code sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said.",
+	"billing": "Claude Code reports a billing problem with your account. Check it at claude.ai.",
+}
 
 
 static func find_automatically() -> String:
@@ -76,7 +87,7 @@ static func _plan_name(status: Dictionary) -> String:
 ## Starts one question: the system prompt from a file, the question as a stream-json line on stdin,
 ## so no shell has to carry either, the same on every computer.
 static func start(brain, program: String, dir: String, system_file: String, prompt: String, model: String) -> Dictionary:
-	var flags := PackedStringArray(["-p", "--model", model, "--tools=",
+	var flags := PackedStringArray(["-p", "--model", model, "--effort", brain.effort(), "--tools=",
 		"--setting-sources=", "--strict-mcp-config", "--no-session-persistence", "--input-format", "stream-json",
 		"--output-format", "stream-json", "--verbose", "--include-partial-messages", "--system-prompt-file", system_file])
 	var started: Dictionary = brain._start(program, dir, flags)
