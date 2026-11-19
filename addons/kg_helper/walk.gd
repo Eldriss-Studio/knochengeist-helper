@@ -1,5 +1,7 @@
 @tool
 extends RefCounted
+
+const L := preload("l10n.gd")
 # The walk-through: the ghost points at one thing on screen, waits for him to click it or type in it,
 # then goes on to the next step, from a plan made ahead or by asking as it goes, to the end of what he
 # wanted, like a tutor pointing over his shoulder. It can point inside dialogs too (Create New Node):
@@ -89,7 +91,7 @@ func _pointed(clicked: bool, cancelled: bool, gave_up: bool) -> void:
 	if gave_up:
 		walk_ask = 0
 		h.answers.walk_ended(h.answer_record, "stopped")
-		h._note("I'll stop here. Ask me again anytime.", 8.0)
+		h._note(L.t("I'll stop here. Ask me again anytime."), 8.0)
 		return
 	if clicked:
 		walk_clicked.append(str(h.labels.get(walk_target, walk_target)))
@@ -176,7 +178,7 @@ func _ask_next() -> void:
 	if walk_clicked.size() >= WALK_MAX:
 		walk_ask = 0
 		h.answers.walk_ended(h.answer_record, "stopped")
-		h._note("That was a long one. Ask me again if there's more to do.", 6.0)
+		h._note(L.t("That was a long one. Ask me again if there's more to do."), 6.0)
 		return
 	var body: Dictionary = h._state()
 	if walk_ask == ALONE:
@@ -207,7 +209,7 @@ func next_came(result: int, code: int, reply) -> void:
 		return
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or not (reply is Dictionary):
 		walk_ask = 0
-		h._note("I lost track of where we were. Ask me again with %s." % Menu.ask_keys(), 6.0)
+		h._note(L.t("I lost track of where we were. Ask me again with %s.") % Menu.ask_keys(), 6.0)
 		return
 	next_reply(reply)
 

@@ -1,5 +1,6 @@
 @tool
 extends "bubble.gd"
+
 # The ghost, asked without leaving Godot (#44): the same card as its speech, with a field for any
 # question about Godot. It shows the answer in words, then a Show me button when the answer named
 # something on screen: words first, then where. Esc closes it.
@@ -27,7 +28,7 @@ func _init() -> void:
 	super()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	field = LineEdit.new()
-	field.placeholder_text = ASKING_HINT
+	field.placeholder_text = L.t(ASKING_HINT)
 	var inside := StyleBoxFlat.new()
 	inside.bg_color = CREAM
 	inside.border_color = INK
@@ -47,9 +48,9 @@ func _init() -> void:
 	row.add_theme_constant_override("separation", int(8 * s))
 	ask_button = _button("Ask", true)
 	ask_button.pressed.connect(func(): asked.emit(field.text))
-	show_button = _button("Show me", true)
+	show_button = _button(L.t("Show me"), true)
 	show_button.pressed.connect(func(): show_me.emit())
-	close_button = _button("Close", false)
+	close_button = _button(L.t("Close"), false)
 	close_button.pressed.connect(close)
 	for b in [ask_button, show_button, close_button]:
 		row.add_child(b)
@@ -57,7 +58,7 @@ func _init() -> void:
 	rate_row = HBoxContainer.new()
 	rate_row.add_theme_constant_override("separation", int(8 * s))
 	var quiet := Label.new()
-	quiet.text = "Did this help?"
+	quiet.text = L.t("Did this help?")
 	quiet.add_theme_color_override("font_color", Color(INK, 0.65))
 	quiet.add_theme_font_size_override("font_size", int(14 * s))
 	if _font(450):
@@ -76,7 +77,7 @@ func _init() -> void:
 	add_child(rate_row)
 	note_row = HBoxContainer.new()
 	note_field = LineEdit.new()
-	note_field.placeholder_text = "What was wrong? (optional)"
+	note_field.placeholder_text = L.t("What was wrong? (optional)")
 	for state in ["normal", "focus", "read_only"]:
 		note_field.add_theme_stylebox_override(state, field.get_theme_stylebox(state))
 	for color in ["font_color", "font_placeholder_color", "caret_color"]:
@@ -102,7 +103,7 @@ func _quiet_button(text: String) -> Button:
 	b.text = text
 	b.flat = true
 	b.focus_mode = Control.FOCUS_NONE
-	b.tooltip_text = "Kept only on this computer"
+	b.tooltip_text = L.t("Kept only on this computer")
 	for color in ["font_color", "font_hover_color", "font_pressed_color"]:
 		b.add_theme_color_override(color, Color(INK, 0.65) if color == "font_color" else OXBLOOD)
 	b.add_theme_font_size_override("font_size", int(14 * s))
@@ -140,7 +141,7 @@ func _button(text: String, main: bool) -> Button:
 ## Opens ready for a question.
 func open(course: bool) -> void:
 	_show("[b]Ask the ghost[/b]\nAnything about Godot." + (" Leave it empty if you're stuck on your lesson step." if course else "") + "\n[color=#1c221d99]Enter to ask, Esc to close.[/color]", true, false)
-	ask_button.text = "Ask"
+	ask_button.text = L.t("Ask")
 	field.text = ""
 	field.grab_focus()
 
@@ -169,7 +170,7 @@ func answered(answer: String, can_show: bool) -> void:
 	_show(answer, false, can_show)
 	rate_row.visible = true
 	following = true
-	field.placeholder_text = "Ask a follow-up…"
+	field.placeholder_text = L.t("Ask a follow-up…")
 	field.text = ""
 	field.visible = true
 	_fit()
@@ -198,7 +199,7 @@ func _hide_rating() -> void:
 ## The question stays in the field, so Ask again sends it as it was.
 func failed(why: String) -> void:
 	_show(why, false, false)
-	ask_button.text = "Ask again"
+	ask_button.text = L.t("Ask again")
 	ask_button.visible = field.text.strip_edges() != ""
 
 
@@ -211,7 +212,7 @@ func close() -> void:
 func _show(text: String, asking: bool, can_show: bool) -> void:
 	_hide_rating()
 	following = false
-	field.placeholder_text = ASKING_HINT
+	field.placeholder_text = L.t(ASKING_HINT)
 	field.visible = asking
 	ask_button.visible = asking
 	show_button.visible = can_show

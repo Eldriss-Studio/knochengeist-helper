@@ -1,5 +1,7 @@
 @tool
 extends Node
+
+const L := preload("l10n.gd")
 # Finds a newer helper on its public repo's releases, and installs it: the whole folder replaced at once.
 
 signal found(version: String, notes: String)
@@ -159,7 +161,7 @@ func _replace_folder() -> String:
 
 func _fail(said: String, logged: String) -> void:
 	Brain.log_line(logged)
-	failed.emit(said)
+	failed.emit(L.t(said))
 
 
 static func _remove(path: String) -> void:

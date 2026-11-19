@@ -1,5 +1,7 @@
 @tool
 extends Control
+
+const L := preload("l10n.gd")
 # The ghost's speech: a bone-colored card with a thin, slightly uneven carved frame and a soft
 # oxblood shadow, set in Alegreya, as in identity/README.md. It draws itself (Godot's flat style
 # boxes can't do the uneven frame) and never takes a click.
@@ -87,7 +89,7 @@ func muse() -> void:
 	musing = true
 	mused = 0.0
 	muse_from = randi() % MUSINGS.size()
-	say(MUSINGS[muse_from], wide / s)
+	say(L.t(MUSINGS[muse_from]), wide / s)
 	musing = true
 
 
@@ -117,7 +119,7 @@ func _process(delta: float) -> void:
 		var before := int(mused / 2.2)
 		mused += delta
 		if int(mused / 2.2) != before:
-			words.text = MUSINGS[(muse_from + int(mused / 2.2)) % MUSINGS.size()]
+			words.text = L.t(MUSINGS[(muse_from + int(mused / 2.2)) % MUSINGS.size()])
 	_fit()
 
 

@@ -1,0 +1,506 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: Knochengeist helper\n"
+
+msgid "%s is installed. Your first question checks that you're signed in."
+msgstr ""
+
+msgid "%s location"
+msgstr ""
+
+msgid "%s to ask."
+msgstr ""
+
+msgid "%s: %d%% used"
+msgstr ""
+
+msgid "%s: %d%% used, resets %s"
+msgstr ""
+
+msgid ", with its manual"
+msgstr ""
+
+msgid ". Couldn't fetch the manual for Godot %s, so answers use the class reference alone."
+msgstr ""
+
+msgid ". The manual for Godot %s isn't out yet, so answers use the class reference alone."
+msgstr ""
+
+msgid "5-hour limit"
+msgstr ""
+
+msgid "AI tool"
+msgstr ""
+
+msgid "API key"
+msgstr ""
+
+msgid "API key: billed per question"
+msgstr ""
+
+msgid "About Knochengeist"
+msgstr ""
+
+msgid "Allow"
+msgstr ""
+
+msgid "Allow Knochengeist to use Claude Code?"
+msgstr ""
+
+msgid "Almost have it..."
+msgstr ""
+
+msgid "Answers come from the AI tool you pick. You sign in to it with your own plan."
+msgstr ""
+
+msgid "Ask"
+msgstr ""
+
+msgid "Ask a follow-up…"
+msgstr ""
+
+msgid "Ask again"
+msgstr ""
+
+msgid "Ask the ghost"
+msgstr ""
+
+msgid "Ask the ghost about this"
+msgstr ""
+
+msgid "Asking Godot %s for its class reference…"
+msgstr ""
+
+msgid "Asking the other side..."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "ChatGPT plan"
+msgstr ""
+
+msgid "Check for updates"
+msgstr ""
+
+msgid "Checking %s…"
+msgstr ""
+
+msgid "Checking a name against your Godot…"
+msgstr ""
+
+msgid "Choose file…"
+msgstr ""
+
+msgid "Choose the %s file"
+msgstr ""
+
+msgid "Claude Code (Claude plan)"
+msgstr ""
+
+msgid "Claude Code didn't use your sign-in for this question, though it says you're signed in. This helper may need an update. Show log has the details."
+msgstr ""
+
+msgid "Claude Code isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr ""
+
+msgid "Claude Code isn't installed. Click the ghost and choose Install Claude Code… from its menu. Then sign in once, and ask again."
+msgstr ""
+
+msgid "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again."
+msgstr ""
+
+msgid "Claude Code not found"
+msgstr ""
+
+msgid "Claude Code reports a billing problem with your account. Check it at claude.ai."
+msgstr ""
+
+msgid "Claude Code sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr ""
+
+msgid "Claude Code wasn't run. Ask again to allow it."
+msgstr ""
+
+msgid "Claude Code won't start"
+msgstr ""
+
+msgid "Click to see what's wrong."
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Codex (ChatGPT plan)"
+msgstr ""
+
+msgid "Codex chooses the model. You can't change it here."
+msgstr ""
+
+msgid "Codex isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr ""
+
+msgid "Codex isn't installed. Click the ghost and choose Install Codex… from its menu. Then sign in once with codex login in a terminal, and ask again."
+msgstr ""
+
+msgid "Codex isn't signed in. Open a terminal, run codex login, and sign in. Then ask again."
+msgstr ""
+
+msgid "Codex reports a billing problem with your account. Check it at chatgpt.com."
+msgstr ""
+
+msgid "Codex sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr ""
+
+msgid "Copilot (GitHub Copilot plan)"
+msgstr ""
+
+msgid "Copilot chooses the model. You can't change it here."
+msgstr ""
+
+msgid "Copilot isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr ""
+
+msgid "Copilot isn't installed. Click the ghost and choose Install Copilot… from its menu. Then sign in once with copilot login in a terminal, and ask again."
+msgstr ""
+
+msgid "Copilot isn't signed in. Open a terminal, run copilot login, and sign in. Then ask again."
+msgstr ""
+
+msgid "Copilot reports a billing problem with your account. Check it at github.com/settings/copilot."
+msgstr ""
+
+msgid "Copilot sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Copy debug info…"
+msgstr ""
+
+msgid "Couldn't build the class reference. Show log has why."
+msgstr ""
+
+msgid "Counting my ribs..."
+msgstr ""
+
+msgid "Did this help?"
+msgstr ""
+
+msgid "Don't allow"
+msgstr ""
+
+msgid "Drifting through the manual..."
+msgstr ""
+
+msgid "Explain the last error"
+msgstr ""
+
+msgid "Fable (answers best, uses your limit fastest)"
+msgstr ""
+
+msgid "Find automatically"
+msgstr ""
+
+msgid "Found automatically."
+msgstr ""
+
+msgid "Godot docs"
+msgstr ""
+
+msgid "Haiku (lightest)"
+msgstr ""
+
+msgid "Haunting the docs..."
+msgstr ""
+
+msgid "Heads up: you've used %d%% of your %s. It resets %s."
+msgstr ""
+
+msgid "I lost track of where we were. Ask me again with %s."
+msgstr ""
+
+msgid "I'll stop here. Ask me again anytime."
+msgstr ""
+
+msgid "Include my last %d answers that didn't help"
+msgstr ""
+
+msgid "Install %s…"
+msgstr ""
+
+msgid "Install…"
+msgstr ""
+
+msgid "Kept only on this computer"
+msgstr ""
+
+msgid "Knochengeist debug info"
+msgstr ""
+
+msgid "Knochengeist didn't update"
+msgstr ""
+
+msgid "Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your %s, or from the course page when it's running."
+msgstr ""
+
+msgid "Knochengeist settings"
+msgstr ""
+
+msgid "Knochengeist updated"
+msgstr ""
+
+msgid "Knochengeist: %s."
+msgstr ""
+
+msgid "Last model: %s"
+msgstr ""
+
+msgid "Last question cost $%.4f"
+msgstr ""
+
+msgid "Later"
+msgstr ""
+
+msgid "Looking for Claude Code…"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Motion"
+msgstr ""
+
+msgid "No Claude Code at the path in Settings"
+msgstr ""
+
+msgid "Not found"
+msgstr ""
+
+msgid "Not installed yet. Click Install…, or choose its file."
+msgstr ""
+
+msgid "Not now"
+msgstr ""
+
+msgid "Not signed in to %s"
+msgstr ""
+
+msgid "Not signed in to Claude Code"
+msgstr ""
+
+msgid "Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."
+msgstr ""
+
+msgid "Open a terminal and install %s from %s. Then ask again."
+msgstr ""
+
+msgid "Open a terminal, run %s, and sign in. Then ask again."
+msgstr ""
+
+msgid "Open the course page"
+msgstr ""
+
+msgid "Opus (strong, uses your limit fast)"
+msgstr ""
+
+msgid "Peering through the walls..."
+msgstr ""
+
+msgid "Rattling my bones..."
+msgstr ""
+
+msgid "Read how it works"
+msgstr ""
+
+msgid "Reading the class reference from Godot %s…"
+msgstr ""
+
+msgid "Ready for Godot %s%s"
+msgstr ""
+
+msgid "Recent questions"
+msgstr ""
+
+msgid "Reduce motion"
+msgstr ""
+
+msgid "Reload"
+msgstr ""
+
+msgid "Report a problem"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Settings…"
+msgstr ""
+
+msgid "Show log"
+msgstr ""
+
+msgid "Show me"
+msgstr ""
+
+msgid "Sign in to %s…"
+msgstr ""
+
+msgid "Sign in…"
+msgstr ""
+
+msgid "Signed in to %s"
+msgstr ""
+
+msgid "Sonnet (suits most questions)"
+msgstr ""
+
+msgid "That didn't work. Is the course page still running?"
+msgstr ""
+
+msgid "That didn't work. Try again, or open Show log in the ghost's menu to see why."
+msgstr ""
+
+msgid "That didn't work. Try again."
+msgstr ""
+
+msgid "That was a long one. Ask me again if there's more to do."
+msgstr ""
+
+msgid "The 5-hour window"
+msgstr ""
+
+msgid "The CC BY 3.0 license"
+msgstr ""
+
+msgid "The Godot manual pages: CC BY 3.0, by Juan Linietsky, Ariel Manzur and the Godot community."
+msgstr ""
+
+msgid "The course page and Knochengeist are different versions. Choose Project > Reload Current Project."
+msgstr ""
+
+msgid "The ghost jumps to where it points instead of flying. It stays still while it thinks."
+msgstr ""
+
+msgid "The ghost uses these Godot docs to check its answers. They're saved on this computer."
+msgstr ""
+
+msgid "The update couldn't be installed, so nothing changed."
+msgstr ""
+
+msgid "The update didn't download correctly, so nothing changed."
+msgstr ""
+
+msgid "The update didn't download, so nothing changed. Try again later."
+msgstr ""
+
+msgid "There's no file at this location. Choose another file, or use Find automatically."
+msgstr ""
+
+msgid "This week"
+msgstr ""
+
+msgid "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+msgstr ""
+
+msgid "Try again"
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Update Knochengeist"
+msgstr ""
+
+msgid "Update to version %s…"
+msgstr ""
+
+msgid "Updates"
+msgstr ""
+
+msgid "Using Claude Code"
+msgstr ""
+
+msgid "Using the course page"
+msgstr ""
+
+msgid "Version %s is installed. Reload the project to use it."
+msgstr ""
+
+msgid "Version %s is out. You have version %s.\n\nWhat's new:\n%s\n\nUpdating replaces the helper's folder, then asks you to reload the project."
+msgstr ""
+
+msgid "What Knochengeist sends"
+msgstr ""
+
+msgid "What is a shader? Where do I add a node?"
+msgstr ""
+
+msgid "What it sends to %s"
+msgstr ""
+
+msgid "What was wrong? (optional)"
+msgstr ""
+
+msgid "What's new in each version"
+msgstr ""
+
+msgid "With %d selected line."
+msgid_plural "With %d selected lines."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "With the error and %s."
+msgstr ""
+
+msgid "With the error."
+msgstr ""
+
+msgid "You chose this file."
+msgstr ""
+
+msgid "You've reached your ChatGPT plan's usage limit for Codex. Try again later."
+msgstr ""
+
+msgid "You've reached your Claude plan's limit. Try again later."
+msgstr ""
+
+msgid "You've used all of your Claude plan's %s. It resets %s."
+msgstr ""
+
+msgid "You've used all of your Copilot plan for now. Wait a bit, then ask again."
+msgstr ""
+
+msgid "Your game hit an error. Click me to have it explained."
+msgstr ""
+
+msgid "[b]I'm here.[/b] Press %s to ask me anything about Godot, and I'll show you where to click."
+msgstr ""
+
+msgid "[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it."
+msgstr ""
+
+msgid "in %d days"
+msgstr ""
+
+msgid "in %d minute"
+msgid_plural "in %d minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "in about %d hours"
+msgstr ""
+
+msgid "in about an hour"
+msgstr ""
+
+msgid "line %d of %s"
+msgstr ""
+
+msgid "tomorrow"
+msgstr ""
+
+msgid "weekly limit"
+msgstr ""

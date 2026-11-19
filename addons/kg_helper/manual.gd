@@ -1,5 +1,7 @@
 @tool
 extends Node
+
+const L := preload("l10n.gd")
 # Godot's manual (the how-to pages, not the class reference) for the Godot that's running: built
 # nightly from godot-docs into the public repo's releases, downloaded once per minor version, checked
 # against the release's digest, then kept. By Juan Linietsky, Ariel Manzur and the Godot community,
@@ -161,11 +163,11 @@ func search(question: String, k := 3) -> Array:
 func status() -> String:
 	match state:
 		"ready":
-			return ", with its manual"
+			return L.t(", with its manual")
 		"not out":
-			return ". The manual for Godot %s isn't out yet, so answers use the class reference alone." % minor
+			return L.t(". The manual for Godot %s isn't out yet, so answers use the class reference alone.") % minor
 		"failed":
-			return ". Couldn't fetch the manual for Godot %s, so answers use the class reference alone." % minor
+			return L.t(". Couldn't fetch the manual for Godot %s, so answers use the class reference alone.") % minor
 		"fetching", "loading":
 			return ". Getting the manual for Godot %s…" % minor
 	return ""

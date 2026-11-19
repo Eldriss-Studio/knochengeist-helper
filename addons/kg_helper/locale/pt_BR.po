@@ -1,0 +1,507 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "%s is installed. Your first question checks that you're signed in."
+msgstr "O %s está instalado. Sua primeira pergunta confere se você está conectado."
+
+msgid "%s location"
+msgstr "Local do %s"
+
+msgid "%s to ask."
+msgstr "%s para perguntar."
+
+msgid "%s: %d%% used"
+msgstr "%s: %d%% usado"
+
+msgid "%s: %d%% used, resets %s"
+msgstr "%s: %d%% usado, renova %s"
+
+msgid ", with its manual"
+msgstr ", com o manual"
+
+msgid ". Couldn't fetch the manual for Godot %s, so answers use the class reference alone."
+msgstr ". Não deu para baixar o manual do Godot %s, então as respostas usam só a referência de classe."
+
+msgid ". The manual for Godot %s isn't out yet, so answers use the class reference alone."
+msgstr ". O manual do Godot %s ainda não saiu, então as respostas usam só a referência de classe."
+
+msgid "5-hour limit"
+msgstr "limite de 5 horas"
+
+msgid "AI tool"
+msgstr "Ferramenta de IA"
+
+msgid "API key"
+msgstr "Chave de API"
+
+msgid "API key: billed per question"
+msgstr "Chave de API: cobrança por pergunta"
+
+msgid "About Knochengeist"
+msgstr "Sobre o Knochengeist"
+
+msgid "Allow"
+msgstr "Permitir"
+
+msgid "Allow Knochengeist to use Claude Code?"
+msgstr "Permitir que o Knochengeist use o Claude Code?"
+
+msgid "Almost have it..."
+msgstr "Quase lá..."
+
+msgid "Answers come from the AI tool you pick. You sign in to it with your own plan."
+msgstr "As respostas vêm da ferramenta de IA que você escolher. Você entra nela com o seu próprio plano."
+
+msgid "Ask"
+msgstr "Perguntar"
+
+msgid "Ask a follow-up…"
+msgstr "Pergunte mais alguma coisa…"
+
+msgid "Ask again"
+msgstr "Perguntar de novo"
+
+msgid "Ask the ghost"
+msgstr "Perguntar ao fantasma"
+
+msgid "Ask the ghost about this"
+msgstr "Perguntar ao fantasma sobre isto"
+
+msgid "Asking Godot %s for its class reference…"
+msgstr "Pedindo a referência de classe ao Godot %s…"
+
+msgid "Asking the other side..."
+msgstr "Consultando o outro lado..."
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "ChatGPT plan"
+msgstr "Plano ChatGPT"
+
+msgid "Check for updates"
+msgstr "Procurar atualizações"
+
+msgid "Checking %s…"
+msgstr "Verificando o %s…"
+
+msgid "Checking a name against your Godot…"
+msgstr "Conferindo um nome no seu Godot…"
+
+msgid "Choose file…"
+msgstr "Escolher arquivo…"
+
+msgid "Choose the %s file"
+msgstr "Escolha o arquivo do %s"
+
+msgid "Claude Code (Claude plan)"
+msgstr "Claude Code (plano Claude)"
+
+msgid "Claude Code sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr "O Claude Code mandou uma resposta que o Knochengeist ainda não consegue ler. Atualize o Knochengeist ou abra Mostrar log para ver o que ele disse."
+
+msgid "Claude Code didn't use your sign-in for this question, though it says you're signed in. This helper may need an update. Show log has the details."
+msgstr "O Claude Code não usou a sua conta nesta pergunta, mesmo dizendo que você está conectado. Este assistente pode precisar de uma atualização. Os detalhes estão em Mostrar log."
+
+msgid "Claude Code isn't installed. Click the ghost and choose Install Claude Code… from its menu. Then sign in once, and ask again."
+msgstr "O Claude Code não está instalado. Clique no fantasma e escolha Instalar Claude Code… no menu dele. Depois entre na sua conta uma vez e pergunte de novo."
+
+msgid "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again."
+msgstr "O Claude Code não está conectado à sua conta. Abra um terminal, rode claude e entre na sua conta. Depois pergunte de novo."
+
+msgid "Claude Code not found"
+msgstr "Claude Code não encontrado"
+
+msgid "Claude Code reports a billing problem with your account. Check it at claude.ai."
+msgstr "O Claude Code avisa que há um problema de cobrança na sua conta. Confira em claude.ai."
+
+msgid "Claude Code wasn't run. Ask again to allow it."
+msgstr "O Claude Code não foi executado. Pergunte de novo para permitir."
+
+msgid "Claude Code won't start"
+msgstr "O Claude Code não inicia"
+
+msgid "Click to see what's wrong."
+msgstr "Clique para ver o que houve."
+
+msgid "Close"
+msgstr "Fechar"
+
+msgid "Codex (ChatGPT plan)"
+msgstr "Codex (plano ChatGPT)"
+
+msgid "Codex sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr "O Codex mandou uma resposta que o Knochengeist ainda não consegue ler. Atualize o Knochengeist ou abra Mostrar log para ver o que ele disse."
+
+msgid "Codex chooses the model. You can't change it here."
+msgstr "O Codex escolhe o modelo. Não dá para mudar aqui."
+
+msgid "Codex isn't installed. Click the ghost and choose Install Codex… from its menu. Then sign in once with codex login in a terminal, and ask again."
+msgstr "O Codex não está instalado. Clique no fantasma e escolha Instalar Codex… no menu dele. Depois entre na sua conta uma vez com codex login num terminal e pergunte de novo."
+
+msgid "Codex isn't signed in. Open a terminal, run codex login, and sign in. Then ask again."
+msgstr "O Codex não está conectado à sua conta. Abra um terminal, rode codex login e entre na sua conta. Depois pergunte de novo."
+
+msgid "Codex reports a billing problem with your account. Check it at chatgpt.com."
+msgstr "O Codex avisa que há um problema de cobrança na sua conta. Confira em chatgpt.com."
+
+msgid "Copilot (GitHub Copilot plan)"
+msgstr "Copilot (plano GitHub Copilot)"
+
+msgid "Copilot sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said."
+msgstr "O Copilot mandou uma resposta que o Knochengeist ainda não consegue ler. Atualize o Knochengeist ou abra Mostrar log para ver o que ele disse."
+
+msgid "Copilot chooses the model. You can't change it here."
+msgstr "O Copilot escolhe o modelo. Não dá para mudar aqui."
+
+msgid "Copilot isn't installed. Click the ghost and choose Install Copilot… from its menu. Then sign in once with copilot login in a terminal, and ask again."
+msgstr "O Copilot não está instalado. Clique no fantasma e escolha Instalar Copilot… no menu dele. Depois entre na sua conta uma vez com copilot login num terminal e pergunte de novo."
+
+msgid "Copilot isn't signed in. Open a terminal, run copilot login, and sign in. Then ask again."
+msgstr "O Copilot não está conectado à sua conta. Abra um terminal, rode copilot login e entre na sua conta. Depois pergunte de novo."
+
+msgid "Copilot reports a billing problem with your account. Check it at github.com/settings/copilot."
+msgstr "O Copilot avisa que há um problema de cobrança na sua conta. Confira em github.com/settings/copilot."
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Copy debug info…"
+msgstr "Copiar informações de depuração…"
+
+msgid "Couldn't build the class reference. Show log has why."
+msgstr "Não deu para montar a referência de classe. O motivo está em Mostrar log."
+
+msgid "Counting my ribs..."
+msgstr "Contando minhas costelas..."
+
+msgid "Did this help?"
+msgstr "Isso ajudou?"
+
+msgid "Don't allow"
+msgstr "Não permitir"
+
+msgid "Drifting through the manual..."
+msgstr "Flutuando pelo manual..."
+
+msgid "Explain the last error"
+msgstr "Explicar o último erro"
+
+msgid "Fable (answers best, uses your limit fastest)"
+msgstr "Fable (responde melhor, gasta o seu limite mais rápido)"
+
+msgid "Find automatically"
+msgstr "Encontrar automaticamente"
+
+msgid "Found automatically."
+msgstr "Encontrado automaticamente."
+
+msgid "Godot docs"
+msgstr "Documentação do Godot"
+
+msgid "Haiku (lightest)"
+msgstr "Haiku (mais leve)"
+
+msgid "Haunting the docs..."
+msgstr "Assombrando a documentação..."
+
+msgid "Heads up: you've used %d%% of your %s. It resets %s."
+msgstr "Atenção: você já usou %d%% do seu %s. Ele renova %s."
+
+msgid "I lost track of where we were. Ask me again with %s."
+msgstr "Perdi o fio da meada. Pergunte de novo com %s."
+
+msgid "I'll stop here. Ask me again anytime."
+msgstr "Vou parar por aqui. Pode perguntar de novo quando quiser."
+
+msgid "Include my last %d answers that didn't help"
+msgstr "Incluir minhas últimas %d respostas que não ajudaram"
+
+msgid "Install %s…"
+msgstr "Instalar %s…"
+
+msgid "Install…"
+msgstr "Instalar…"
+
+msgid "Kept only on this computer"
+msgstr "Fica só neste computador"
+
+msgid "Knochengeist debug info"
+msgstr "Informações de depuração do Knochengeist"
+
+msgid "Knochengeist didn't update"
+msgstr "O Knochengeist não foi atualizado"
+
+msgid "Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your %s, or from the course page when it's running."
+msgstr "Assistente do Knochengeist, versão %s.\nPergunte qualquer coisa sobre o Godot com %s. As respostas vêm do seu %s, ou da página do curso quando ela está rodando."
+
+msgid "Knochengeist settings"
+msgstr "Configurações do Knochengeist"
+
+msgid "Knochengeist updated"
+msgstr "Knochengeist atualizado"
+
+msgid "Knochengeist: %s."
+msgstr "Knochengeist: %s."
+
+msgid "Last model: %s"
+msgstr "Último modelo: %s"
+
+msgid "Last question cost $%.4f"
+msgstr "A última pergunta custou US$ %.4f"
+
+msgid "Later"
+msgstr "Depois"
+
+msgid "Looking for Claude Code…"
+msgstr "Procurando o Claude Code…"
+
+msgid "Model"
+msgstr "Modelo"
+
+msgid "Motion"
+msgstr "Movimento"
+
+msgid "No Claude Code at the path in Settings"
+msgstr "Nenhum Claude Code no caminho das Configurações"
+
+msgid "Not found"
+msgstr "Não encontrado"
+
+msgid "Not installed yet. Click Install…, or choose its file."
+msgstr "Ainda não está instalado. Clique em Instalar… ou escolha o arquivo dele."
+
+msgid "Not now"
+msgstr "Agora não"
+
+msgid "Not signed in to %s"
+msgstr "Não conectado ao %s"
+
+msgid "Not signed in to Claude Code"
+msgstr "Não conectado ao Claude Code"
+
+msgid "Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."
+msgstr "Uma vez por dia, o Knochengeist procura uma versão nova no GitHub. Se tiver, ela aparece no menu do fantasma. Nada é instalado se você não escolher."
+
+msgid "Open a terminal and install %s from %s. Then ask again."
+msgstr "Abra um terminal e instale o %s de %s. Depois pergunte de novo."
+
+msgid "Open a terminal, run %s, and sign in. Then ask again."
+msgstr "Abra um terminal, rode %s e entre na sua conta. Depois pergunte de novo."
+
+msgid "Open the course page"
+msgstr "Abrir a página do curso"
+
+msgid "Opus (strong, uses your limit fast)"
+msgstr "Opus (forte, gasta o seu limite rápido)"
+
+msgid "Peering through the walls..."
+msgstr "Espiando através das paredes..."
+
+msgid "Rattling my bones..."
+msgstr "Chacoalhando os ossos..."
+
+msgid "Read how it works"
+msgstr "Ler como funciona"
+
+msgid "Reading the class reference from Godot %s…"
+msgstr "Lendo a referência de classe do Godot %s…"
+
+msgid "Ready for Godot %s%s"
+msgstr "Pronto para o Godot %s%s"
+
+msgid "Recent questions"
+msgstr "Perguntas recentes"
+
+msgid "Reduce motion"
+msgstr "Reduzir movimento"
+
+msgid "Reload"
+msgstr "Recarregar"
+
+msgid "Report a problem"
+msgstr "Relatar um problema"
+
+msgid "Save"
+msgstr "Salvar"
+
+msgid "Settings…"
+msgstr "Configurações…"
+
+msgid "Show log"
+msgstr "Mostrar log"
+
+msgid "Show me"
+msgstr "Me mostre"
+
+msgid "Sign in to %s…"
+msgstr "Entrar no %s…"
+
+msgid "Sign in…"
+msgstr "Entrar…"
+
+msgid "Signed in to %s"
+msgstr "Conectado ao %s"
+
+msgid "Sonnet (suits most questions)"
+msgstr "Sonnet (serve para a maioria das perguntas)"
+
+msgid "That didn't work. Is the course page still running?"
+msgstr "Não deu certo. A página do curso ainda está rodando?"
+
+msgid "That didn't work. Try again, or open Show log in the ghost's menu to see why."
+msgstr "Não deu certo. Tente de novo ou abra Mostrar log no menu do fantasma para ver o motivo."
+
+msgid "That didn't work. Try again."
+msgstr "Não deu certo. Tente de novo."
+
+msgid "That was a long one. Ask me again if there's more to do."
+msgstr "Essa foi longa. Pergunte de novo se ainda tiver algo a fazer."
+
+msgid "The 5-hour window"
+msgstr "A janela de 5 horas"
+
+msgid "The CC BY 3.0 license"
+msgstr "A licença CC BY 3.0"
+
+msgid "The Godot manual pages: CC BY 3.0, by Juan Linietsky, Ariel Manzur and the Godot community."
+msgstr "As páginas do manual do Godot: CC BY 3.0, por Juan Linietsky, Ariel Manzur e a comunidade Godot."
+
+msgid "The course page and Knochengeist are different versions. Choose Project > Reload Current Project."
+msgstr "A página do curso e o Knochengeist estão em versões diferentes. Escolha Projeto > Recarregar Projeto Atual."
+
+msgid "The ghost jumps to where it points instead of flying. It stays still while it thinks."
+msgstr "O fantasma pula direto para onde aponta, em vez de voar. Ele fica parado enquanto pensa."
+
+msgid "The ghost uses these Godot docs to check its answers. They're saved on this computer."
+msgstr "O fantasma usa esta documentação do Godot para conferir as respostas. Ela fica salva neste computador."
+
+msgid "The update couldn't be installed, so nothing changed."
+msgstr "Não deu para instalar a atualização, então nada mudou."
+
+msgid "The update didn't download correctly, so nothing changed."
+msgstr "A atualização não baixou direito, então nada mudou."
+
+msgid "The update didn't download, so nothing changed. Try again later."
+msgstr "A atualização não baixou, então nada mudou. Tente de novo mais tarde."
+
+msgid "Claude Code isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr "O Claude Code não está no arquivo que você escolheu. Abra Configurações no menu do fantasma e escolha o arquivo dele de novo, ou use Encontrar automaticamente."
+
+msgid "Codex isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr "O Codex não está no arquivo que você escolheu. Abra Configurações no menu do fantasma e escolha o arquivo dele de novo, ou use Encontrar automaticamente."
+
+msgid "Copilot isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically."
+msgstr "O Copilot não está no arquivo que você escolheu. Abra Configurações no menu do fantasma e escolha o arquivo dele de novo, ou use Encontrar automaticamente."
+
+msgid "There's no file at this location. Choose another file, or use Find automatically."
+msgstr "Não tem nenhum arquivo neste local. Escolha outro arquivo ou use Encontrar automaticamente."
+
+msgid "This week"
+msgstr "Esta semana"
+
+msgid "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+msgstr "Para responder, o Knochengeist roda o seu Claude Code neste computador.\n\nA cada pergunta, ele envia para Anthropic, usando a sua conta:\n• a sua pergunta\n• o nome do arquivo da cena aberta e o nó selecionado\n• os nomes do que está na sua tela no Godot: botões, nós no painel Cena, arquivos e pastas em listas, propriedades do Inspetor e dicas em caixas de texto\n• durante um passo a passo, o que você clicou e digitou nas caixas que ele apontou\n• quando você pergunta sobre algo em que clicou com o botão direito: o nome, ou o código que você selecionou\n• numa pergunta de continuação, suas últimas perguntas e respostas naquela conversa\n• quando a sua pergunta cita algo do Godot, as páginas de referência disso, tiradas do seu próprio Godot\n• quando você pergunta sobre um erro do seu jogo: o texto do erro e as linhas do script em volta dele\n\nEle nunca envia a sua senha nem os seus dados de login, e não envia mais nada.\n\nÀ parte disso, uma vez por dia ele pergunta ao GitHub se saiu um assistente mais novo (dá para desligar isso nas Configurações), e uma vez por versão do Godot ele baixa o manual do Godot do GitHub."
+
+msgid "Try again"
+msgstr "Tentar de novo"
+
+msgid "Update"
+msgstr "Atualizar"
+
+msgid "Update Knochengeist"
+msgstr "Atualizar o Knochengeist"
+
+msgid "Update to version %s…"
+msgstr "Atualizar para a versão %s…"
+
+msgid "Updates"
+msgstr "Atualizações"
+
+msgid "Using Claude Code"
+msgstr "Usando o Claude Code"
+
+msgid "Using the course page"
+msgstr "Usando a página do curso"
+
+msgid "Version %s is installed. Reload the project to use it."
+msgstr "A versão %s está instalada. Recarregue o projeto para usá-la."
+
+msgid "Version %s is out. You have version %s.\n\nWhat's new:\n%s\n\nUpdating replaces the helper's folder, then asks you to reload the project."
+msgstr "Saiu a versão %s. Você tem a versão %s.\n\nO que há de novo:\n%s\n\nAtualizar troca a pasta do assistente e depois pede para você recarregar o projeto."
+
+msgid "What Knochengeist sends"
+msgstr "O que o Knochengeist envia"
+
+msgid "What is a shader? Where do I add a node?"
+msgstr "O que é um shader? Onde eu adiciono um nó?"
+
+msgid "What it sends to %s"
+msgstr "O que ele envia para %s"
+
+msgid "What was wrong? (optional)"
+msgstr "O que estava errado? (opcional)"
+
+msgid "What's new in each version"
+msgstr "O que há de novo em cada versão"
+
+msgid "With %d selected line."
+msgid_plural "With %d selected lines."
+msgstr[0] "Com %d linha selecionada."
+msgstr[1] "Com %d linhas selecionadas."
+
+msgid "With the error and %s."
+msgstr "Com o erro e a %s."
+
+msgid "With the error."
+msgstr "Com o erro."
+
+msgid "You chose this file."
+msgstr "Você escolheu este arquivo."
+
+msgid "You've reached your ChatGPT plan's usage limit for Codex. Try again later."
+msgstr "Você atingiu o limite de uso do seu plano ChatGPT para o Codex. Tente de novo mais tarde."
+
+msgid "You've reached your Claude plan's limit. Try again later."
+msgstr "Você atingiu o limite do seu plano Claude. Tente de novo mais tarde."
+
+msgid "You've used all of your Copilot plan for now. Wait a bit, then ask again."
+msgstr "Você já usou todo o seu plano Copilot por enquanto. Espere um pouco e pergunte de novo."
+
+msgid "You've used all of your Claude plan's %s. It resets %s."
+msgstr "Você já usou todo o %s do seu plano Claude. Ele renova %s."
+
+msgid "Your game hit an error. Click me to have it explained."
+msgstr "Seu jogo deu erro. Clique em mim para eu explicar."
+
+msgid "[b]I'm here.[/b] Press %s to ask me anything about Godot, and I'll show you where to click."
+msgstr "[b]Estou aqui.[/b] Aperte %s para me perguntar qualquer coisa sobre o Godot, e eu mostro onde clicar."
+
+msgid "in %d days"
+msgstr "em %d dias"
+
+msgid "in %d minute"
+msgid_plural "in %d minutes"
+msgstr[0] "em %d minuto"
+msgstr[1] "em %d minutos"
+
+msgid "in about %d hours"
+msgstr "em cerca de %d horas"
+
+msgid "in about an hour"
+msgstr "em cerca de uma hora"
+
+msgid "line %d of %s"
+msgstr "linha %d de %s"
+
+msgid "tomorrow"
+msgstr "amanhã"
+
+msgid "weekly limit"
+msgstr "limite semanal"
+
+msgid "[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it."
+msgstr "[b]Estou aqui[/b], mas há um problema: %s. Clique no fantasma acima para resolver."

@@ -1,6 +1,8 @@
 @tool
 extends RefCounted
 
+const L := preload("l10n.gd")
+
 const Brain := preload("brain.gd")
 
 enum { STATE, WHERE, INSTALL, SIGN_IN, ASK, SETTINGS, SHOW_LOGS, DEBUG_INFO, ABOUT, COURSE_PAGE, UPDATE, EXPLAIN_ERROR }
@@ -31,17 +33,17 @@ static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: 
 		_line(menu, short_path(claude_path), WHERE)
 	menu.add_separator()
 	if update_to != "":
-		menu.add_item("Update to version %s…" % update_to, UPDATE)
+		menu.add_item(L.t("Update to version %s…") % update_to, UPDATE)
 	if not course_up and claude == "missing":
-		menu.add_item("Install %s…" % Brain.tool_name(), INSTALL)
+		menu.add_item(L.t("Install %s…") % Brain.tool_name(), INSTALL)
 	if not course_up and claude == "signed_out":
-		menu.add_item("Sign in to %s…" % Brain.tool_name(), SIGN_IN)
-	menu.add_item("Ask the ghost", ASK)
+		menu.add_item(L.t("Sign in to %s…") % Brain.tool_name(), SIGN_IN)
+	menu.add_item(L.t("Ask the ghost"), ASK)
 	var shortcuts := EditorInterface.get_editor_settings()
 	if shortcuts.has_shortcut(ASK_SHORTCUT):
 		menu.set_item_shortcut(menu.get_item_index(ASK), shortcuts.get_shortcut(ASK_SHORTCUT))
 	if has_error:
-		menu.add_item("Explain the last error", EXPLAIN_ERROR)
+		menu.add_item(L.t("Explain the last error"), EXPLAIN_ERROR)
 	if not recent.is_empty():
 		var past: PopupMenu = menu.get_node_or_null("Recent")
 		if past == null:
@@ -53,14 +55,14 @@ static func fill(menu: PopupMenu, course_up: bool, claude: String, claude_path: 
 			past.add_item(recent[i] if recent[i].length() <= RECENT_CHARS else recent[i].left(RECENT_CHARS - 1).strip_edges() + "…", i)
 		if show_past.is_valid() and not past.id_pressed.is_connected(show_past):
 			past.id_pressed.connect(show_past)
-		menu.add_submenu_node_item("Recent questions", past)
-	menu.add_item("Settings…", SETTINGS)
-	menu.add_item("Show log", SHOW_LOGS)
-	menu.add_item("Copy debug info…", DEBUG_INFO)
-	menu.add_item("About Knochengeist", ABOUT)
+		menu.add_submenu_node_item(L.t("Recent questions"), past)
+	menu.add_item(L.t("Settings…"), SETTINGS)
+	menu.add_item(L.t("Show log"), SHOW_LOGS)
+	menu.add_item(L.t("Copy debug info…"), DEBUG_INFO)
+	menu.add_item(L.t("About Knochengeist"), ABOUT)
 	if course_up:
 		menu.add_separator()
-		menu.add_item("Open the course page", COURSE_PAGE)
+		menu.add_item(L.t("Open the course page"), COURSE_PAGE)
 
 
 static func _line(menu: PopupMenu, text: String, id: int) -> void:
@@ -79,8 +81,9 @@ static func short_path(path: String) -> String:
 	return "…" + slash + slash.join(parts.slice(parts.size() - 2))
 
 
-static func state(course_up: bool, claude: String) -> String:
-	return "Using the course page" if course_up else LINES.get(claude, LINES["checking"]).replace("Claude Code", Brain.tool_name())
+## The line that says what's answering. `tool_name` names another tool than the one in use (Settings).
+static func state(course_up: bool, claude: String, tool_name := "") -> String:
+	return L.t("Using the course page") if course_up else L.t(LINES.get(claude, LINES["checking"])).replace("Claude Code", tool_name if tool_name != "" else Brain.tool_name())
 
 
 static func can_answer(course_up: bool, claude: String) -> bool:

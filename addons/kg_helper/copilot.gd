@@ -17,7 +17,7 @@ const MODEL_SETTING := "knochengeist/copilot_model"
 const ENV := "KG_HELPER_COPILOT"
 const COMMAND := "copilot"
 const INSTALL_PAGE := "https://docs.github.com/en/copilot/how-tos/copilot-cli"
-const INSTALL_HINT := "Not installed yet. Use Install… above, or choose where it is."
+const INSTALL_HINT := "Not installed yet. Click Install…, or choose its file."
 const LOGIN_HINT := "copilot login"
 const AUTH_ARGS := []                # no free check: checking while signed in would spend a request
 const CHECKS_SIGN_IN := false
@@ -27,11 +27,11 @@ const MODELS := []                   # Free plans can only use Auto, so the help
 const REPORTS_RESETS := false
 const SIGN_IN_CAN_BE_SKIPPED := false
 const PROBLEMS := {
-	"missing": "Copilot isn't installed. Pick Install Copilot… in the ghost's menu, sign in with copilot login, then ask again.",
+	"missing": "Copilot isn't installed. Click the ghost and choose Install Copilot… from its menu. Then sign in once with copilot login in a terminal, and ask again.",
 	"signed_out": "Copilot isn't signed in. Open a terminal, run copilot login, and sign in. Then ask again.",
-	"limit": "You've reached your Copilot plan's limit for now. Try again later.",
-	"not_there": "There's no Copilot at the path in Settings. Open Settings in the ghost's menu to change it.",
-	"unknown": "Copilot answered in a format this helper doesn't understand. This helper may need an update. Show log has what it said.",
+	"limit": "You've used all of your Copilot plan for now. Wait a bit, then ask again.",
+	"not_there": "Copilot isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically.",
+	"unknown": "Copilot sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said.",
 	"billing": "Copilot reports a billing problem with your account. Check it at github.com/settings/copilot.",
 }
 const NO_TOOLS := ["--output-format", "json", "--available-tools=", "--deny-tool=shell,write,read,url,memory",

@@ -1,6 +1,8 @@
 @tool
 extends AcceptDialog
 
+const L := preload("l10n.gd")
+
 const Brain := preload("brain.gd")
 const Updates := preload("updates.gd")
 const Menu := preload("menu.gd")
@@ -40,9 +42,9 @@ signal install(tool: GDScript)
 
 
 func _init(brain = null, claude_state := "", docs = null) -> void:
-	title = "Knochengeist settings"
-	ok_button_text = "Save"
-	add_cancel_button("Cancel")
+	title = L.t("Knochengeist settings")
+	ok_button_text = L.t("Save")
+	add_cancel_button(L.t("Cancel"))
 	s = EditorInterface.get_editor_scale()
 	var box := VBoxContainer.new()
 	box.custom_minimum_size = Vector2(WIDTH, 0) * s
@@ -50,23 +52,23 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	brain_ref = brain
 	tool_state = claude_state
 	picked = Brain.adapter()
-	box.add_child(_heading("AI tool"))
+	box.add_child(_heading(L.t("AI tool")))
 	tool_list = OptionButton.new()
 	for id in Brain.TOOLS:
-		tool_list.add_item(Brain.TOOLS[id].LABEL)    # each says the plan it runs on
+		tool_list.add_item(L.t(Brain.TOOLS[id].LABEL))    # each says the plan it runs on
 	tool_list.select(Brain.TOOLS.keys().find(Brain.tool()))
 	tool_list.item_selected.connect(func(i: int): _pick(Brain.TOOLS.values()[i]))
 	box.add_child(tool_list)
 	status_box = VBoxContainer.new()
 	status_box.add_theme_constant_override("separation", int(GAP * s))
 	box.add_child(status_box)
-	box.add_child(_quiet("Answers come from the AI tool you pick. You sign in to it with your own plan."))
+	box.add_child(_quiet(L.t("Answers come from the AI tool you pick. You sign in to it with your own plan.")))
 	if brain:
 		brain.checked.connect(func(state: String, _path: String):
 			tool_state = state
 			if is_instance_valid(status_box):
 				_show_status())
-	box.add_child(_heading("Model"))
+	box.add_child(_heading(L.t("Model")))
 	model_list = OptionButton.new()
 	box.add_child(model_list)
 	model_hint = _quiet("")
@@ -82,28 +84,28 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_child(how)
 	var row := HBoxContainer.new()
 	var change := Button.new()
-	change.text = "Choose file…"
+	change.text = L.t("Choose file…")
 	change.pressed.connect(_browse)
 	row.add_child(change)
 	automatic = Button.new()
-	automatic.text = "Find automatically"
+	automatic.text = L.t("Find automatically")
 	automatic.pressed.connect(func():
 		chosen_path = ""
 		_show_found())
 	row.add_child(automatic)
 	box.add_child(row)
 	less_motion = CheckBox.new()
-	less_motion.text = "Reduce motion"
+	less_motion.text = L.t("Reduce motion")
 	less_motion.button_pressed = Brain.less_motion()
-	box.add_child(_heading("Motion"))
+	box.add_child(_heading(L.t("Motion")))
 	box.add_child(less_motion)
-	box.add_child(_quiet("The ghost jumps to where it points instead of flying. It stays still while it thinks."))
+	box.add_child(_quiet(L.t("The ghost jumps to where it points instead of flying. It stays still while it thinks.")))
 	check_updates = CheckBox.new()
-	check_updates.text = "Check for updates"
+	check_updates.text = L.t("Check for updates")
 	check_updates.button_pressed = Updates.on()
-	box.add_child(_heading("Updates"))
+	box.add_child(_heading(L.t("Updates")))
 	box.add_child(check_updates)
-	box.add_child(_quiet("Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."))
+	box.add_child(_quiet(L.t("Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it.")))
 	add_child(box)
 	confirmed.connect(_save)
 	_pick(picked)
@@ -124,7 +126,7 @@ func _pick(tool: GDScript) -> void:
 				_show_status())
 		preview.check()
 	chosen_path = Brain.saved_setting(picked.PATH_SETTING)
-	where_heading.text = "%s location" % picked.NAME
+	where_heading.text = L.t("%s location") % picked.NAME
 	_show_status()
 	_show_model()
 	_show_found()
@@ -142,10 +144,10 @@ func _show_status() -> void:
 	var source = brain_ref if in_use else preview
 	var state := tool_state if in_use else preview_state
 	var lines: PackedStringArray = source.plan_lines()
-	var text: String = STATUS_WORDS.get(state, "")
+	var text: String = L.t(STATUS_WORDS.get(state, ""))
 	if state == "ready" and not picked.CHECKS_SIGN_IN:
-		text = UNCHECKED_SIGN_IN
-	text = text % tool_name if text != "" else Menu.state(false, state)
+		text = L.t(UNCHECKED_SIGN_IN)
+	text = text % tool_name if text != "" else Menu.state(false, state, tool_name)
 	var row := HBoxContainer.new()
 	var icon := TextureRect.new()
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
@@ -158,12 +160,12 @@ func _show_status() -> void:
 	row.add_child(status)
 	if state == "missing":
 		var install_button := Button.new()
-		install_button.text = "Install…"
+		install_button.text = L.t("Install…")
 		install_button.pressed.connect(func(): install.emit(picked))
 		row.add_child(install_button)
 	if state == "signed_out":
 		var button := Button.new()
-		button.text = "Sign in…"
+		button.text = L.t("Sign in…")
 		button.pressed.connect(func(): sign_in.emit(picked))
 		row.add_child(button)
 	if state == "ready" and not lines.is_empty():
@@ -192,9 +194,9 @@ func _show_model() -> void:
 	var models: Array = picked.MODELS
 	model_list.visible = not models.is_empty()
 	model_hint.visible = models.is_empty()
-	model_hint.text = picked.MODEL_HINT if models.is_empty() else ""
+	model_hint.text = L.t(picked.MODEL_HINT) if models.is_empty() else ""
 	for id in models:
-		model_list.add_item(MODEL_NAMES.get(id, id.capitalize()))     # each says what it's for, in the list itself
+		model_list.add_item(L.t(MODEL_NAMES.get(id, id.capitalize())))     # each says what it's for, in the list itself
 	if not models.is_empty():
 		model_list.select(maxi(0, models.find(picked.model_from(Brain.saved_setting(picked.MODEL_SETTING)))))
 
@@ -228,11 +230,11 @@ func _show_found() -> void:
 	automatic.visible = chosen_path != ""
 	if chosen_path != "":
 		where.text = Brain._short(chosen_path)
-		how.text = "You chose this file." if FileAccess.file_exists(chosen_path) else "There's no file at this location. Choose another file, or use Find automatically."
+		how.text = L.t("You chose this file.") if FileAccess.file_exists(chosen_path) else L.t("There's no file at this location. Choose another file, or use Find automatically.")
 		return
 	var at := Brain.find_for(picked)
-	where.text = Brain._short(at) if at != "" else "Not found"
-	how.text = "Found automatically." if at != "" else picked.INSTALL_HINT
+	where.text = Brain._short(at) if at != "" else L.t("Not found")
+	how.text = L.t("Found automatically.") if at != "" else L.t(picked.INSTALL_HINT)
 
 
 func _browse() -> void:
@@ -240,7 +242,7 @@ func _browse() -> void:
 		pick = EditorFileDialog.new()
 		pick.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
 		pick.access = EditorFileDialog.ACCESS_FILESYSTEM
-		pick.title = "Choose the %s file" % picked.NAME
+		pick.title = L.t("Choose the %s file") % picked.NAME
 		pick.file_selected.connect(func(path: String):
 			chosen_path = path
 			_show_found())
@@ -268,7 +270,7 @@ var docs_retry: Button
 
 func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	docs_node = docs
-	box.add_child(_heading("Godot docs"))
+	box.add_child(_heading(L.t("Godot docs")))
 	var row := HBoxContainer.new()
 	docs_icon = TextureRect.new()
 	docs_icon.name = "DocsIcon"
@@ -279,7 +281,7 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	row.add_child(docs_line)
 	docs_retry = Button.new()
 	docs_retry.name = "DocsRetry"
-	docs_retry.text = "Try again"
+	docs_retry.text = L.t("Try again")
 	docs_retry.pressed.connect(func(): docs_node.start())
 	row.add_child(docs_retry)
 	box.add_child(row)
@@ -293,7 +295,7 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	fill.set_corner_radius_all(int(3 * s))
 	docs_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(docs_bar)
-	box.add_child(_quiet("The ghost uses these Godot docs to check its answers. They're saved on this computer."))
+	box.add_child(_quiet(L.t("The ghost uses these Godot docs to check its answers. They're saved on this computer.")))
 	docs.changed.connect(func(_state): _show_docs())
 	if docs.manual:
 		docs.manual.changed.connect(func(_state): _show_docs())

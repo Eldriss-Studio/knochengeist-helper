@@ -17,7 +17,7 @@ const COMMAND := "codex"
 # The ChatGPT app ships Codex inside it: in /Applications, or the person's own ~/Applications.
 const CHATGPT_APP := "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
 const INSTALL_PAGE := "https://developers.openai.com/codex/cli"
-const INSTALL_HINT := "Not installed yet. Use Install… above, or choose where it is."
+const INSTALL_HINT := "Not installed yet. Click Install…, or choose its file."
 const LOGIN_HINT := "codex login"
 const AUTH_ARGS := ["login", "status"]
 const MODEL_HINT := "Codex chooses the model. You can't change it here."
@@ -27,11 +27,11 @@ const CHECKS_SIGN_IN := true
 const SIGNED_OUT_SAYS := []          # it says so in its events, which read() handles
 const SIGN_IN_CAN_BE_SKIPPED := false
 const PROBLEMS := {
-	"missing": "Codex isn't installed. Pick Install Codex… in the ghost's menu, sign in with codex login, then ask again.",
+	"missing": "Codex isn't installed. Click the ghost and choose Install Codex… from its menu. Then sign in once with codex login in a terminal, and ask again.",
 	"signed_out": "Codex isn't signed in. Open a terminal, run codex login, and sign in. Then ask again.",
 	"limit": "You've reached your ChatGPT plan's usage limit for Codex. Try again later.",
-	"not_there": "There's no Codex at the path in Settings. Open Settings in the ghost's menu to change it.",
-	"unknown": "Codex answered in a format this helper doesn't understand. This helper may need an update. Show log has what it said.",
+	"not_there": "Codex isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically.",
+	"unknown": "Codex sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said.",
 	"billing": "Codex reports a billing problem with your account. Check it at chatgpt.com.",
 }
 
@@ -65,8 +65,8 @@ static func process_env() -> Dictionary:
 
 static func check_state(brain, exit_code: int, said: String, also: String) -> String:
 	var words := said + also
-	brain.plan_name = "ChatGPT plan" if words.contains("ChatGPT") else ("API key" if words.to_lower().contains("api key") else "")
-	brain.auth_method = "chatgpt" if brain.plan_name == "ChatGPT plan" else ("api_key" if brain.plan_name != "" else "")
+	brain.plan_name = "ChatGPT plan" if words.contains("ChatGPT") else ""      # with an API key it has no plan: each question is billed
+	brain.auth_method = "chatgpt" if brain.plan_name != "" else ("api_key" if words.to_lower().contains("api key") else "")
 	if exit_code == 0:
 		return "ready"
 	return "signed_out" if words.to_lower().contains("not logged in") else "wont_start"

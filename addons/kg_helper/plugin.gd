@@ -1,5 +1,7 @@
 @tool
 extends EditorPlugin
+
+const L := preload("l10n.gd")
 # The Knochengeist helper (#44). Tells the course app what this editor shows, the things on screen
 # Stuck? may name (buttons, scene tree rows, inspector properties), and points at the one it names
 # with a flying ghost and an inked ring (pointer.gd). The app's side is course/src/lib/server/godot-link.ts.
@@ -154,6 +156,7 @@ func _init() -> void:
 
 
 func _enter_tree() -> void:
+	L.load_all()                       # its own words in the editor's language, before anything is shown
 	var from_env := OS.get_environment("KG_HELPER_URL")
 	if DisplayServer.get_name() == "headless" and from_env == "":
 		return
@@ -214,6 +217,7 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
+	L.unload()
 	for menu_plugin in context_menus:
 		remove_context_menu_plugin(menu_plugin)
 	context_menus.clear()
@@ -304,7 +308,7 @@ func _show_up(up: bool) -> void:
 	var can := Menu.can_answer(up, claude_state)
 	button.modulate = Color(1, 1, 1, 1.0 if can else 0.5)
 	var state := Menu.state(up, claude_state)
-	button.tooltip_text = "Knochengeist: %s." % state + (" %s to ask." % Menu.ask_keys() if can else " Click to see what's wrong.")
+	button.tooltip_text = L.t("Knochengeist: %s.") % state + " " + (L.t("%s to ask.") % Menu.ask_keys() if can else L.t("Click to see what's wrong."))
 	if ring and brain and not up:
 		ring.show_used(float(brain.limit.get("used", -1.0)), brain.limit.get("status") == "allowed_warning")
 		if ring.visible:
@@ -366,18 +370,18 @@ func _chose(id: int) -> void:
 ## Codex with "codex login", Copilot with "copilot login".
 func _sign_in(tool: GDScript = null) -> void:
 	var adapter: GDScript = tool if tool else Brain.adapter()
-	_in_terminal(adapter.login_args(Brain.find_for(adapter)), "run %s, and sign in" % adapter.LOGIN_HINT)
+	_in_terminal(adapter.login_args(Brain.find_for(adapter)), L.t("Open a terminal, run %s, and sign in. Then ask again.") % adapter.LOGIN_HINT)
 
 
 ## Runs this tool's own installer, or the one in use's, in a terminal he watches. Coming back to Godot
 ## checks again.
 func _install(tool: GDScript = null) -> void:
 	var adapter: GDScript = tool if tool else Brain.adapter()
-	_in_terminal(adapter.install_args(), "install %s from %s" % [adapter.NAME, adapter.INSTALL_PAGE])
+	_in_terminal(adapter.install_args(), L.t("Open a terminal and install %s from %s. Then ask again.") % [adapter.NAME, adapter.INSTALL_PAGE])
 
 
-## Opens a terminal running this command line; `todo` says what to do by hand when there is none.
-func _in_terminal(run: PackedStringArray, todo: String) -> void:
+## Opens a terminal running this command line; `by_hand` says what to do when there is no terminal.
+func _in_terminal(run: PackedStringArray, by_hand: String) -> void:
 	var terminal := OS.get_environment("KG_HELPER_TERMINAL")
 	if terminal != "":
 		OS.create_process(terminal, run)
@@ -410,7 +414,7 @@ func _in_terminal(run: PackedStringArray, todo: String) -> void:
 				args.append_array(run)
 				OS.create_process(found, args)
 				return
-		_note("Open a terminal, %s. Then ask again." % todo, 10.0)
+		_note(by_hand, 10.0)
 
 
 static func _on_path(app: String) -> String:
@@ -431,11 +435,11 @@ func _run_claude(system: String, prompt: String) -> void:
 	var window := ConfirmationDialog.new()
 	consent_window = window
 	var asked_for := brain_for
-	window.title = CONSENT_TITLE.replace("Claude Code", Brain.tool_name())
+	window.title = L.t(CONSENT_TITLE).replace("Claude Code", Brain.tool_name())
 	window.dialog_text = Brain.disclosure()
 	window.dialog_autowrap = true
-	window.ok_button_text = "Allow"
-	window.cancel_button_text = "Don't allow"
+	window.ok_button_text = L.t("Allow")
+	window.cancel_button_text = L.t("Don't allow")
 	window.min_size = Vector2i(460, 0) * EditorInterface.get_editor_scale()
 	window.confirmed.connect(func():
 		settings.set_project_metadata("knochengeist", "claude_allowed", Brain.find_claude())
@@ -444,10 +448,10 @@ func _run_claude(system: String, prompt: String) -> void:
 			brain.ask(system, prompt))
 	window.canceled.connect(func():
 		if asked_for == "ask":
-			ask_box.failed(NOT_ALLOWED.replace("Claude Code", Brain.tool_name()))
+			ask_box.failed(L.t(NOT_ALLOWED).replace("Claude Code", Brain.tool_name()))
 		else:
 			walk_ask = 0
-			_note(NOT_ALLOWED.replace("Claude Code", Brain.tool_name()), 6.0))
+			_note(L.t(NOT_ALLOWED).replace("Claude Code", Brain.tool_name()), 6.0))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
@@ -459,9 +463,9 @@ func _version() -> String:
 
 func _open_debug_info() -> void:
 	var window := AcceptDialog.new()
-	window.title = "Knochengeist debug info"
-	window.ok_button_text = "Copy"
-	window.add_cancel_button("Close")
+	window.title = L.t("Knochengeist debug info")
+	window.ok_button_text = L.t("Copy")
+	window.add_cancel_button(L.t("Close"))
 	var box := VBoxContainer.new()
 	var info := TextEdit.new()
 	var base: String = brain.debug_info(_version())
@@ -471,7 +475,7 @@ func _open_debug_info() -> void:
 	info.custom_minimum_size = Vector2(520, 200) * EditorInterface.get_editor_scale()
 	box.add_child(info)
 	var share := CheckBox.new()
-	share.text = "Include my last %d answers that didn't help" % SHARED_UNHELPFUL
+	share.text = L.t("Include my last %d answers that didn't help") % SHARED_UNHELPFUL
 	share.toggled.connect(func(on: bool): info.text = base + (_unhelpful_text() if on else ""))
 	box.add_child(share)
 	window.add_child(box)
@@ -520,32 +524,32 @@ func _unhelpful_text() -> String:
 
 func _open_about() -> void:
 	var about := AcceptDialog.new()
-	about.title = "About Knochengeist"
+	about.title = L.t("About Knochengeist")
 	var box := VBoxContainer.new()
 	var words := Label.new()
-	words.text = "Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your %s, or from the course page when it's running." % [_version(), Menu.ask_keys(), Brain.tool_name()]
+	words.text = L.t("Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your %s, or from the course page when it's running.") % [_version(), Menu.ask_keys(), Brain.tool_name()]
 	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	words.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
 	box.add_child(words)
 	var sends := LinkButton.new()
-	sends.text = "What it sends to Anthropic"
+	sends.text = L.t("What it sends to %s") % Brain.company()
 	sends.pressed.connect(func():
 		about.hide()                  # Godot opens one exclusive window at a time
 		_open_disclosure.call_deferred())
 	box.add_child(sends)
 	for each in [["Read how it works", README], ["What's new in each version", RELEASES], ["Report a problem", ISSUES]]:
 		var link := LinkButton.new()
-		link.text = each[0]
+		link.text = L.t(each[0])
 		link.uri = each[1]
 		box.add_child(link)
 	var credit := Label.new()
-	credit.text = "The Godot manual pages: CC BY 3.0, by Juan Linietsky, Ariel Manzur and the Godot community."
+	credit.text = L.t("The Godot manual pages: CC BY 3.0, by Juan Linietsky, Ariel Manzur and the Godot community.")
 	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
 	credit.modulate = Color(1, 1, 1, 0.7)
 	box.add_child(credit)
 	var license := LinkButton.new()
-	license.text = "The CC BY 3.0 license"
+	license.text = L.t("The CC BY 3.0 license")
 	license.uri = "https://creativecommons.org/licenses/by/3.0/"
 	box.add_child(license)
 	about.add_child(box)
@@ -554,12 +558,12 @@ func _open_about() -> void:
 
 func _open_update() -> void:
 	var window := ConfirmationDialog.new()
-	window.title = "Update Knochengeist"
-	window.ok_button_text = "Update"
-	window.cancel_button_text = "Not now"
+	window.title = L.t("Update Knochengeist")
+	window.ok_button_text = L.t("Update")
+	window.cancel_button_text = L.t("Not now")
 	var words := Label.new()
 	var notes := update_notes.replace("**", "").strip_edges()
-	words.text = "Version %s is out. You have version %s.\n\nWhat's new:\n%s\n\nUpdating replaces the helper's folder, then asks you to reload the project." % [update_to, _version(), notes if notes != "" else "See the release notes on GitHub."]
+	words.text = L.t("Version %s is out. You have version %s.\n\nWhat's new:\n%s\n\nUpdating replaces the helper's folder, then asks you to reload the project.") % [update_to, _version(), notes if notes != "" else "See the release notes on GitHub."]
 	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	words.custom_minimum_size = Vector2(460, 0) * EditorInterface.get_editor_scale()
 	window.add_child(words)
@@ -570,24 +574,24 @@ func _open_update() -> void:
 func _updated(version: String) -> void:
 	update_to = ""
 	var window := ConfirmationDialog.new()
-	window.title = "Knochengeist updated"
-	window.ok_button_text = "Reload"
-	window.cancel_button_text = "Later"
-	window.dialog_text = "Version %s is installed. Reload the project to use it." % version
+	window.title = L.t("Knochengeist updated")
+	window.ok_button_text = L.t("Reload")
+	window.cancel_button_text = L.t("Later")
+	window.dialog_text = L.t("Version %s is installed. Reload the project to use it.") % version
 	window.confirmed.connect(func(): EditorInterface.restart_editor(true))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
 func _update_failed(why: String) -> void:
 	var window := AcceptDialog.new()
-	window.title = "Knochengeist didn't update"
+	window.title = L.t("Knochengeist didn't update")
 	window.dialog_text = why + " Show log has the details."
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
 func _open_disclosure() -> void:
 	var window := AcceptDialog.new()
-	window.title = "What Knochengeist sends"
+	window.title = L.t("What Knochengeist sends")
 	var words := Label.new()
 	words.text = Brain.disclosure()
 	words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -609,9 +613,9 @@ func _say_hello() -> void:
 	var scale := EditorInterface.get_editor_scale()
 	hello = Bubble.new()
 	if Menu.can_answer(course_shown, claude_state):
-		hello.say("[b]I'm here.[/b] Press %s to ask me anything about Godot, and I'll show you where to click." % Menu.ask_keys(), 260.0)
+		hello.say(L.t("[b]I'm here.[/b] Press %s to ask me anything about Godot, and I'll show you where to click.") % Menu.ask_keys(), 260.0)
 	else:
-		hello.say("[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it." % Menu.state(course_shown, claude_state).to_lower().replace(Brain.tool_name().to_lower(), Brain.tool_name()), 260.0)
+		hello.say(L.t("[b]I'm here[/b], but there's a problem: %s. Click the ghost above to fix it.") % Menu.state(course_shown, claude_state).to_lower().replace(Brain.tool_name().to_lower(), Brain.tool_name()), 260.0)
 	var base := EditorInterface.get_base_control()
 	base.add_child(hello)
 	hello.position = _under_button(hello)
@@ -638,7 +642,7 @@ func _process(delta: float) -> void:
 # The app speaks another contract version: app.gd stops knocking for a while.
 func _refused() -> void:
 	_show_up(false)
-	_note("The course app and this helper are different versions. Reload this project: Project > Reload Current Project.", App.REFUSED_S)
+	_note(L.t("The course page and Knochengeist are different versions. Choose Project > Reload Current Project."), App.REFUSED_S)
 
 
 func _point_came(answer: Dictionary) -> void:
@@ -731,18 +735,18 @@ func _ask_about(kind: String, what: Dictionary) -> void:
 			about = "They are asking about the %s property of a %s in the Inspector." % [what["property"], what["class"]]
 		"error":
 			question = "What does this error mean, and how do I fix it?"
-			var where := "line %d of %s" % [what["line"], str(what["file"]).get_file()] if str(what["file"]) != "" else ""
+			var where := L.t("line %d of %s") % [what["line"], str(what["file"]).get_file()] if str(what["file"]) != "" else ""
 			about = "They ran their game and it stopped with this error:\n%s" % str(what["details"]).strip_edges()
 			var code := Errors.lines_around(str(what["file"]), int(what["line"]))
 			if code != "":
 				about += "\nIn %s, around line %d (the line marked >):\n```gdscript\n%s\n```" % [what["file"], what["line"], code]
-			note = "With the error%s." % ((" and " + where) if where != "" else "")
+			note = L.t("With the error and %s.") % where if where != "" else L.t("With the error.")
 		"code":
 			var lines: PackedStringArray = str(what["code"]).split("\n")
 			var kept := "\n".join(lines.slice(0, CODE_LINES_KEPT))
 			question = "Explain this code%s." % ((" from " + what["path"]) if what["path"] != "" else "")
 			about = "They are asking about these lines%s:\n```gdscript\n%s\n```" % [(" of " + what["path"]) if what["path"] != "" else "", kept]
-			note = "With %d selected line%s." % [mini(lines.size(), CODE_LINES_KEPT), "" if lines.size() == 1 else "s"]
+			note = L.t_n("With %d selected line.", "With %d selected lines.", mini(lines.size(), CODE_LINES_KEPT)) % mini(lines.size(), CODE_LINES_KEPT)
 	_open_ask()
 	asking_about = about
 	ask_box.ask_about(question, note)
@@ -761,7 +765,7 @@ func _look_for_errors() -> void:
 		if not error_offered and Menu.can_answer(course_shown, claude_state):
 			error_offered = true
 			Brain.log_line("Offered to explain an error.")
-			_note("Your game hit an error. Click me to have it explained.", OFFER_S)
+			_note(L.t("Your game hit an error. Click me to have it explained."), OFFER_S)
 			note.mouse_filter = Control.MOUSE_FILTER_STOP
 			note.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			note.gui_input.connect(func(event: InputEvent):
@@ -835,7 +839,7 @@ func _ask(said: String) -> void:
 		said = earlier.strip_edges() + "\n\nTheir question: " + said
 	said += from_docs + _from_the_manual(said)
 	if not ask_stream.post(host, port, "/api/godot/ask", app.headers(true), JSON.stringify({"project": project, "said": said, "stream": true})):
-		ask_box.failed("That didn't work. Try again.")
+		ask_box.failed(L.t("That didn't work. Try again."))
 
 
 # One line of the answer: { say } is the next words, anything else is its last line.
@@ -859,13 +863,13 @@ func _plain(text: String) -> String:
 func _answer_came(ok: bool, code: int) -> void:
 	var reply = ask_reply
 	if not ok or not (reply is Dictionary):
-		ask_box.failed("That didn't work. Is the course page still running?")
+		ask_box.failed(L.t("That didn't work. Is the course page still running?"))
 		return
 	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
 		app.refuse()
 	if code != 200 or reply.has("code"):
-		var claude := {"signed_out": "Claude isn't signed in. Open a terminal, type claude, and sign in. Then ask again.", "missing": "The claude command isn't installed on this computer yet."}
-		ask_box.failed(claude.get(reply.get("code", ""), str(reply.get("message", "That didn't work. Try again."))))
+		var problem: String = str(reply.get("code", ""))
+		ask_box.failed(Brain.problem_text(problem) if problem in ["signed_out", "missing"] else str(reply.get("message", L.t("That didn't work. Try again."))))
 		return
 	_answered(reply)
 
@@ -951,7 +955,7 @@ func _names_wrong(said: String) -> bool:
 	ask_words = ""
 	tags = Tags.new()
 	brain_for = "ask"
-	ask_box.saying("Checking a name against your Godot…")
+	ask_box.saying(L.t("Checking a name against your Godot…"))
 	_run_claude(ask_sent[0], ask_sent[1] + "\n".join(lines))
 	return true
 

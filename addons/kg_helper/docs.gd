@@ -1,5 +1,7 @@
 @tool
 extends Node
+
+const L := preload("l10n.gd")
 # A keyword index of Godot's class reference for the Godot that's running, built from that Godot itself
 # (`--doctool`), so it always matches its version and nothing is downloaded.
 
@@ -48,11 +50,11 @@ func status_line() -> String:
 	var godot := (version if version != "" else running_version()).rsplit(".", true, 1)[0]
 	match state:
 		"ready":
-			return "Ready for Godot %s%s" % [godot, manual.status() if manual else ""]
+			return L.t("Ready for Godot %s%s") % [godot, manual.status() if manual else ""]
 		"building":
-			return "Reading the class reference from Godot %s…" % godot if reading > 0.0 else "Asking Godot %s for its class reference…" % godot
+			return L.t("Reading the class reference from Godot %s…") % godot if reading > 0.0 else L.t("Asking Godot %s for its class reference…") % godot
 		"failed":
-			return "Couldn't build the class reference. Show log has why."
+			return L.t("Couldn't build the class reference. Show log has why.")
 	return "Off"
 
 

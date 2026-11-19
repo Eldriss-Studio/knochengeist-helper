@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 48
+
+- **In your editor's language.** The menu, the ghost's cards, Settings and every message now follow the language you set for the Godot editor: Brazilian Portuguese and Spanish to start, English otherwise. The ghost already answered in your language; now everything around it does too. Your game's own translations aren't touched.
+
 ## Version 47
 
 - **Install from the helper.** "Install Claude Code…", "Install Codex…" and "Install Copilot…" in the ghost's menu, and Install… in Settings, run that tool's own installer in a terminal you can watch. None of them needs Node. Back in Godot, the helper looks for it again.

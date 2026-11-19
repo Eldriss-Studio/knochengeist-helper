@@ -1,5 +1,7 @@
 @tool
 extends EditorContextMenuPlugin
+
+const L := preload("l10n.gd")
 # "Ask the ghost about this" in one of Godot's right-click menus. Each slot names what was picked in
 # its own way; asking is the helper's.
 
@@ -18,7 +20,7 @@ func _init(for_slot: int, ghost: Texture2D) -> void:
 func _popup_menu(paths: PackedStringArray) -> void:
 	var open_script := EditorInterface.get_script_editor().get_current_script() if slot == CONTEXT_SLOT_SCRIPT_EDITOR_CODE else null
 	script_path = open_script.resource_path if open_script else ""
-	add_context_menu_item("Ask the ghost about this", _chosen, icon)
+	add_context_menu_item(L.t("Ask the ghost about this"), _chosen, icon)
 
 
 func _chosen(from) -> void:

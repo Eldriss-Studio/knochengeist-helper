@@ -1,24 +1,26 @@
 @tool
 extends RefCounted
-# Claude Code, as the helper's brain when the course app isn't running. Another AI tool is another
-# script with the same signals and functions.
+
+const L := preload("l10n.gd")
+# The AI tool that answers when the course page isn't running: it finds the tool, checks it, asks it,
+# and reads its answer. Each tool is its own adapter script (claude.gd, codex.gd, copilot.gd).
 
 signal piece(text: String)
 signal done(text: String, problem: String)      # problem: "", "missing", "signed_out" or "failed"
 signal checked(state: String, path: String)     # state: "checking", "ready", "missing", "signed_out" or "not_there"
 
 const PROBLEMS := {
-	"missing": "Claude Code isn't installed. Pick Install Claude Code… in the ghost's menu, sign in once, then ask again.",
+	"missing": "Claude Code isn't installed. Click the ghost and choose Install Claude Code… from its menu. Then sign in once, and ask again.",
 	"signed_out": "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again.",
 	"failed": "That didn't work. Try again, or open Show log in the ghost's menu to see why.",
 	"limit": "You've reached your Claude plan's limit. Try again later.",
-	"not_there": "There's no Claude Code at the path in Settings. Open Settings in the ghost's menu to change it.",
+	"not_there": "Claude Code isn't at the file you chose. Open Settings in the ghost's menu, then choose its file again or pick Find automatically.",
 	"login_skipped": "Claude Code didn't use your sign-in for this question, though it says you're signed in. This helper may need an update. Show log has the details.",
-	"unknown": "Claude Code answered in a format this helper doesn't understand. This helper may need an update. Show log has what it said.",
+	"unknown": "Claude Code sent an answer Knochengeist can't read yet. Update Knochengeist, or open Show log to see what it said.",
 	"billing": "Claude Code reports a billing problem with your account. Check it at claude.ai.",
 }
 
-const DISCLOSURE := "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends passwords, stores no logins, and sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+const DISCLOSURE := "To answer, Knochengeist runs your Claude Code on this computer.\n\nEach question sends to Anthropic, using your account:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
 const GIVE_UP_S := 120.0
 const SHELL_GIVE_UP_S := 8.0
 const CHECK_GIVE_UP_S := 15.0
@@ -191,18 +193,18 @@ func billed() -> bool:
 func plan_lines() -> PackedStringArray:
 	var lines := PackedStringArray()
 	if billed():
-		lines.append("API key: billed per question")
+		lines.append(L.t("API key: billed per question"))
 		if last_cost >= 0.0:
-			lines.append("Last question cost $%.4f" % last_cost)
+			lines.append(L.t("Last question cost $%.4f") % last_cost)
 	elif plan_name != "":
-		lines.append(plan_name)
+		lines.append(L.t(plan_name))
 	if usage_line() != "":
 		lines.append(usage_line())
 	for name in windows:
 		if name != limit.get("kind", "") and not name.contains("overage") and windows[name] > 0.0:
-			lines.append("%s: %d%% used" % [_window_name(name), roundi(windows[name] * 100)])
+			lines.append(L.t("%s: %d%% used") % [_window_name(name), roundi(windows[name] * 100)])
 	if answered_by != "":
-		lines.append("Last model: " + model_name(answered_by))
+		lines.append(L.t("Last model: %s") % model_name(answered_by))
 	return lines
 
 
@@ -220,51 +222,52 @@ static func model_name(id: String) -> String:
 
 
 static func _window_name(name: String) -> String:
-	var said := name.replace("seven_day", "this week").replace("five_hour", "the 5-hour window").replace("_", " ")
+	var said: String = {"seven_day": L.t("This week"), "five_hour": L.t("The 5-hour window")}.get(name, name.replace("_", " "))
 	return said[0].to_upper() + said.substr(1)
 
 
 func usage_line() -> String:
 	if limit.is_empty() or float(limit.get("used", -1.0)) < 0.0:
 		return ""
-	return "%s: %d%% used, resets %s" % [_limit_name()[0].to_upper() + _limit_name().substr(1), roundi(limit["used"] * 100), _when(limit["resets_at"])]
+	return L.t("%s: %d%% used, resets %s") % [_limit_name()[0].to_upper() + _limit_name().substr(1), roundi(limit["used"] * 100), _when(limit["resets_at"])]
 
 
 func warning() -> String:
 	if warned or limit.is_empty() or not (limit.get("status") == "allowed_warning" or float(limit.get("used", 0.0)) >= NEAR_LIMIT):
 		return ""
 	warned = true
-	return "Heads up: you've used %d%% of your %s. It resets %s." % [roundi(limit["used"] * 100), _limit_name(), _when(limit["resets_at"])]
+	return L.t("Heads up: you've used %d%% of your %s. It resets %s.") % [roundi(limit["used"] * 100), _limit_name(), _when(limit["resets_at"])]
 
 
 func problem_message(problem: String) -> String:
 	if problem == "limit" and adapter().REPORTS_RESETS and float(limit.get("resets_at", 0.0)) > 0.0:
-		return "You've used all of your Claude plan's %s. It resets %s." % [_limit_name(), _when(limit["resets_at"])]
+		return L.t("You've used all of your Claude plan's %s. It resets %s.") % [_limit_name(), _when(limit["resets_at"])]
 	return problem_text(problem)
 
 
 func _limit_name() -> String:
-	return LIMIT_NAMES.get(limit.get("kind", ""), "usage limit")
+	return L.t(LIMIT_NAMES.get(limit.get("kind", ""), "usage limit"))
 
 
 static func _when(resets_at: float) -> String:
 	var left := resets_at - Time.get_unix_time_from_system()
 	if left < 3600.0:
-		return "in %d minutes" % maxi(1, roundi(left / 60.0))
+		var minutes := maxi(1, roundi(left / 60.0))
+		return L.t_n("in %d minute", "in %d minutes", minutes) % minutes
 	if left < 86400.0:
-		return "in about %d hours" % roundi(left / 3600.0) if roundi(left / 3600.0) > 1 else "in about an hour"
-	return "in %d days" % floori(left / 86400.0) if floori(left / 86400.0) > 1 else "tomorrow"
+		return L.t("in about %d hours") % roundi(left / 3600.0) if roundi(left / 3600.0) > 1 else L.t("in about an hour")
+	return L.t("in %d days") % floori(left / 86400.0) if floori(left / 86400.0) > 1 else L.t("tomorrow")
 
 
 static func problem_text(problem: String) -> String:
 	if adapter().PROBLEMS.has(problem):
-		return adapter().PROBLEMS[problem]
-	return PROBLEMS.get(problem, PROBLEMS["failed"]).replace("Claude Code", tool_name())
+		return L.t(adapter().PROBLEMS[problem])
+	return L.t(PROBLEMS.get(problem, PROBLEMS["failed"])).replace("Claude Code", tool_name())
 
 
 ## What a question sends, and to whom, for the tool in use.
 static func disclosure() -> String:
-	return DISCLOSURE.replace("Claude Code", tool_name()).replace("Anthropic", company())
+	return L.t(DISCLOSURE).replace("Claude Code", tool_name()).replace("Anthropic", company())
 
 
 ## The tool this brain checks: the one in use, or one Settings shows before it's saved.
