@@ -50,6 +50,7 @@ const RUN_FROM_FILE := "cd \"$1\" && f=\"$2\" && shift 2 && exec \"$0\" \"$@\" <
 # Godot's one pipe can't close the tool's input on its own, so a shell hands it the prompt file.
 const RUN := "cd \"$1\" && shift && exec \"$0\" \"$@\""   # in the helper's own folder, not the game's
 
+var checking_tool: GDScript = null   # set when Settings checks a tool that isn't the one in use yet
 var pid := 0
 var io: FileAccess
 var errors: FileAccess
@@ -266,12 +267,17 @@ static func disclosure() -> String:
 	return DISCLOSURE.replace("Claude Code", tool_name()).replace("Anthropic", company())
 
 
+## The tool this brain checks: the one in use, or one Settings shows before it's saved.
+func _tool() -> GDScript:
+	return checking_tool if checking_tool else adapter()
+
+
 func check() -> void:
 	stop_check()
 	if state == "checking":
 		_now("checking", "")
-	var claude := find_claude()
-	if claude == "" and _path_from_env() == "" and OS.get_name() != "Windows":
+	var claude := find_for(_tool())
+	if claude == "" and OS.get_environment(_tool().ENV) == "" and OS.get_name() != "Windows":
 		_ask_login_shell()                # Windows has no login shell to ask
 	else:
 		_check_sign_in(claude)
@@ -280,7 +286,7 @@ func check() -> void:
 # A Godot opened from the Dock doesn't get the PATH his Terminal has, so his login shell is asked.
 func _ask_login_shell() -> void:
 	var shell := OS.get_environment("SHELL")
-	var started := OS.execute_with_pipe(shell if shell != "" else ("/bin/zsh" if OS.get_name() == "macOS" else "/bin/bash"), ["-lc", "command -v " + adapter().COMMAND], false)
+	var started := OS.execute_with_pipe(shell if shell != "" else ("/bin/zsh" if OS.get_name() == "macOS" else "/bin/bash"), ["-lc", "command -v " + _tool().COMMAND], false)
 	if started.is_empty():
 		_check_sign_in("")
 		return
@@ -313,7 +319,7 @@ func _start_check(claude: String, args: Array, step: String) -> void:
 
 
 func _missing() -> String:
-	var set_in_settings := _path_from_env() == "" and saved_setting(path_setting()) != ""
+	var set_in_settings := OS.get_environment(_tool().ENV) == "" and saved_setting(_tool().PATH_SETTING) != ""
 	return "not_there" if set_in_settings else "missing"
 
 
@@ -330,7 +336,7 @@ func _poll_check(delta: float) -> void:
 		for line in said.split("\n", false):
 			if FileAccess.file_exists(line.strip_edges()):
 				from_login_shell = line.strip_edges()
-		_check_sign_in(find_claude())
+		_check_sign_in(find_for(_tool()))
 	elif check_pid != 0:
 		check_waited += delta
 		if OS.is_process_running(check_pid) and check_waited < CHECK_GIVE_UP_S:
@@ -342,16 +348,16 @@ func _poll_check(delta: float) -> void:
 		stop_check()
 		if step == "version":
 			claude_version = said.strip_edges().get_slice("\n", 0)
-			if adapter().AUTH_ARGS.is_empty():
-				_now("ready" if exit_code in [0, EXIT_UNKNOWN] else "wont_start", find_claude())   # no free sign-in check: the first question finds out
+			if _tool().AUTH_ARGS.is_empty():
+				_now("ready" if exit_code in [0, EXIT_UNKNOWN] else "wont_start", find_for(_tool()))   # no free sign-in check: the first question finds out
 				return
-			_start_check(find_claude(), adapter().AUTH_ARGS, "auth")
+			_start_check(find_for(_tool()), _tool().AUTH_ARGS, "auth")
 			return
 		var also := check_err.get_buffer(check_err.get_length()).get_string_from_utf8() if check_err else ""
-		var now: String = adapter().check_state(self, exit_code, said, also)
+		var now: String = _tool().check_state(self, exit_code, said, also)
 		if now == "wont_start":
-			log_line("%s check: it exited with %d. It said: %s" % [tool_name(), exit_code, (said + also).strip_edges().left(300).replace("\n", " ")])
-		_now(now, find_claude())
+			log_line("%s check: it exited with %d. It said: %s" % [_tool().NAME, exit_code, (said + also).strip_edges().left(300).replace("\n", " ")])
+		_now(now, find_for(_tool()))
 
 
 func stop_check() -> void:

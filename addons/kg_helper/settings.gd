@@ -26,6 +26,8 @@ var tool_list: OptionButton
 var picked: GDScript               # the tool chosen in the list, saved or not
 var brain_ref                      # the brain, for whether the tool in use is ready
 var tool_state := ""               # the tool in use's check: ready, signed_out, checking…
+var preview: RefCounted            # a check of a picked tool that isn't the one in use
+var preview_state := ""
 var status_box: VBoxContainer      # whether the picked tool is ready, under the list
 var model_hint: Label              # for a tool that picks its own model
 var where_heading: Label
@@ -33,7 +35,7 @@ var less_motion: CheckBox
 var check_updates: CheckBox
 var pick: EditorFileDialog
 var s := 1.0
-signal sign_in
+signal sign_in(tool: GDScript)
 
 
 func _init(brain = null, claude_state := "", docs = null) -> void:
@@ -57,7 +59,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	status_box = VBoxContainer.new()
 	status_box.add_theme_constant_override("separation", int(GAP * s))
 	box.add_child(status_box)
-	box.add_child(_quiet("Answers come from the tool you pick, signed in with your own plan. Save, and the helper checks it."))
+	box.add_child(_quiet("Answers come from the tool you pick, signed in with your own plan."))
 	if brain:
 		brain.checked.connect(func(state: String, _path: String):
 			tool_state = state
@@ -110,6 +112,16 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 # Everything below the list follows the picked tool at once: its readiness, model and location.
 func _pick(tool: GDScript) -> void:
 	picked = tool
+	_stop_preview()
+	if picked != Brain.adapter():             # checked at once: whether it's there and signed in shouldn't wait for Save
+		preview = Brain.new()
+		preview.checking_tool = picked
+		preview_state = "checking"
+		preview.checked.connect(func(state: String, _path: String):
+			preview_state = state
+			if is_instance_valid(status_box):
+				_show_status())
+		preview.check()
 	chosen_path = Brain.saved_setting(picked.PATH_SETTING)
 	where_heading.text = "%s location" % picked.NAME
 	_show_status()
@@ -125,39 +137,39 @@ func _show_status() -> void:
 	var tool_name: String = picked.NAME
 	if brain_ref == null:
 		return
-	if picked != Brain.adapter():
-		status_box.add_child(_label("Save to check %s." % tool_name))
-		return
-	var lines: PackedStringArray = brain_ref.plan_lines()
-	var text: String = STATUS_WORDS.get(tool_state, "")
-	if tool_state == "ready" and not picked.CHECKS_SIGN_IN:
+	var in_use := picked == Brain.adapter()
+	var source = brain_ref if in_use else preview
+	var state := tool_state if in_use else preview_state
+	var lines: PackedStringArray = source.plan_lines()
+	var text: String = STATUS_WORDS.get(state, "")
+	if state == "ready" and not picked.CHECKS_SIGN_IN:
 		text = UNCHECKED_SIGN_IN
-	text = text % tool_name if text != "" else Menu.state(false, tool_state)
+	text = text % tool_name if text != "" else Menu.state(false, state)
 	var row := HBoxContainer.new()
 	var icon := TextureRect.new()
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	if tool_state != "checking":
-		icon.texture = EditorInterface.get_editor_theme().get_icon("StatusSuccess" if tool_state == "ready" else "StatusWarning", "EditorIcons")
+	if state != "checking":
+		icon.texture = EditorInterface.get_editor_theme().get_icon("StatusSuccess" if state == "ready" else "StatusWarning", "EditorIcons")
 		row.add_child(icon)
 	var status := Label.new()
 	status.text = text
 	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(status)
-	if tool_state == "signed_out":
+	if state == "signed_out":
 		var button := Button.new()
 		button.text = "Sign in…"
-		button.pressed.connect(func(): sign_in.emit())
+		button.pressed.connect(func(): sign_in.emit(picked))
 		row.add_child(button)
-	if tool_state == "ready" and not lines.is_empty():
+	if state == "ready" and not lines.is_empty():
 		status_box.add_child(_label(lines[0]))      # the plan it runs on
 	status_box.add_child(row)
-	if tool_state != "ready":
+	if state != "ready":
 		return
-	var usage: String = brain_ref.usage_line()
+	var usage: String = source.usage_line()
 	if usage != "":
 		var bar := ProgressBar.new()
 		bar.max_value = 1.0
-		bar.value = float(brain_ref.limit.get("used", 0.0))
+		bar.value = float(source.limit.get("used", 0.0))
 		bar.show_percentage = false
 		bar.custom_minimum_size = Vector2(0, 6) * s
 		var fill := StyleBoxFlat.new()
@@ -297,6 +309,19 @@ func _show_docs() -> void:
 	set_process(state == "building")
 
 
-func _process(_delta: float) -> void:
+## A check of a tool picked before, still running, ends with it.
+func _stop_preview() -> void:
+	if preview:
+		preview.stop_check()
+	preview = null
+
+
+func _exit_tree() -> void:
+	_stop_preview()
+
+
+func _process(delta: float) -> void:
 	_show_docs()
+	if preview:
+		preview.poll(delta)              # a picked tool being checked before Save
 

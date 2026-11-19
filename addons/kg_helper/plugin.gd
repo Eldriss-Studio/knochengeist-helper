@@ -4,10 +4,7 @@ extends EditorPlugin
 # Stuck? may name (buttons, scene tree rows, inspector properties), and points at the one it names
 # with a flying ghost and an inked ring (pointer.gd). The app's side is course/src/lib/server/godot-link.ts.
 #
-# It talks to the app over plain HTTP: a POST of what's on screen whenever that changes (and every
-# few seconds, so the app knows it's still here), and one GET held open, waiting for a point. When
-# the app isn't running, it knocks on its port every 2 seconds with a plain TCP connection, which
-# fails quietly: an HTTP request would print an error in his Output panel each time.
+# It talks to the app through app.gd, and reads what's on screen through screen.gd.
 # KG_HELPER_URL is the app's address; without it, a headless Godot (the checker's runs) leaves the
 # helper off.
 #
@@ -37,6 +34,9 @@ const Errors := preload("errors.gd")
 const Manual := preload("manual.gd")
 const Ring := preload("ring.gd")
 const Docs := preload("docs.gd")
+const Screen := preload("screen.gd")
+const App := preload("app.gd")
+const Walk := preload("walk.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
 const CODE_LINES_KEPT := 200
@@ -46,19 +46,8 @@ const CONSENT_TITLE := "Allow Knochengeist to use Claude Code?"
 const README := "https://github.com/Eldriss-Studio/knochengeist-helper#readme"
 const RELEASES := "https://github.com/Eldriss-Studio/knochengeist-helper/releases"
 const ISSUES := "https://github.com/Eldriss-Studio/knochengeist-helper/issues"
-const ALONE := -1
-const LOOK_S := 1.0              # how often it looks at what's on screen
-const STILL_HERE_S := 5.0        # sends at least this often
-const RETRY_S := 2.0
-const NOT_THE_APP_RETRY_S := 30.0
-const SETTLE_S := 0.25
-const LOOK_AGAIN_S := 0.15
-const LOOKS_BEFORE_SKIPPING_AHEAD := 6
-const LOOKS_BEFORE_ASKING := 20
-const WALK_MAX := 15             # clicks in one walk-through, at most
+const ALONE := Walk.ALONE
 const CONTRACT := 1              # the version of the messages it speaks; the app refuses another
-const CONTRACT_HEADER := "x-kg-contract"
-const REFUSED_S := 30.0
 
 var url := ""
 var button: Button               # in the editor's top bar: the ghost, and whether the course page is connected
@@ -97,7 +86,6 @@ var update_to := ""                # a newer version, once the check finds one
 var update_notes := ""
 var asking_about := ""             # what he right-clicked, added to the next question
 var hello: Control        # the one-time hello under the button
-var labels := {}                 # target id -> what to call it
 var ask_box: Control             # Stuck?, asked from here
 var ask_stream: RefCounted
 var brain: RefCounted
@@ -109,50 +97,60 @@ var walk_said := ""
 var walk_answer := ""
 var ask_words := ""
 var ask_reply = null             # the answer's last line: { ask, answer, steps, closing }, or why it couldn't
-var tell_req: HTTPRequest        # tells the app he pressed Show me
 var answer_ask := 0              # the last answer's id and the target it named
 var answer_target := ""
-var host := ""
-var port := 0
 var project := ""
-var state_req: HTTPRequest
-var hello_req: HTTPRequest
-var point_req: HTTPRequest
 var ghost: Texture2D
-var pointers := {}               # a window's id -> the ghost overlay in it
-var wins := {}                   # target id -> the window it's in
-var fields := {}                 # target id -> its text field (a weak reference)
-var nodes := {}
 var note: Control                # a short line under the button: thinking, or done
-var next_req: HTTPRequest
-var walk_ask := 0                # the ask a walk-through started from; 0 when there's none
-var walk_clicked: Array = []     # what he has clicked so far in it
-var walk_plan: Array = []        # the clicks planned ahead, each { id, say }; empty when it asks as it goes
-var walk_i := 0                  # which planned click he's on
-var walk_closing := ""
-var walk_tries := 0
 var answer_plan: Array = []      # the last answer's plan, until he presses Show me
 var answer_closing := ""
-var walk_target := ""
-var walk_typed := ""             # a field he's typing in: its text when last looked at
-var typed_for := 0.0
-var typed_changed := false        # he changed the text since the ghost pointed at the field
-var prefilled_for := 0.0          # how long a field the ghost points at has held its old text, untouched
-const ALREADY_TYPED_S := 2.5      # then it counts as already typed, and the walk goes on
-var typed_in := {}                # field id -> what he typed there earlier in this walk
-var next_in := -1.0              # counting down to asking for the next click
-var switching := false
-var places := {}                 # target id -> Callable giving its rect on screen now, or null
-var sent := ""
-var sending := false
-var waiting := false
-var look_in := 0.0
-var since_sent := 0.0
-var retry_in := 0.0
-var app_up := false              # the app answered on its port; until then only knock
-var knock: StreamPeerTCP = null
-var knocking_s := 0.0
-var refused_for := 0.0
+var walk                         # the walk-through (walk.gd)
+var walk_ask: int:
+	get: return walk.walk_ask
+	set(value): walk.walk_ask = value
+var walk_clicked: Array:
+	get: return walk.walk_clicked
+	set(value): walk.walk_clicked = value
+var walk_plan: Array:
+	get: return walk.walk_plan
+	set(value): walk.walk_plan = value
+var walk_i: int:
+	get: return walk.walk_i
+	set(value): walk.walk_i = value
+var walk_closing: String:
+	get: return walk.walk_closing
+	set(value): walk.walk_closing = value
+var walk_target: String:
+	get: return walk.walk_target
+	set(value): walk.walk_target = value
+var typed_in: Dictionary:
+	get: return walk.typed_in
+	set(value): walk.typed_in = value
+var pointers: Dictionary:
+	get: return walk.pointers
+	set(value): walk.pointers = value
+var screen := Screen.new()
+var places: Dictionary:          # what was on screen when it last looked, kept by screen.gd
+	get: return screen.places
+var labels: Dictionary:
+	get: return screen.labels
+var wins: Dictionary:
+	get: return screen.wins
+var fields: Dictionary:
+	get: return screen.fields
+var nodes: Dictionary:
+	get: return screen.nodes
+var app: Node                    # the link to the course app (app.gd)
+var app_up: bool:                # the app answered on its port; until then only knock
+	get: return app != null and app.app_up
+var host: String:
+	get: return app.host if app else ""
+var port: int:
+	get: return app.port if app else 0
+
+
+func _init() -> void:
+	walk = Walk.new(self)
 
 
 func _enter_tree() -> void:
@@ -160,22 +158,13 @@ func _enter_tree() -> void:
 	if DisplayServer.get_name() == "headless" and from_env == "":
 		return
 	url = (from_env if from_env != "" else "http://127.0.0.1:4173").trim_suffix("/")
-	var address := url.trim_prefix("http://").get_slice("/", 0)
-	host = address.get_slice(":", 0)
-	port = int(address.get_slice(":", 1)) if address.contains(":") else 80
 	project = ProjectSettings.globalize_path("res://").trim_suffix("/")
-	state_req = HTTPRequest.new()
-	state_req.timeout = 10.0
-	state_req.request_completed.connect(_state_sent)
-	add_child(state_req)
-	hello_req = HTTPRequest.new()
-	hello_req.timeout = 5.0
-	hello_req.request_completed.connect(_hello_came)
-	add_child(hello_req)
-	point_req = HTTPRequest.new()
-	point_req.timeout = 40.0
-	point_req.request_completed.connect(_point_came)
-	add_child(point_req)
+	app = App.new(url, project, CONTRACT)
+	app.went.connect(_show_up)
+	app.refused.connect(_refused)
+	app.pointed.connect(_point_came)
+	app.next_came.connect(walk.next_came)
+	add_child(app)
 	Brain.offer_settings()
 	Menu.offer_shortcut()
 	Updates.offer_setting()
@@ -186,12 +175,6 @@ func _enter_tree() -> void:
 	ask_stream = Stream.new()
 	ask_stream.line.connect(_answer_line)
 	ask_stream.done.connect(_answer_came)
-	tell_req = HTTPRequest.new()
-	add_child(tell_req)
-	next_req = HTTPRequest.new()
-	next_req.timeout = 60.0
-	next_req.request_completed.connect(_next_came)
-	add_child(next_req)
 	ghost = _svg("ghost.svg", 44.0)
 	ask_box = Ask.new()
 	ask_box.mascot = ghost
@@ -378,29 +361,20 @@ func _chose(id: int) -> void:
 			OS.shell_open(url + "/learn")
 
 
-func _sign_in() -> void:
-	# Claude Code signs in when it's run; Codex with "codex login", Copilot with "copilot login" in its own home.
-	var run: PackedStringArray = Brain.adapter().login_args(claude_path)
-	var env: Dictionary = Brain.adapter().process_env()
-	if not env.is_empty() and OS.get_name() != "Windows":
-		# a terminal app may start from its own environment, so the sign-in names its home on the command line
-		var with_env := PackedStringArray(["/usr/bin/env"])
-		for key in env:
-			with_env.append("%s=%s" % [key, env[key]])
-		with_env.append_array(run)
-		run = with_env
-	var before := Brain._set_env(env)          # Windows' console starts from the helper's environment
-	_open_sign_in(run)
-	Brain._set_env(before)
+## Signs in to this tool, or the one in use, in his own setup: Claude Code signs in when it's run,
+## Codex with "codex login", Copilot with "copilot login".
+func _sign_in(tool: GDScript = null) -> void:
+	var adapter: GDScript = tool if tool else Brain.adapter()
+	_open_sign_in(adapter.login_args(Brain.find_for(adapter)), adapter)
 
 
-func _open_sign_in(run: PackedStringArray) -> void:
+func _open_sign_in(run: PackedStringArray, adapter: GDScript) -> void:
 	var terminal := OS.get_environment("KG_HELPER_TERMINAL")
 	if terminal != "":
 		OS.create_process(terminal, run)
 	elif OS.get_name() == "macOS":
 		if run.size() == 1:
-			OS.create_process("open", ["-a", "Terminal", claude_path])
+			OS.create_process("open", ["-a", "Terminal", run[0]])
 		else:
 			# Terminal opens a file, not a command line: a small .command file runs it.
 			var script := OS.get_user_data_dir().path_join("kg_helper").path_join("sign-in.command")
@@ -427,7 +401,7 @@ func _open_sign_in(run: PackedStringArray) -> void:
 				args.append_array(run)
 				OS.create_process(found, args)
 				return
-		_note("Open a terminal, run %s, and sign in. Then ask again." % Brain.adapter().LOGIN_HINT, 10.0)
+		_note("Open a terminal, run %s, and sign in. Then ask again." % adapter.LOGIN_HINT, 10.0)
 
 
 static func _on_path(app: String) -> String:
@@ -639,82 +613,27 @@ func _say_hello() -> void:
 func _process(delta: float) -> void:
 	if url == "":
 		return
-	_walk(delta)
+	for card in [note, hello, ask_box]:       # the cards under the button grow as their words change: keep them inside the window
+		if card and is_instance_valid(card) and card.visible:
+			card.position = _under_button(card)
+	walk.tick(delta)
 	errors_in -= delta
 	if errors_in <= 0.0:
 		errors_in = LOOK_FOR_ERRORS_S
 		_look_for_errors()
 	ask_stream.poll(delta)
 	brain.poll(delta)
-	if refused_for > 0.0:
-		refused_for -= delta
-		return
-	if not app_up:
-		_knock(delta)
-		return
-	since_sent += delta
-	look_in -= delta
-	if look_in <= 0.0 and not sending:
-		look_in = LOOK_S
-		var body := JSON.stringify(_state())
-		if body != sent or since_sent >= STILL_HERE_S:
-			sending = true
-			if _send(state_req, "/api/godot/state", body):
-				sent = body
-				since_sent = 0.0
-			else:
-				sending = false
-	if not waiting:
-		retry_in -= delta
-		if retry_in <= 0.0:
-			waiting = _send(point_req, "/api/godot/point?project=" + project.uri_encode())
-			if not waiting:
-				retry_in = RETRY_S
+	app.poll(delta, _state)
 
 
-# `body` is JSON to POST; without one it's a GET.
-func _send(req: HTTPRequest, path: String, body := "") -> bool:
-	if body == "":
-		return req.request(url + path, _headers(false)) == OK
-	return req.request(url + path, _headers(true), HTTPClient.METHOD_POST, body) == OK
-
-
-func _headers(with_body: bool) -> PackedStringArray:
-	var headers := PackedStringArray(["X-KG-Contract: %d" % CONTRACT])
-	if with_body:
-		headers.append("Content-Type: application/json")
-	return headers
-
-
-# Knocking again at once would only be refused again.
+# The app speaks another contract version: app.gd stops knocking for a while.
 func _refused() -> void:
-	refused_for = REFUSED_S
-	sent = ""
 	_show_up(false)
-	_note("The course app and this helper are different versions. Reload this project: Project > Reload Current Project.", REFUSED_S)
+	_note("The course app and this helper are different versions. Reload this project: Project > Reload Current Project.", App.REFUSED_S)
 
 
-func _state_sent(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
-	sending = false
-	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
-		_refused()
-		return
-	if result != HTTPRequest.RESULT_SUCCESS or code >= 300:
-		sent = ""                 # the app missed it: send it again once it's back
-		_app_gone()
-
-
-func _point_came(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
-	waiting = false
-	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
-		_refused()
-		return
-	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
-		_app_gone()
-		return
-	retry_in = 0.0
-	var answer = JSON.parse_string(body.get_string_from_utf8())
-	if answer is Dictionary and answer.get("target") is String and places.has(answer["target"]):
+func _point_came(answer: Dictionary) -> void:
+	if places.has(answer["target"]):
 		# he pressed Show me on the course page: start (or restart) the walk from that ask
 		walk_ask = int(answer["ask"]) if answer.get("ask") != null else 0
 		walk_clicked = []
@@ -723,194 +642,18 @@ func _point_came(result: int, code: int, _headers: PackedStringArray, body: Pack
 		_point(answer["target"], _say(answer["target"]))
 
 
-# ---------------------------------------------------------------- pointing, and going on
-
-# The ghost overlay for a window (the editor itself, or a dialog), made the first time it's needed.
-func _pointer_in(win: Window) -> Control:
-	var key := win.get_instance_id()
-	if pointers.has(key) and is_instance_valid(pointers[key]):
-		return pointers[key]
-	var p: Control = Pointer.new()
-	p.ghost = ghost
-	var base := EditorInterface.get_base_control()
-	if win == base.get_window():
-		base.add_child(p)
-	else:
-		win.add_child(p, false, Node.INTERNAL_MODE_BACK)      # not part of the dialog's own layout
-	p.finished.connect(_pointed)
-	pointers[key] = p
-	return p
-
+# ---------------------------------------------------------------- pointing, and going on (walk.gd)
 
 func _point(id: String, text: String) -> void:
-	_stop_pointing()
-	if note and is_instance_valid(note):
-		note.queue_free()
-	walk_target = id
-	var field_now = (fields[id] as WeakRef).get_ref() if fields.has(id) else null
-	walk_typed = (field_now as LineEdit).text if field_now else ""      # what's already there isn't new typing
-	typed_changed = false
-	prefilled_for = 0.0
-	typed_for = 0.0
-	var win: Window = wins.get(id, EditorInterface.get_base_control().get_window())
-	var p := _pointer_in(win)
-	p.stays = fields.has(id)
-	p.point(places[id], text)
+	walk.point(id, text)
 
 
-# Takes every ghost down without ending the walk-through.
 func _stop_pointing() -> void:
-	switching = true
-	for p in pointers.values():
-		if is_instance_valid(p):
-			p.stop()
-	switching = false
-
-
-func _pointed(clicked: bool, cancelled: bool, gave_up: bool) -> void:
-	if switching:
-		return
-	if walk_ask == 0 or cancelled:
-		walk_ask = 0
-		return
-	if gave_up:
-		walk_ask = 0
-		answers.walk_ended(answer_record, "stopped")
-		_note("I'll stop here. Ask me again anytime.", 8.0)
-		return
-	if clicked:
-		walk_clicked.append(str(labels.get(walk_target, walk_target)))
-		walk_i += 1
-	walk_tries = 0
-	next_in = SETTLE_S
-
-
-func _walk(delta: float) -> void:
-	# the cards under the button grow as their words change: keep them inside the window
-	for card in [note, hello, ask_box]:
-		if card and is_instance_valid(card) and card.visible:
-			card.position = _under_button(card)
-	# a text field he was pointed at: once he has typed and paused, go on
-	if walk_ask != 0 and fields.has(walk_target) and next_in < 0.0:
-		var field = (fields[walk_target] as WeakRef).get_ref()
-		if field and (field as LineEdit).text != walk_typed:
-			walk_typed = (field as LineEdit).text
-			typed_changed = true
-			typed_for = 0.0
-		elif field and not typed_changed and walk_typed != "" and typed_in.get(walk_target, "") == walk_typed:
-			# pointed back at a box that already holds text: if he leaves it, it was typed already
-			prefilled_for += delta
-			if prefilled_for > ALREADY_TYPED_S:
-				prefilled_for = -INF
-				_stop_pointing()
-				walk_i += 1
-				walk_tries = 0
-				next_in = 0.0
-		elif field and typed_changed and walk_typed != "":
-			typed_for += delta
-			if typed_for > 1.2:
-				walk_clicked.append("typed \"%s\" in %s" % [walk_typed, str(labels.get(walk_target, "the field"))])
-				typed_in[walk_target] = walk_typed
-				typed_changed = false             # counted once; waiting for the next click mustn't count it again
-				_stop_pointing()
-				walk_i += 1
-				walk_tries = 0
-				next_in = 0.0
-	if next_in >= 0.0:
-		next_in -= delta
-		if next_in < 0.0:
-			_ask_next()
-
-
-# Whether a plan step already done pointed at this same thing.
-func _used_before(id: String) -> bool:
-	for i in walk_i:
-		if str(walk_plan[i].get("id", "")) == id:
-			return true
-	return false
-
-
-func _ask_next() -> void:
-	if walk_ask == 0 or (walk_ask != ALONE and not app_up):
-		return
-	# the clicks were planned ahead: go straight to the next one when it's where the plan said
-	if walk_plan.size() > 0:
-		if walk_i >= walk_plan.size():
-			walk_ask = 0
-			answers.walk_ended(answer_record, "finished")
-			_note(walk_closing if walk_closing != "" else "That's it.", 7.0)
-			return
-		_state()
-		var found := _find(str(walk_plan[walk_i].get("id", "")))
-		var at := walk_i
-		# Not at once: right after a click the old screen is still up, and a later step may be on it.
-		if found == "" and walk_tries >= LOOKS_BEFORE_SKIPPING_AHEAD:
-			for j in range(walk_i + 1, walk_plan.size()):
-				if _changes_what_is_made(str(walk_plan[j - 1].get("id", ""))):
-					break              # skipping a box to type in or an item to pick would make the wrong thing
-				if _used_before(str(walk_plan[j].get("id", ""))):
-					break              # the same box or button as a done step: the screen hasn't moved on, so it's not that step yet
-				found = _find(str(walk_plan[j].get("id", "")))
-				if found != "":
-					at = j
-					break
-		if found != "":
-			walk_i = at
-			_point(found, "[b]Step %d of %d:[/b] " % [at + 1, walk_plan.size()] + str(walk_plan[at].get("say", "")).replace("[", "[lb]"))
-			return
-		walk_tries += 1
-		if walk_tries < LOOKS_BEFORE_ASKING:
-			next_in = LOOK_AGAIN_S
-			return
-		walk_plan = []                 # the plan and the screen disagree: ask as it goes from here
-	if walk_clicked.size() >= WALK_MAX:
-		walk_ask = 0
-		answers.walk_ended(answer_record, "stopped")
-		_note("That was a long one. Ask me again if there's more to do.", 6.0)
-		return
-	var body := _state()
-	if walk_ask == ALONE:
-		brain_for = "next"
-		tags = Tags.new()
-		_run_claude(_prompt("guide"), _fill(_prompt("turn"), {
-			"wanted": walk_said.strip_edges() if walk_said.strip_edges() != "" else "help with what they are building",
-			"answer": walk_answer,
-			"clicked": "(nothing yet)" if walk_clicked.is_empty() else "".join(walk_clicked.map(func(c): return "\n- " + str(c))),
-			"screen": _screen(body, "point"),
-		}))
-		_note("", 60.0)
-		return
-	body["ask"] = walk_ask
-	body["clicked"] = walk_clicked
-	if _send(next_req, "/api/godot/next", JSON.stringify(body)):
-		_note("", 60.0)
-	else:
-		walk_ask = 0
-
-
-func _next_came(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
-	var reply = JSON.parse_string(body.get_string_from_utf8())
-	if walk_ask == 0:
-		return
-	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
-		walk_ask = 0
-		_refused()
-		return
-	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or not (reply is Dictionary):
-		walk_ask = 0
-		_note("I lost track of where we were. Ask me again with %s." % Menu.ask_keys(), 6.0)
-		return
-	_next_reply(reply)
+	walk.stop_pointing()
 
 
 func _next_reply(reply: Dictionary) -> void:
-	var say := str(reply.get("say", "")).replace("[", "[lb]")
-	_state()                                  # where things are now
-	if reply.get("target") is String and places.has(reply["target"]) and walk_clicked.count(str(labels.get(reply["target"], ""))) < 2:
-		_point(reply["target"], "[b]Next:[/b] " + say)
-	else:
-		walk_ask = 0
-		_note(say if say != "" else "That's it.", 7.0)
+	walk.next_reply(reply)
 
 
 # A short line under the helper's button, for a few seconds.
@@ -1082,7 +825,7 @@ func _ask(said: String) -> void:
 	if earlier != "":
 		said = earlier.strip_edges() + "\n\nTheir question: " + said
 	said += from_docs + _from_the_manual(said)
-	if not ask_stream.post(host, port, "/api/godot/ask", _headers(true), JSON.stringify({"project": project, "said": said, "stream": true})):
+	if not ask_stream.post(host, port, "/api/godot/ask", app.headers(true), JSON.stringify({"project": project, "said": said, "stream": true})):
 		ask_box.failed("That didn't work. Try again.")
 
 
@@ -1110,7 +853,7 @@ func _answer_came(ok: bool, code: int) -> void:
 		ask_box.failed("That didn't work. Is the course page still running?")
 		return
 	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
-		_refused()
+		app.refuse()
 	if code != 200 or reply.has("code"):
 		var claude := {"signed_out": "Claude isn't signed in. Open a terminal, type claude, and sign in. Then ask again.", "missing": "The claude command isn't installed on this computer yet."}
 		ask_box.failed(claude.get(reply.get("code", ""), str(reply.get("message", "That didn't work. Try again."))))
@@ -1245,7 +988,7 @@ func _show_me() -> void:
 	var label := ("[b]Step 1 of %d:[/b] " % walk_plan.size()) if walk_plan.size() > 1 else "[b]First:[/b] "
 	_point(answer_target, (label + first.replace("[", "[lb]")) if first != "" else _say(answer_target))
 	if answer_ask != ALONE:
-		_send(tell_req, "/api/godot/show", JSON.stringify({"ask": answer_ask}))
+		app.tell_shown(answer_ask)
 
 
 # A planned click on today's screen: the thing with that id, give or take capitals and a full stop
@@ -1291,172 +1034,11 @@ func _say(id: String) -> String:
 	return name
 
 
-func _app_gone() -> void:
-	app_up = false
-	retry_in = RETRY_S
-	_show_up(false)
+# ---------------------------------------------------------------- what's on screen (screen.gd)
 
-
-# Knocks on the app's port; once it answers, the HTTP side starts.
-func _knock(delta: float) -> void:
-	if knock == null:
-		retry_in -= delta
-		if retry_in > 0.0:
-			return
-		knock = StreamPeerTCP.new()
-		knocking_s = 0.0
-		if knock.connect_to_host(host, port) != OK:
-			knock = null
-			retry_in = RETRY_S
-		return
-	knock.poll()
-	knocking_s += delta
-	var status := knock.get_status()
-	if status == StreamPeerTCP.STATUS_CONNECTING and knocking_s < RETRY_S:
-		return
-	knock.disconnect_from_host()
-	knock = null
-	if status == StreamPeerTCP.STATUS_CONNECTED:
-		retry_in = NOT_THE_APP_RETRY_S             # until the answer says it's the course app
-		if hello_req.request(url + "/api/godot/status", _headers(false)) != OK:
-			retry_in = RETRY_S
-	else:
-		retry_in = RETRY_S
-
-
-# Something answered on the course app's port: only the course app itself turns course mode on.
-func _hello_came(_result: int, code: int, headers: PackedStringArray, _body: PackedByteArray) -> void:
-	var says_contract := false
-	for header in headers:
-		says_contract = says_contract or header.to_lower().begins_with(CONTRACT_HEADER + ":")
-	if code == HTTPClient.RESPONSE_UPGRADE_REQUIRED:
-		_refused()
-		return
-	if code != 200 or not says_contract:
-		return
-	app_up = true
-	_show_up(true)
-	sent = ""
-	look_in = 0.0
-	retry_in = 0.0
-
-
-# ---------------------------------------------------------------- what's on screen
-
-# The window he's working in: a dialog when one is open (Create New Node, a file dialog), else the editor.
 func _front() -> Window:
-	var main := EditorInterface.get_base_control().get_window()
-	var front := main
-	for w in main.find_children("*", "AcceptDialog", true, false):
-		if (w as Window).visible:
-			front = w
-	return front
+	return Screen.front_window()
 
 
 func _state() -> Dictionary:
-	places = {}
-	labels = {}
-	wins = {}
-	fields = {}
-	nodes = {}
-	var targets: Array = []
-	var base := EditorInterface.get_base_control()
-	var front := _front()
-	var root: Node = base if front == base.get_window() else front
-	var screen := Rect2(Vector2.ZERO, front.size)
-	var here := func(c: Control) -> bool: return c.is_visible_in_tree() and c.get_window() == front and screen.intersects(c.get_global_rect())
-	for b in root.find_children("*", "BaseButton", true, false):
-		if b == self.button or (b as BaseButton).disabled:
-			continue              # not the helper's own button, nor one that can't be pressed
-		var found: BaseButton = b
-		if not here.call(found) or (ask_box and ask_box.is_ancestor_of(found)):
-			continue
-		var name := found.tooltip_text.get_slice("\n", 0).strip_edges()
-		if name == "" and found is Button:
-			name = (found as Button).text.strip_edges()
-		name = name.replace("]", ")")
-		if name == "":
-			continue
-		_add(targets, "button:" + name, "the \"%s\" button" % name, _control_place(found), front, found)
-	for t in root.find_children("*", "Tree", true, false):
-		var tree: Tree = t
-		if not here.call(tree):
-			continue
-		var in_scene_dock := false
-		var up := tree.get_parent()
-		while up and not in_scene_dock and not (up is Window):
-			in_scene_dock = up.get_class() == "SceneTreeDock"
-			up = up.get_parent()
-		var inside := tree.get_global_rect()
-		var item := tree.get_root()
-		var listed := 0
-		while item and listed < 80:
-			var row := item.get_text(0).replace("]", ")")
-			if row != "" and item.is_visible_in_tree():
-				var at: Vector2 = inside.position + tree.get_item_area_rect(item).position     # already where it is now, scrolling included
-				if in_scene_dock:
-					_add(targets, "row:" + row, "the %s node in the Scene dock" % row, _row_place(tree, row), front, tree)
-					listed += 1
-				elif at.y >= inside.position.y and at.y < inside.end.y:
-					_add(targets, "item:" + row, "\"%s\" in the list" % row, _row_place(tree, row), front, tree)
-					listed += 1
-			item = item.get_next_in_tree()
-	for f in root.find_children("*", "LineEdit", true, false):
-		var field: LineEdit = f
-		if field.secret:
-			continue
-		var hint := field.placeholder_text.strip_edges().replace("]", ")")
-		if hint == "" and front != base.get_window():
-			hint = "Search"           # a dialog's unnamed box is its search box
-		if here.call(field) and field.editable and hint != "" and not (ask_box and ask_box.is_ancestor_of(field)):
-			_add(targets, "field:" + hint, "the \"%s\" text field" % hint, _control_place(field), front, field)
-			fields["field:" + hint] = weakref(field)
-	for p in root.find_children("*", "EditorProperty", true, false):
-		var prop: EditorProperty = p
-		if here.call(prop):
-			var label := prop.label if prop.label != "" else str(prop.get_edited_property())
-			_add(targets, "prop:" + str(prop.get_edited_property()), "the %s property in the Inspector" % label, _control_place(prop), front, prop)
-	var scene := EditorInterface.get_edited_scene_root()
-	var selected := EditorInterface.get_selection().get_selected_nodes()
-	return {
-		"project": project,
-		"scene": scene.scene_file_path if scene else "",
-		"selected": str(selected[0].name) if selected.size() > 0 else "",
-		"window": front.title if front != base.get_window() else "",
-		"targets": targets,
-	}
-
-
-func _add(targets: Array, id: String, label: String, place: Callable, win: Window, node: Object) -> void:
-	if id.ends_with(":") and id.count(":") == 1:
-		return                    # a thing with no name: the app refuses a whole report over one such id
-	if places.has(id):
-		return                    # the first one on screen wins
-	places[id] = place
-	wins[id] = win
-	nodes[id] = weakref(node)
-	labels[id] = label
-	targets.append({"id": id, "label": label})
-
-
-func _control_place(c: Control) -> Callable:
-	var ref := weakref(c)
-	return func():
-		var it = ref.get_ref()
-		return it.get_global_rect() if it and it.is_visible_in_tree() else null
-
-
-func _row_place(tree: Tree, row: String) -> Callable:
-	var ref := weakref(tree)
-	return func():
-		var t = ref.get_ref()
-		if not t or not t.is_visible_in_tree():
-			return null
-		var item: TreeItem = t.get_root()
-		while item:
-			if item.get_text(0) == row:
-				var a: Rect2 = t.get_item_area_rect(item)
-				var at: Vector2 = t.get_global_rect().position + a.position
-				return Rect2(at, Vector2(t.size.x, a.size.y))
-			item = item.get_next_in_tree()
-		return null
+	return screen.read(project, button, ask_box)

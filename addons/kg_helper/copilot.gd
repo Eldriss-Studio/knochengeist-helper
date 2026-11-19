@@ -36,8 +36,8 @@ const PROBLEMS := {
 	"billing": "Copilot reports a billing problem with your account. Check it at github.com/settings/copilot.",
 }
 const NO_TOOLS := ["--output-format", "json", "--available-tools=", "--deny-tool=shell,write,read,url,memory",
-	"--no-custom-instructions", "--disable-builtin-mcps", "--no-ask-user", "--no-auto-update"]
-const KNOWN_EVENTS := ["session.", "assistant.", "tool.", "user."]   # event types it sends besides the three read here
+	"--no-custom-instructions", "--disable-builtin-mcps", "--no-ask-user", "--no-auto-update", "--sync-session=off"]
+const KNOWN_EVENTS := ["session.", "assistant.", "tool.", "user.", "model.", "commands.", "instruction."]   # event types it sends besides the three read here
 const LAST_ANSWER := "copilot_answer"   # the latest message with text, kept on the brain until the result line
 
 
@@ -54,11 +54,35 @@ static func login_args(path: String) -> PackedStringArray:
 	return PackedStringArray([path, "login"])
 
 
-## Its own home and working folder, under the helper's data folder.
+## A home of its own, so the helper's questions stay out of his Copilot history. It finds his sign-in
+## (kept in his keychain) through the account his own Copilot names in config.json, so only those
+## two account fields are copied, fresh each time: never a token.
 static func process_env() -> Dictionary:
 	var home := OS.get_user_data_dir().path_join("kg_helper").path_join("copilot-home")
 	DirAccess.make_dir_recursive_absolute(home)
+	var account := {}
+	var his: Dictionary = _his_config()
+	for key in ["loggedInUsers", "lastLoggedInUser"]:
+		if his.has(key):
+			account[key] = his[key]
+	var file := FileAccess.open(home.path_join("config.json"), FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(account))
+		file.close()
 	return {"COPILOT_HOME": home}
+
+
+## His own Copilot's config.json, which starts with // comment lines.
+static func _his_config() -> Dictionary:
+	var his_home := OS.get_environment("COPILOT_HOME")
+	if his_home == "":
+		his_home = OS.get_environment("USERPROFILE" if OS.get_name() == "Windows" else "HOME").path_join(".copilot")
+	var lines := PackedStringArray()
+	for line in FileAccess.get_file_as_string(his_home.path_join("config.json")).split("\n"):
+		if not line.strip_edges().begins_with("//"):
+			lines.append(line)
+	var parsed = JSON.parse_string("\n".join(lines))
+	return parsed if parsed is Dictionary else {}
 
 
 static func check_state(_brain, _exit_code: int, _said: String, _also: String) -> String:

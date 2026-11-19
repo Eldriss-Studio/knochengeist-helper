@@ -2,6 +2,12 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 46
+
+- **Settings checks the AI tool you pick right away.** No more "Save to check": pick Codex or Copilot and Settings says at once whether it's there and signed in, and its Sign in button signs in to that tool.
+- **Copilot uses the sign-in you already have.** Version 45 asked you to sign in again inside the helper. Now it finds your own `copilot login` through your account name (never your token), while its questions still stay out of your Copilot history and aren't synced to your GitHub account.
+- The helper's main file is split into its three jobs (the course app link, reading the screen, and the walk-through), with no change to what it does.
+
 ## Version 45
 
 - **Copilot, for GitHub Copilot plans (Free included).** Pick it under **AI tool** in Settings. The helper answers through `copilot` with every tool off and your own instructions and MCP servers ignored, so only your question is sent, to GitHub. It runs Copilot with its own settings folder, so these questions stay out of your Copilot history. Copilot can't be checked for sign-in without spending a request, so your first question finds out, and the menu then offers **Sign in to Copilot…**.

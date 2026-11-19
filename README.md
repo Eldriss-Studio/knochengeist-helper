@@ -17,9 +17,9 @@ It answers through your own Claude Code, so it has no account, key or server of 
 - **An AI tool you're signed in to**, picked under **AI tool** in Settings:
   - **Claude Code**, with a Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once.
   - **Codex**, with a ChatGPT plan. The ChatGPT app for Mac comes with it, and the helper finds it there. Otherwise install it with `npm install -g @openai/codex`, then run `codex login` once in a terminal.
-  - **Copilot**, with any GitHub Copilot plan, Free included. Install it with `npm install -g @github/copilot` (or `brew install --cask copilot-cli`), then pick **Sign in to Copilot…** in the ghost's menu after your first question.
+  - **Copilot**, with any GitHub Copilot plan, Free included. Install it with `brew install --cask copilot-cli`, `winget install GitHub.Copilot` or `npm install -g @github/copilot`, then run `copilot login` once in a terminal.
 
-Each question is one run of that tool, so it counts toward your plan's usage like any other. With an API key instead of a plan, each question is billed to that key. Codex and Copilot answer all at once rather than word by word, and don't report how much of the plan is left. Copilot runs with its own settings folder, so the helper's questions stay out of your Copilot history, and the helper can't check its sign-in without spending a request: your first question finds out.
+Each question is one run of that tool, so it counts toward your plan's usage like any other. With an API key instead of a plan, each question is billed to that key. Codex and Copilot answer all at once rather than word by word, and don't report how much of the plan is left. Copilot runs with a settings folder of its own, so the helper's questions stay out of your Copilot history. It uses your own sign-in: the helper copies only your account name there, never your token. It can't check that sign-in without spending a request, so your first question finds out.
 
 ## Install
 
