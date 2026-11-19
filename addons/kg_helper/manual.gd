@@ -169,7 +169,7 @@ func status() -> String:
 		"failed":
 			return L.t(". Couldn't fetch the manual for Godot %s, so answers use the class reference alone.") % minor
 		"fetching", "loading":
-			return ". Getting the manual for Godot %s…" % minor
+			return L.t(". Getting the manual for Godot %s…") % minor
 	return ""
 
 

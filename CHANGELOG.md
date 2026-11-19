@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 50
+
+- **Walk-throughs work in single-window mode.** With Godot set to draw its dialogs inside the editor window, clicking what the ghost pointed at in a dialog (Create New Node, for one) wasn't noticed, so the walk-through stalled there. Now it goes on to the next step.
+- **Settings fully in your language.** The "Getting the manual for Godot…" line was still in English. Now it follows the editor's language like the rest.
+
 ## Version 49
 
 - **Answers come sooner, and you choose how hard the AI thinks.** Settings has a new **Effort** choice for Claude Code and Codex: Low (the default), Medium or High. At Low, Claude Code's whole answer with Show me is ready in about 4.3 seconds instead of 5.8 (median of ten real runs), and the answer evals pass the same. Pick High when you'd rather it think longer. Copilot decides this itself, so it has no choice to make.

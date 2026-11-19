@@ -643,3 +643,6 @@ msgstr "Llegaste al límite de tu plan para %s. Inténtalo más tarde."
 
 msgid "You've used all of your plan's %s. It resets %s."
 msgstr "Usaste todo el %s de tu plan. Se reinicia %s."
+
+msgid ". Getting the manual for Godot %s…"
+msgstr ". Descargando el manual de Godot %s…"

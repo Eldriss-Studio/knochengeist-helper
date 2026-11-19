@@ -28,6 +28,7 @@ var t := 0.0
 var start := Vector2.ZERO
 var fly_s := 0.8
 var bubble: Control
+var ring_box: Control            # where the ring is, as a control: what a screen reader (or a test) can find
 var ring_a := PackedVector2Array()
 var ring_b := PackedVector2Array()
 
@@ -40,6 +41,11 @@ func _ready() -> void:
 	bubble = Bubble.new()
 	bubble.visible = false
 	add_child(bubble)
+	ring_box = Control.new()
+	ring_box.name = "GhostRing"
+	ring_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring_box.visible = false
+	add_child(ring_box)
 
 
 ## Points at whatever `place` finds, saying `text` beside it.
@@ -60,6 +66,7 @@ func point(place: Callable, text: String) -> void:
 	bubble.say(text, 230.0)
 	bubble.show_part(0.0)
 	bubble.visible = false
+	ring_box.visible = false
 	visible = true
 	queue_redraw()
 
@@ -120,7 +127,10 @@ func _process(delta: float) -> void:
 		stop(false, false, true)
 		return
 	var landed := t - fly_s
+	ring_box.visible = landed > 0.0
 	if landed > 0.0:
+		ring_box.position = (r as Rect2).position
+		ring_box.size = (r as Rect2).size
 		var rest := _rest(r)
 		bubble.visible = true
 		bubble.position = _card_at(r, rest)
@@ -135,7 +145,9 @@ func _input(event: InputEvent) -> void:
 		stop(false, true)
 	elif event is InputEventMouseButton and event.pressed and where.is_valid():
 		var r = where.call()
-		if r != null and (r as Rect2).has_point(event.global_position) and not stays:
+		# position, not global_position: a dialog drawn inside the editor's window (single-window mode)
+		# gets the click moved into its own corner, and only position is moved
+		if r != null and (r as Rect2).has_point(event.position) and not stays:
 			stop(true)
 
 

@@ -54,6 +54,9 @@ msgstr ""
 msgid ". Couldn't fetch the manual for Godot %s, so answers use the class reference alone."
 msgstr ""
 
+msgid ". Getting the manual for Godot %s…"
+msgstr ""
+
 msgid ". The manual for Godot %s isn't out yet, so answers use the class reference alone."
 msgstr ""
 
