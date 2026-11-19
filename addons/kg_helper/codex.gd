@@ -24,6 +24,8 @@ const AUTH_ARGS := ["login", "status"]
 const MODEL_HINT := "Codex picks its model for your ChatGPT plan."
 const MODELS := []                  # Codex picks its model for the plan
 const REPORTS_RESETS := false
+const CHECKS_SIGN_IN := true
+const SIGNED_OUT_SAYS := []          # it says so in its events, which read() handles
 const SIGN_IN_CAN_BE_SKIPPED := false
 const PROBLEMS := {
 	"missing": "Codex isn't installed. Install it with " + INSTALL_COMMAND + ", run codex login once in a terminal, then ask again.",
@@ -50,6 +52,11 @@ static func login_args(path: String) -> PackedStringArray:
 
 ## `login status` says on stderr: signed in on exit 0, signed out when it says "Not logged in",
 ## and otherwise it won't start.
+## No extra environment: it runs with the person's own.
+static func process_env() -> Dictionary:
+	return {}
+
+
 static func check_state(brain, exit_code: int, said: String, also: String) -> String:
 	var words := said + also
 	brain.plan_name = "ChatGPT plan" if words.contains("ChatGPT") else ("API key" if words.to_lower().contains("api key") else "")

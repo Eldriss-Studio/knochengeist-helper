@@ -20,6 +20,8 @@ const AUTH_ARGS := ["auth", "status"]
 const MODEL_HINT := ""
 const MODELS := ["sonnet", "fable", "opus", "haiku"]
 const REPORTS_RESETS := true        # its limit events say when the limit resets
+const CHECKS_SIGN_IN := true
+const SIGNED_OUT_SAYS := []          # it says so in its events, which read() handles
 const SIGN_IN_CAN_BE_SKIPPED := true    # it can answer with an API key though its sign-in says otherwise
 const SIGNED_OUT_EXIT := 1
 const PROBLEMS := {}                # the brain's wording, which is Claude Code's
@@ -40,6 +42,11 @@ static func login_args(path: String) -> PackedStringArray:
 
 ## The sign-in check's answer from `auth status` JSON on stdout. Signed out only when it says so
 ## ({"loggedIn": false}); any other failure means it won't start.
+## No extra environment: it runs with the person's own.
+static func process_env() -> Dictionary:
+	return {}
+
+
 static func check_state(brain, exit_code: int, said: String, _also: String) -> String:
 	var status = JSON.parse_string(said)
 	brain.auth_method = str(status.get("authMethod", "")) if status is Dictionary else ""

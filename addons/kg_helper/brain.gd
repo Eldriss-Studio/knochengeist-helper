@@ -35,14 +35,15 @@ const EXIT_UNKNOWN := -1
 const NEWLINE := 10
 const Claude := preload("claude.gd")
 const Codex := preload("codex.gd")
+const Copilot := preload("copilot.gd")
 # Every AI tool the helper can answer through, by id. To add one (Copilot CLI, Cursor CLI…): copy
 # codex.gd, give it every name below, add it here, and give its tests a stand-in like fake-codex.ts.
 # A test checks each tool here has the whole surface.
-const TOOLS := {"claude": Claude, "codex": Codex}
+const TOOLS := {"claude": Claude, "codex": Codex, "copilot": Copilot}
 const ADAPTER_CONSTANTS := ["ID", "NAME", "LABEL", "COMPANY", "PATH_SETTING", "MODEL_SETTING", "ENV", "COMMAND",
 	"INSTALL_PAGE", "INSTALL_HINT", "LOGIN_HINT", "AUTH_ARGS", "MODELS", "MODEL_HINT", "REPORTS_RESETS",
-	"SIGN_IN_CAN_BE_SKIPPED", "PROBLEMS"]
-const ADAPTER_FUNCTIONS := ["find_automatically", "model_from", "login_args", "check_state", "start", "read"]
+	"SIGN_IN_CAN_BE_SKIPPED", "CHECKS_SIGN_IN", "SIGNED_OUT_SAYS", "PROBLEMS"]
+const ADAPTER_FUNCTIONS := ["find_automatically", "model_from", "login_args", "check_state", "start", "read", "process_env"]
 const TOOL_SETTING := "knochengeist/tool"
 # Codex reads its question from stdin to the end, so a shell hands it the question's file.
 const RUN_FROM_FILE := "cd \"$1\" && f=\"$2\" && shift 2 && exec \"$0\" \"$@\" < \"$f\""
@@ -341,6 +342,9 @@ func _poll_check(delta: float) -> void:
 		stop_check()
 		if step == "version":
 			claude_version = said.strip_edges().get_slice("\n", 0)
+			if adapter().AUTH_ARGS.is_empty():
+				_now("ready" if exit_code in [0, EXIT_UNKNOWN] else "wont_start", find_claude())   # no free sign-in check: the first question finds out
+				return
 			_start_check(find_claude(), adapter().AUTH_ARGS, "auth")
 			return
 		var also := check_err.get_buffer(check_err.get_length()).get_string_from_utf8() if check_err else ""
@@ -437,7 +441,9 @@ func ask(system: String, prompt: String) -> void:
 		return
 	file.store_string(system)
 	file.close()
+	var before := _set_env(adapter().process_env())
 	var started: Dictionary = adapter().start(self, claude, dir, asked, prompt, model())
+	_set_env(before)                      # the child copied its environment when it started
 	if started.is_empty():
 		_finish.call_deferred("failed", question)
 		return
@@ -545,6 +551,8 @@ func poll(delta: float) -> void:
 	if unread.size() > 0:
 		_line(unread.get_string_from_utf8())
 	_keep_errors()
+	for words in adapter().SIGNED_OUT_SAYS:     # what a tool that says it on stderr says
+		auth_failed = auth_failed or said_wrong.to_lower().contains(words)
 	var crashed := not got_result and OS.get_process_exit_code(pid) not in [0, EXIT_UNKNOWN]
 	var failed := ended_badly or crashed or text.strip_edges() == ""
 	var wrong := said_wrong.to_lower()
@@ -589,6 +597,19 @@ func _line(raw: String) -> void:
 
 
 ## A piece of the answer, as it comes.
+## Sets these environment variables in Godot's own process, for a child about to start, and returns
+## what they were so they can be put back. OS.execute_with_pipe takes no environment of its own.
+static func _set_env(vars: Dictionary) -> Dictionary:
+	var before := {}
+	for key in vars:
+		before[key] = OS.get_environment(key) if OS.has_environment(key) else null
+		if vars[key] == null:
+			OS.unset_environment(key)
+		else:
+			OS.set_environment(key, vars[key])
+	return before
+
+
 func add_text(more: String) -> void:
 	if more == "":
 		return

@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 45
+
+- **Copilot, for GitHub Copilot plans (Free included).** Pick it under **AI tool** in Settings. The helper answers through `copilot` with every tool off and your own instructions and MCP servers ignored, so only your question is sent, to GitHub. It runs Copilot with its own settings folder, so these questions stay out of your Copilot history. Copilot can't be checked for sign-in without spending a request, so your first question finds out, and the menu then offers **Sign in to Copilot…**.
+- When any AI tool turns out to be signed out mid-question, the menu now says so and offers Sign in right away.
+
 ## Version 44
 
 - **Codex, for ChatGPT plans.** Pick **AI tool** in Settings: Claude Code or Codex. With Codex, the helper answers through `codex exec` with its shell and web search turned off, so only your question is sent, to OpenAI. Show me, follow-ups and the name check work the same. Codex answers all at once, and doesn't report your plan's usage, so the ring stays hidden.

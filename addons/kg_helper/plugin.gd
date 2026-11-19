@@ -379,8 +379,22 @@ func _chose(id: int) -> void:
 
 
 func _sign_in() -> void:
-	# Claude Code signs in when it's run; Codex with "codex login".
+	# Claude Code signs in when it's run; Codex with "codex login", Copilot with "copilot login" in its own home.
 	var run: PackedStringArray = Brain.adapter().login_args(claude_path)
+	var env: Dictionary = Brain.adapter().process_env()
+	if not env.is_empty() and OS.get_name() != "Windows":
+		# a terminal app may start from its own environment, so the sign-in names its home on the command line
+		var with_env := PackedStringArray(["/usr/bin/env"])
+		for key in env:
+			with_env.append("%s=%s" % [key, env[key]])
+		with_env.append_array(run)
+		run = with_env
+	var before := Brain._set_env(env)          # Windows' console starts from the helper's environment
+	_open_sign_in(run)
+	Brain._set_env(before)
+
+
+func _open_sign_in(run: PackedStringArray) -> void:
 	var terminal := OS.get_environment("KG_HELPER_TERMINAL")
 	if terminal != "":
 		OS.create_process(terminal, run)
@@ -393,7 +407,10 @@ func _sign_in() -> void:
 			DirAccess.make_dir_recursive_absolute(script.get_base_dir())
 			var file := FileAccess.open(script, FileAccess.WRITE)
 			if file:
-				file.store_string("#!/bin/sh\nexec '%s' login\n" % claude_path.replace("'", "'\\''"))
+				var line := PackedStringArray()
+				for part in run:
+					line.append("'%s'" % part.replace("'", "'\\''"))
+				file.store_string("#!/bin/sh\nexec %s\n" % " ".join(line))
 				file.close()
 				OS.execute("chmod", ["+x", script])
 				OS.create_process("open", ["-a", "Terminal", script])

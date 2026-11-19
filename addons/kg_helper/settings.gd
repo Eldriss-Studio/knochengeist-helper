@@ -8,6 +8,7 @@ const WIDTH := 440.0
 const GAP := 6
 const QUIET := Color(1, 1, 1, 0.7)
 const CANDLE := Color("e3b44a")
+const UNCHECKED_SIGN_IN := "%s found. Your first question checks its sign-in."
 const STATUS_WORDS := {"ready": "Signed in to %s", "signed_out": "Not signed in to %s", "checking": "Checking %s…"}
 const MODEL_NAMES := {
 	"sonnet": "Sonnet (suits most questions)",
@@ -129,6 +130,8 @@ func _show_status() -> void:
 		return
 	var lines: PackedStringArray = brain_ref.plan_lines()
 	var text: String = STATUS_WORDS.get(tool_state, "")
+	if tool_state == "ready" and not picked.CHECKS_SIGN_IN:
+		text = UNCHECKED_SIGN_IN
 	text = text % tool_name if text != "" else Menu.state(false, tool_state)
 	var row := HBoxContainer.new()
 	var icon := TextureRect.new()
