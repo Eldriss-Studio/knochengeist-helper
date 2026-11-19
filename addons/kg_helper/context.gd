@@ -12,6 +12,13 @@ var icon: Texture2D
 var script_path := ""
 
 
+## The Inspector's right-click spot, or -1 in a Godot older than 4.7, which has none.
+static func inspector_slot() -> int:
+	if ClassDB.class_has_integer_constant("EditorContextMenuPlugin", "CONTEXT_SLOT_INSPECTOR_PROPERTY"):
+		return ClassDB.class_get_integer_constant("EditorContextMenuPlugin", "CONTEXT_SLOT_INSPECTOR_PROPERTY")
+	return -1
+
+
 func _init(for_slot: int, ghost: Texture2D) -> void:
 	slot = for_slot
 	icon = ghost
@@ -24,6 +31,11 @@ func _popup_menu(paths: PackedStringArray) -> void:
 
 
 func _chosen(from) -> void:
+	if slot == inspector_slot():
+		var object = EditorInterface.get_inspector().get_edited_object()
+		var property := str(from[0]) if from is Array and not from.is_empty() else str(from)
+		picked.emit("property", {"property": property, "class": object.get_class() if object else ""})
+		return
 	match slot:
 		CONTEXT_SLOT_SCENE_TREE:
 			var nodes: Array = from if from is Array else [from]
@@ -40,7 +52,3 @@ func _chosen(from) -> void:
 				var code := from as CodeEdit
 				var lines := code.get_selected_text() if code.has_selection() else code.get_line(code.get_caret_line())
 				picked.emit("code", {"path": script_path, "code": lines})
-		CONTEXT_SLOT_INSPECTOR_PROPERTY:
-			var object = EditorInterface.get_inspector().get_edited_object()
-			var property := str(from[0]) if from is Array and not from.is_empty() else str(from)
-			picked.emit("property", {"property": property, "class": object.get_class() if object else ""})

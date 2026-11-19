@@ -12,7 +12,7 @@ It answers through your own AI tool (Claude Code, Codex or GitHub Copilot), so i
 
 ## What you need
 
-- **Godot 4.6 or newer.** It's built and tested on 4.7.
+- **Godot 4.6 or newer.** The helper is built on 4.7. Each release is checked to load with no errors or warnings on 4.6 and 4.7.
 - **A Mac, Linux or Windows.**
 - **Any editor language.** The helper follows your editor's language: the menu, cards, Settings and messages come in Brazilian Portuguese and Spanish when Godot is set to them, and English otherwise. Translations live in `addons/kg_helper/locale/`; a new language is one `.po` file made from `kg_helper.pot`.
 - **An AI tool you're signed in to**, picked under **AI tool** in Settings. If it isn't installed yet, **Install…** in Settings (or the ghost's menu) runs its own installer in a terminal:
@@ -40,7 +40,7 @@ When a newer version is out, the ghost's menu shows **Update to version…**. It
 - **Follow up** in the box at the bottom of the answer: the ghost remembers the conversation until you close the card. **Recent questions**, in the ghost's menu, shows your last five answers again without asking your AI tool.
 - **When your game hits an error**, the ghost offers to explain it. Click the offer, or pick **Explain the last error** in its menu, and the card opens ready to ask, with the error and the script lines around it. Nothing is sent until you press Ask.
 - It answers in the language your Godot editor is set to, and names buttons the way your editor shows them.
-- **Right-click to ask about something:** in the Scene dock, the FileSystem dock, the Inspector or the script editor, choose **Ask the ghost about this**. The card opens with a question about what you picked, ready to send or change. In the script editor, it asks about the lines you selected.
+- **Right-click to ask about something:** in the Scene dock, the FileSystem dock, the Inspector or the script editor, choose **Ask the ghost about this**. The card opens with a question about what you picked, ready to send or change. In the script editor, it asks about the lines you selected. On Godot 4.6, the Inspector has no right-click entry.
 - The first time you ask in a project, a window says exactly what the helper sends and asks you to allow it (see [What it sends](#what-it-sends)).
 
 ## The ghost's menu
@@ -135,27 +135,30 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
-| 48 | 4.6 and newer (tested on 4.7) |
-| 47 | 4.6 and newer (tested on 4.7) |
-| 46 | 4.6 and newer (tested on 4.7) |
-| 45 | 4.6 and newer (tested on 4.7) |
-| 44 | 4.6 and newer (tested on 4.7) |
-| 43 | 4.6 and newer (tested on 4.7) |
-| 42 | 4.6 and newer (tested on 4.7) |
-| 41 | 4.6 and newer (tested on 4.7) |
-| 40 | 4.6 and newer (tested on 4.7) |
-| 39 | 4.6 and newer (tested on 4.7) |
-| 38 | 4.6 and newer (tested on 4.7) |
-| 37 | 4.6 and newer (tested on 4.7) |
-| 36 | 4.6 and newer (tested on 4.7) |
-| 35 | 4.6 and newer (tested on 4.7) |
-| 34 | 4.6 and newer (tested on 4.7) |
-| 33 | 4.6 and newer (tested on 4.7) |
-| 32 | 4.6 and newer (tested on 4.7) |
-| 31 | 4.6 and newer (tested on 4.7) |
-| 30 | 4.6 and newer (tested on 4.7) |
-| 29 | 4.6 and newer (tested on 4.7) |
-| 28 | 4.6 and newer (tested on 4.7) |
+| 51 | 4.6 and newer |
+| 50 | 4.7 and newer |
+| 49 | 4.7 and newer |
+| 48 | 4.7 and newer |
+| 47 | 4.7 and newer |
+| 46 | 4.7 and newer |
+| 45 | 4.7 and newer |
+| 44 | 4.7 and newer |
+| 43 | 4.7 and newer |
+| 42 | 4.7 and newer |
+| 41 | 4.7 and newer |
+| 40 | 4.7 and newer |
+| 39 | 4.7 and newer |
+| 38 | 4.7 and newer |
+| 37 | 4.7 and newer |
+| 36 | 4.7 and newer |
+| 35 | 4.7 and newer |
+| 34 | 4.7 and newer |
+| 33 | 4.7 and newer |
+| 32 | 4.7 and newer |
+| 31 | 4.7 and newer |
+| 30 | 4.7 and newer |
+| 29 | 4.7 and newer |
+| 28 | 4.7 and newer |
 | 27 | 4.6 and newer (tested on 4.7) |
 | 26 | 4.6 and newer (tested on 4.7) |
 | 25 | 4.6 and newer (tested on 4.7) |

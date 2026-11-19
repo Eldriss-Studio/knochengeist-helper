@@ -40,7 +40,13 @@ const Screen := preload("screen.gd")
 const App := preload("app.gd")
 const Walk := preload("walk.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
-const SLOTS := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE, EditorContextMenuPlugin.CONTEXT_SLOT_INSPECTOR_PROPERTY]
+# Where right-click offers "Ask the ghost about this". The Inspector's spot came in Godot 4.7, so on 4.6 it's left out.
+static func slots() -> Array:
+	var found := [EditorContextMenuPlugin.CONTEXT_SLOT_SCENE_TREE, EditorContextMenuPlugin.CONTEXT_SLOT_FILESYSTEM, EditorContextMenuPlugin.CONTEXT_SLOT_SCRIPT_EDITOR_CODE]
+	var inspector := Context.inspector_slot()
+	if inspector >= 0:
+		found.append(inspector)
+	return found
 const CODE_LINES_KEPT := 200
 const COURSE_CODE_CHARS := 1200
 const NOT_ALLOWED := "%s wasn't run. Ask again to allow it."
@@ -206,7 +212,7 @@ func _enter_tree() -> void:
 	get_tree().create_timer(CHECK_UPDATES_AFTER_S).timeout.connect(func():
 		if is_instance_valid(updates) and not course_shown:      # the course page keeps its own copy in step
 			updates.check())
-	for slot in SLOTS:
+	for slot in slots():
 		var menu_plugin := Context.new(slot, _svg("icon.svg", 16.0))
 		menu_plugin.picked.connect(_ask_about)
 		add_context_menu_plugin(slot, menu_plugin)

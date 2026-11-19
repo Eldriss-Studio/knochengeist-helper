@@ -1,0 +1,3 @@
+# Godot writes these when the plugin is opened as a project; they are never part of the plugin
+.godot/
+*.tmp

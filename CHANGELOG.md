@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 51
+
+- **Works on Godot 4.6.** Versions 28 to 50 did not load at all on 4.6. They used the Inspector's right-click spot, which only exists from Godot 4.7. Version 51 loads on 4.6 and leaves that one spot out. Right-click in the Scene dock, the FileSystem dock and the script editor works there as before. On 4.7 all four spots work. Each release is now checked to load with no errors or warnings on 4.7 and 4.6.
+
 ## Version 50
 
 - **Walk-throughs work in single-window mode.** With Godot set to draw its dialogs inside the editor window, clicking what the ghost pointed at in a dialog (Create New Node, for one) wasn't noticed, so the walk-through stalled there. Now it goes on to the next step.

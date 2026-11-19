@@ -1,0 +1,4 @@
+# A download of this repository from GitHub (or the Asset Store) holds only the plugin
+/** export-ignore
+/addons !export-ignore
+/addons/** !export-ignore
