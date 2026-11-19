@@ -10,25 +10,24 @@ const Finder := preload("finder.gd")
 
 const ID := "copilot"
 const NAME := "Copilot"
-const LABEL := "Copilot (GitHub Copilot plans)"
+const LABEL := "Copilot (GitHub Copilot plan)"
 const COMPANY := "GitHub"
 const PATH_SETTING := "knochengeist/copilot_path"
 const MODEL_SETTING := "knochengeist/copilot_model"
 const ENV := "KG_HELPER_COPILOT"
 const COMMAND := "copilot"
 const INSTALL_PAGE := "https://docs.github.com/en/copilot/how-tos/copilot-cli"
-const INSTALL_COMMAND := "npm install -g @github/copilot"
-const INSTALL_HINT := "Install Copilot with " + INSTALL_COMMAND + ", or choose where it is."
+const INSTALL_HINT := "Not installed yet. Use Install… above, or choose where it is."
 const LOGIN_HINT := "copilot login"
 const AUTH_ARGS := []                # no free check: checking while signed in would spend a request
 const CHECKS_SIGN_IN := false
 const SIGNED_OUT_SAYS := ["no authentication information found", "authentication failed"]
-const MODEL_HINT := "Copilot picks its model for your plan."
+const MODEL_HINT := "Copilot chooses the model. You can't change it here."
 const MODELS := []                   # Free plans can only use Auto, so the helper never picks one
 const REPORTS_RESETS := false
 const SIGN_IN_CAN_BE_SKIPPED := false
 const PROBLEMS := {
-	"missing": "Copilot isn't installed. Install it with " + INSTALL_COMMAND + ", run copilot login once in a terminal, then ask again.",
+	"missing": "Copilot isn't installed. Pick Install Copilot… in the ghost's menu, sign in with copilot login, then ask again.",
 	"signed_out": "Copilot isn't signed in. Open a terminal, run copilot login, and sign in. Then ask again.",
 	"limit": "You've reached your Copilot plan's limit for now. Try again later.",
 	"not_there": "There's no Copilot at the path in Settings. Open Settings in the ghost's menu to change it.",
@@ -44,6 +43,13 @@ const LAST_ANSWER := "copilot_answer"   # the latest message with text, kept on 
 static func find_automatically() -> String:
 	return Finder.find(COMMAND, ["/.local/bin/copilot", "/.npm-global/bin/copilot"], ["/opt/homebrew/bin/copilot", "/usr/local/bin/copilot"],
 		[OS.get_environment("APPDATA").path_join("npm/copilot.cmd"), OS.get_environment("LOCALAPPDATA").path_join("Microsoft/WinGet/Links/copilot.exe")])
+
+
+## Its own installer, which needs no Node, for a terminal the person watches.
+static func install_args() -> PackedStringArray:
+	if OS.get_name() == "Windows":
+		return PackedStringArray(["winget", "install", "GitHub.Copilot"])
+	return PackedStringArray(["/bin/sh", "-c", "curl -fsSL https://gh.io/copilot-install | bash"])
 
 
 static func model_from(_saved: String) -> String:

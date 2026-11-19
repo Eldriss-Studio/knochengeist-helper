@@ -8,7 +8,7 @@ signal done(text: String, problem: String)      # problem: "", "missing", "signe
 signal checked(state: String, path: String)     # state: "checking", "ready", "missing", "signed_out" or "not_there"
 
 const PROBLEMS := {
-	"missing": "Claude Code isn't installed. Install it from claude.com/claude-code, sign in once in a terminal, then ask again.",
+	"missing": "Claude Code isn't installed. Pick Install Claude Code… in the ghost's menu, sign in once, then ask again.",
 	"signed_out": "Claude Code isn't signed in. Open a terminal, run claude, and sign in. Then ask again.",
 	"failed": "That didn't work. Try again, or open Show log in the ghost's menu to see why.",
 	"limit": "You've reached your Claude plan's limit. Try again later.",
@@ -43,7 +43,7 @@ const TOOLS := {"claude": Claude, "codex": Codex, "copilot": Copilot}
 const ADAPTER_CONSTANTS := ["ID", "NAME", "LABEL", "COMPANY", "PATH_SETTING", "MODEL_SETTING", "ENV", "COMMAND",
 	"INSTALL_PAGE", "INSTALL_HINT", "LOGIN_HINT", "AUTH_ARGS", "MODELS", "MODEL_HINT", "REPORTS_RESETS",
 	"SIGN_IN_CAN_BE_SKIPPED", "CHECKS_SIGN_IN", "SIGNED_OUT_SAYS", "PROBLEMS"]
-const ADAPTER_FUNCTIONS := ["find_automatically", "model_from", "login_args", "check_state", "start", "read", "process_env"]
+const ADAPTER_FUNCTIONS := ["find_automatically", "model_from", "login_args", "check_state", "start", "read", "process_env", "install_args"]
 const TOOL_SETTING := "knochengeist/tool"
 # Codex reads its question from stdin to the end, so a shell hands it the question's file.
 const RUN_FROM_FILE := "cd \"$1\" && f=\"$2\" && shift 2 && exec \"$0\" \"$@\" < \"$f\""

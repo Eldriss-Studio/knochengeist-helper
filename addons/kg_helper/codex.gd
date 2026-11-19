@@ -8,7 +8,7 @@ const Finder := preload("finder.gd")
 
 const ID := "codex"
 const NAME := "Codex"
-const LABEL := "Codex (ChatGPT plans)"
+const LABEL := "Codex (ChatGPT plan)"
 const COMPANY := "OpenAI"
 const PATH_SETTING := "knochengeist/codex_path"
 const MODEL_SETTING := "knochengeist/codex_model"
@@ -17,18 +17,17 @@ const COMMAND := "codex"
 # The ChatGPT app ships Codex inside it: in /Applications, or the person's own ~/Applications.
 const CHATGPT_APP := "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
 const INSTALL_PAGE := "https://developers.openai.com/codex/cli"
-const INSTALL_COMMAND := "npm install -g @openai/codex"
-const INSTALL_HINT := "Install Codex with " + INSTALL_COMMAND + ", or choose where it is."
+const INSTALL_HINT := "Not installed yet. Use Install… above, or choose where it is."
 const LOGIN_HINT := "codex login"
 const AUTH_ARGS := ["login", "status"]
-const MODEL_HINT := "Codex picks its model for your ChatGPT plan."
+const MODEL_HINT := "Codex chooses the model. You can't change it here."
 const MODELS := []                  # Codex picks its model for the plan
 const REPORTS_RESETS := false
 const CHECKS_SIGN_IN := true
 const SIGNED_OUT_SAYS := []          # it says so in its events, which read() handles
 const SIGN_IN_CAN_BE_SKIPPED := false
 const PROBLEMS := {
-	"missing": "Codex isn't installed. Install it with " + INSTALL_COMMAND + ", run codex login once in a terminal, then ask again.",
+	"missing": "Codex isn't installed. Pick Install Codex… in the ghost's menu, sign in with codex login, then ask again.",
 	"signed_out": "Codex isn't signed in. Open a terminal, run codex login, and sign in. Then ask again.",
 	"limit": "You've reached your ChatGPT plan's usage limit for Codex. Try again later.",
 	"not_there": "There's no Codex at the path in Settings. Open Settings in the ghost's menu to change it.",
@@ -40,6 +39,13 @@ const PROBLEMS := {
 static func find_automatically() -> String:
 	return Finder.find(COMMAND, ["/.local/bin/codex", "/.npm-global/bin/codex", CHATGPT_APP], ["/opt/homebrew/bin/codex", "/usr/local/bin/codex", CHATGPT_APP],
 		[OS.get_environment("APPDATA").path_join("npm/codex.cmd")])
+
+
+## Its own installer, which needs no Node, for a terminal the person watches.
+static func install_args() -> PackedStringArray:
+	if OS.get_name() == "Windows":
+		return PackedStringArray(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://chatgpt.com/codex/install.ps1 | iex"])
+	return PackedStringArray(["/bin/sh", "-c", "curl -fsSL https://chatgpt.com/codex/install.sh | sh"])
 
 
 static func model_from(saved: String) -> String:

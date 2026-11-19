@@ -7,14 +7,14 @@ const Finder := preload("finder.gd")
 
 const ID := "claude"
 const NAME := "Claude Code"
-const LABEL := "Claude Code (Claude plans)"
+const LABEL := "Claude Code (Claude plan)"
 const COMPANY := "Anthropic"
 const PATH_SETTING := "knochengeist/claude_path"
 const MODEL_SETTING := "knochengeist/model"
 const ENV := "KG_HELPER_CLAUDE"
 const COMMAND := "claude"
 const INSTALL_PAGE := "https://claude.com/claude-code"
-const INSTALL_HINT := "Install Claude Code from claude.com/claude-code, or choose where it is."
+const INSTALL_HINT := "Not installed yet. Use Install… above, or choose where it is."
 const LOGIN_HINT := "claude"
 const AUTH_ARGS := ["auth", "status"]
 const MODEL_HINT := ""
@@ -30,6 +30,13 @@ const PROBLEMS := {}                # the brain's wording, which is Claude Code'
 static func find_automatically() -> String:
 	return Finder.find(COMMAND, ["/.local/bin/claude", "/.claude/local/claude"], ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"],
 		[OS.get_environment("USERPROFILE").path_join(".local/bin/claude.exe"), OS.get_environment("APPDATA").path_join("npm/claude.cmd")])
+
+
+## Its own installer, which needs no Node, for a terminal the person watches.
+static func install_args() -> PackedStringArray:
+	if OS.get_name() == "Windows":
+		return PackedStringArray(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://claude.ai/install.ps1 | iex"])
+	return PackedStringArray(["/bin/sh", "-c", "curl -fsSL https://claude.ai/install.sh | bash"])
 
 
 static func model_from(saved: String) -> String:

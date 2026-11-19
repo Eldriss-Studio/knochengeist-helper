@@ -14,10 +14,10 @@ It answers through your own Claude Code, so it has no account, key or server of 
 
 - **Godot 4.6 or newer.** It's built and tested on 4.7.
 - **A Mac, Linux or Windows.**
-- **An AI tool you're signed in to**, picked under **AI tool** in Settings:
+- **An AI tool you're signed in to**, picked under **AI tool** in Settings. If it isn't installed yet, **Install…** in Settings (or the ghost's menu) runs its own installer in a terminal:
   - **Claude Code**, with a Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once.
-  - **Codex**, with a ChatGPT plan. The ChatGPT app for Mac comes with it, and the helper finds it there. Otherwise install it with `npm install -g @openai/codex`, then run `codex login` once in a terminal.
-  - **Copilot**, with any GitHub Copilot plan, Free included. Install it with `brew install --cask copilot-cli`, `winget install GitHub.Copilot` or `npm install -g @github/copilot`, then run `copilot login` once in a terminal.
+  - **Codex**, with a ChatGPT plan. The ChatGPT app for Mac comes with it, and the helper finds it there. Otherwise install it with `curl -fsSL https://chatgpt.com/codex/install.sh | sh` (or `brew install --cask codex`), then run `codex login` once in a terminal.
+  - **Copilot**, with any GitHub Copilot plan, Free included. Install it with `curl -fsSL https://gh.io/copilot-install | bash`, `brew install --cask copilot-cli` or `winget install GitHub.Copilot`, then run `copilot login` once in a terminal.
 
 Each question is one run of that tool, so it counts toward your plan's usage like any other. With an API key instead of a plan, each question is billed to that key. Codex and Copilot answer all at once rather than word by word, and don't report how much of the plan is left. Copilot runs with a settings folder of its own, so the helper's questions stay out of your Copilot history. It uses your own sign-in: the helper copies only your account name there, never your token. It can't check that sign-in without spending a request, so your first question finds out.
 
@@ -91,7 +91,7 @@ The ghost is dimmed when it can't answer, and the first line of its menu says wh
 |---|---|
 | Claude Code not found | **Install Claude Code…** opens its page. Install it, then come back to Godot: it checks again. |
 | Not signed in to Claude Code | **Sign in to Claude Code…** opens Terminal running `claude`. Sign in there, then come back to Godot. |
-| No Claude Code at the path in Settings | Open **Settings…** and use Change… to pick `claude`, or Find automatically. |
+| No Claude Code at the path in Settings | Open **Settings…** and use Choose file… to pick `claude`, or Find automatically. |
 
 On the card:
 

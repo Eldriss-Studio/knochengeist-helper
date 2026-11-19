@@ -341,10 +341,11 @@ func _chose(id: int) -> void:
 		Menu.SETTINGS:
 			var settings := Settings.new(brain, claude_state, docs)
 			settings.sign_in.connect(_sign_in)
+			settings.install.connect(_install)
 			settings.confirmed.connect(brain.check)
 			EditorInterface.popup_dialog_centered(_closes_itself(settings))
 		Menu.INSTALL:
-			OS.shell_open(Brain.adapter().INSTALL_PAGE)
+			_install()
 		Menu.SIGN_IN:
 			_sign_in()
 		Menu.SHOW_LOGS:
@@ -365,10 +366,18 @@ func _chose(id: int) -> void:
 ## Codex with "codex login", Copilot with "copilot login".
 func _sign_in(tool: GDScript = null) -> void:
 	var adapter: GDScript = tool if tool else Brain.adapter()
-	_open_sign_in(adapter.login_args(Brain.find_for(adapter)), adapter)
+	_in_terminal(adapter.login_args(Brain.find_for(adapter)), "run %s, and sign in" % adapter.LOGIN_HINT)
 
 
-func _open_sign_in(run: PackedStringArray, adapter: GDScript) -> void:
+## Runs this tool's own installer, or the one in use's, in a terminal he watches. Coming back to Godot
+## checks again.
+func _install(tool: GDScript = null) -> void:
+	var adapter: GDScript = tool if tool else Brain.adapter()
+	_in_terminal(adapter.install_args(), "install %s from %s" % [adapter.NAME, adapter.INSTALL_PAGE])
+
+
+## Opens a terminal running this command line; `todo` says what to do by hand when there is none.
+func _in_terminal(run: PackedStringArray, todo: String) -> void:
 	var terminal := OS.get_environment("KG_HELPER_TERMINAL")
 	if terminal != "":
 		OS.create_process(terminal, run)
@@ -377,7 +386,7 @@ func _open_sign_in(run: PackedStringArray, adapter: GDScript) -> void:
 			OS.create_process("open", ["-a", "Terminal", run[0]])
 		else:
 			# Terminal opens a file, not a command line: a small .command file runs it.
-			var script := OS.get_user_data_dir().path_join("kg_helper").path_join("sign-in.command")
+			var script := OS.get_user_data_dir().path_join("kg_helper").path_join("in-terminal.command")
 			DirAccess.make_dir_recursive_absolute(script.get_base_dir())
 			var file := FileAccess.open(script, FileAccess.WRITE)
 			if file:
@@ -401,7 +410,7 @@ func _open_sign_in(run: PackedStringArray, adapter: GDScript) -> void:
 				args.append_array(run)
 				OS.create_process(found, args)
 				return
-		_note("Open a terminal, run %s, and sign in. Then ask again." % adapter.LOGIN_HINT, 10.0)
+		_note("Open a terminal, %s. Then ask again." % todo, 10.0)
 
 
 static func _on_path(app: String) -> String:

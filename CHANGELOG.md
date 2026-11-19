@@ -2,6 +2,11 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 47
+
+- **Install from the helper.** "Install Claude Code…", "Install Codex…" and "Install Copilot…" in the ghost's menu, and Install… in Settings, run that tool's own installer in a terminal you can watch. None of them needs Node. Back in Godot, the helper looks for it again.
+- **Clearer Settings.** Plainer words throughout: "Choose file…" instead of "Change…", what to do when something's missing, and the dropdown names the plan each tool runs on.
+
 ## Version 46
 
 - **Settings checks the AI tool you pick right away.** No more "Save to check": pick Codex or Copilot and Settings says at once whether it's there and signed in, and its Sign in button signs in to that tool.

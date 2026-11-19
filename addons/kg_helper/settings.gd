@@ -8,7 +8,7 @@ const WIDTH := 440.0
 const GAP := 6
 const QUIET := Color(1, 1, 1, 0.7)
 const CANDLE := Color("e3b44a")
-const UNCHECKED_SIGN_IN := "%s found. Your first question checks its sign-in."
+const UNCHECKED_SIGN_IN := "%s is installed. Your first question checks that you're signed in."
 const STATUS_WORDS := {"ready": "Signed in to %s", "signed_out": "Not signed in to %s", "checking": "Checking %s…"}
 const MODEL_NAMES := {
 	"sonnet": "Sonnet (suits most questions)",
@@ -36,6 +36,7 @@ var check_updates: CheckBox
 var pick: EditorFileDialog
 var s := 1.0
 signal sign_in(tool: GDScript)
+signal install(tool: GDScript)
 
 
 func _init(brain = null, claude_state := "", docs = null) -> void:
@@ -59,7 +60,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	status_box = VBoxContainer.new()
 	status_box.add_theme_constant_override("separation", int(GAP * s))
 	box.add_child(status_box)
-	box.add_child(_quiet("Answers come from the tool you pick, signed in with your own plan."))
+	box.add_child(_quiet("Answers come from the AI tool you pick. You sign in to it with your own plan."))
 	if brain:
 		brain.checked.connect(func(state: String, _path: String):
 			tool_state = state
@@ -81,7 +82,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_child(how)
 	var row := HBoxContainer.new()
 	var change := Button.new()
-	change.text = "Change…"
+	change.text = "Choose file…"
 	change.pressed.connect(_browse)
 	row.add_child(change)
 	automatic = Button.new()
@@ -96,13 +97,13 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	less_motion.button_pressed = Brain.less_motion()
 	box.add_child(_heading("Motion"))
 	box.add_child(less_motion)
-	box.add_child(_quiet("The ghost appears where it points instead of flying there, and stays still while it thinks."))
+	box.add_child(_quiet("The ghost jumps to where it points instead of flying. It stays still while it thinks."))
 	check_updates = CheckBox.new()
 	check_updates.text = "Check for updates"
 	check_updates.button_pressed = Updates.on()
 	box.add_child(_heading("Updates"))
 	box.add_child(check_updates)
-	box.add_child(_quiet("Once a day, it checks GitHub for a newer helper and offers it in its menu. It never updates on its own."))
+	box.add_child(_quiet("Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."))
 	add_child(box)
 	confirmed.connect(_save)
 	_pick(picked)
@@ -155,6 +156,11 @@ func _show_status() -> void:
 	status.text = text
 	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(status)
+	if state == "missing":
+		var install_button := Button.new()
+		install_button.text = "Install…"
+		install_button.pressed.connect(func(): install.emit(picked))
+		row.add_child(install_button)
 	if state == "signed_out":
 		var button := Button.new()
 		button.text = "Sign in…"
@@ -222,7 +228,7 @@ func _show_found() -> void:
 	automatic.visible = chosen_path != ""
 	if chosen_path != "":
 		where.text = Brain._short(chosen_path)
-		how.text = "Set by you." if FileAccess.file_exists(chosen_path) else "There's no file at this path. Change it, or find it automatically."
+		how.text = "You chose this file." if FileAccess.file_exists(chosen_path) else "There's no file at this location. Choose another file, or use Find automatically."
 		return
 	var at := Brain.find_for(picked)
 	where.text = Brain._short(at) if at != "" else "Not found"
@@ -234,7 +240,7 @@ func _browse() -> void:
 		pick = EditorFileDialog.new()
 		pick.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
 		pick.access = EditorFileDialog.ACCESS_FILESYSTEM
-		pick.title = "Where is %s?" % picked.NAME
+		pick.title = "Choose the %s file" % picked.NAME
 		pick.file_selected.connect(func(path: String):
 			chosen_path = path
 			_show_found())
@@ -287,7 +293,7 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	fill.set_corner_radius_all(int(3 * s))
 	docs_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(docs_bar)
-	box.add_child(_quiet("The ghost checks the Godot names in its answers against this, and reads the pages for anything your question names. It stays on this computer."))
+	box.add_child(_quiet("The ghost uses these Godot docs to check its answers. They're saved on this computer."))
 	docs.changed.connect(func(_state): _show_docs())
 	if docs.manual:
 		docs.manual.changed.connect(func(_state): _show_docs())
@@ -318,6 +324,14 @@ func _stop_preview() -> void:
 
 func _exit_tree() -> void:
 	_stop_preview()
+
+
+func _notification(what: int) -> void:
+	# back from installing or signing in to a picked tool in a terminal: look again
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN and preview and preview_state not in ["checking", "ready"]:
+		preview_state = "checking"
+		_show_status()
+		preview.check()
 
 
 func _process(delta: float) -> void:
