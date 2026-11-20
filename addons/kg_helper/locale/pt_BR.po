@@ -649,3 +649,12 @@ msgstr ". Baixando o manual do Godot %s…"
 
 msgid "Options"
 msgstr "Opções"
+
+msgid "Couldn't save the key in this computer's keychain. Show log has the details."
+msgstr "Não deu para guardar a chave no chaveiro deste computador. Mostrar log tem os detalhes."
+
+msgid "This Mac's keychain can't be reached, so the key wasn't saved."
+msgstr "Não foi possível acessar o chaveiro deste Mac, então a chave não foi guardada."
+
+msgid "This computer has no keychain the helper can use, so the key wasn't saved. Install libsecret-tools (secret-tool), then try again."
+msgstr "Este computador não tem um chaveiro que o assistente possa usar, então a chave não foi guardada. Instale o libsecret-tools (secret-tool) e tente de novo."

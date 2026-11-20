@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 54
+
+- **Walk-throughs no longer wait between clicks.** Two cases made the ghost wait. After Show me in Godot on the course page, the ghost asked the AI what comes next after every click. Each wait took about 5 to 7 seconds. Now the page's answer plans every click up front, as asking inside Godot already did, so each next click shows at once. When a walk meets a screen its plan didn't expect, the ghost asked one click at a time for the rest of the walk. Now one question brings every click left, and the rest needs no more questions.
+
 ## Version 53
 
 - **Settings fits a laptop screen.** The window was about 1,000 px tall, so on a laptop the Save button fell off the screen. Now it is about 350 to 530 px tall. Each explanation moved into the tooltip of its choice, shown when you hover. Model and Effort sit side by side. "Reduce motion" and "Check for updates" share one line under a new "Options" heading. The window shrinks when a tool has fewer choices, such as Copilot. The Godot docs line wraps instead of widening the window.

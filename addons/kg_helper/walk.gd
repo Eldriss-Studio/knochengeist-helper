@@ -150,7 +150,7 @@ func _ask_next() -> void:
 		if walk_i >= walk_plan.size():
 			walk_ask = 0
 			h.answers.walk_ended(h.answer_record, "finished")
-			h._note(walk_closing if walk_closing != "" else L.t("That's it."), 7.0)
+			h._note(walk_closing.replace("[", "[lb]") if walk_closing != "" else L.t("That's it."), 7.0)
 			return
 		h._state()
 		var found: String = h._find(str(walk_plan[walk_i].get("id", "")))
@@ -214,10 +214,37 @@ func next_came(result: int, code: int, reply) -> void:
 	next_reply(reply)
 
 
+# Points at a plan's first click and goes through the rest without asking: from an answer in Godot,
+# from Show me in Godot on the course page, or from asking what's next once a walk went off plan.
+# One click and no closing line isn't a plan (an "I'm stuck on my step" answer): it asks as it goes.
+# Whether a plan's first click is the thing on screen with that id.
+func starts_at(plan: Array, target: String) -> bool:
+	return plan.size() > 0 and h._find(str(plan[0].get("id", ""))) == target
+
+
+func follow(target: String, plan: Array, closing: String) -> void:
+	if not starts_at(plan, target):
+		plan = []                      # a plan that starts elsewhere would label this click with another's words
+		closing = ""
+	walk_plan = plan if plan.size() > 1 or closing != "" else []
+	walk_closing = closing
+	walk_i = 0
+	walk_tries = 0
+	var first := str(plan[0].get("say", "")) if plan.size() > 0 else ""
+	var label := ("[b]%s[/b] " % (L.t("Step %d of %d:") % [1, walk_plan.size()])) if walk_plan.size() > 1 else "[b]%s[/b] " % L.t("First:")
+	point(target, (label + first.replace("[", "[lb]")) if first != "" else h._say(target))
+
+
 func next_reply(reply: Dictionary) -> void:
 	var say := str(reply.get("say", "")).replace("[", "[lb]")
 	h._state()                                  # where things are now
-	if reply.get("target") is String and h.places.has(reply["target"]) and walk_clicked.count(str(h.labels.get(reply["target"], ""))) < 2:
+	var plan: Array = reply["steps"] if reply.get("steps") is Array else []
+	var closing: String = reply["closing"] if reply.get("closing") is String else ""
+	var on_screen: bool = reply.get("target") is String and h.places.has(reply["target"]) and walk_clicked.count(str(h.labels.get(reply["target"], ""))) < 2
+	if on_screen and starts_at(plan, reply["target"]) and (plan.size() > 1 or closing != ""):
+		follow(reply["target"], plan, closing)     # every click left came with it: no more questions
+		return
+	if on_screen:
 		point(reply["target"], "[b]%s[/b] " % L.t("Next:") + say)
 	else:
 		walk_ask = 0

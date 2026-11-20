@@ -216,6 +216,9 @@ msgstr ""
 msgid "Couldn't build the class reference. Show log has why."
 msgstr ""
 
+msgid "Couldn't save the key in this computer's keychain. Show log has the details."
+msgstr ""
+
 msgid "Counting my ribs..."
 msgstr ""
 
@@ -478,6 +481,12 @@ msgid "The update didn't download, so nothing changed. Try again later."
 msgstr ""
 
 msgid "There's no file at this location. Choose another file, or use Find automatically."
+msgstr ""
+
+msgid "This Mac's keychain can't be reached, so the key wasn't saved."
+msgstr ""
+
+msgid "This computer has no keychain the helper can use, so the key wasn't saved. Install libsecret-tools (secret-tool), then try again."
 msgstr ""
 
 msgid "This node:"

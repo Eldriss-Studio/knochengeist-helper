@@ -657,8 +657,7 @@ func _point_came(answer: Dictionary) -> void:
 		walk_ask = int(answer["ask"]) if answer.get("ask") != null else 0
 		walk_clicked = []
 		typed_in = {}
-		walk_plan = []
-		_point(answer["target"], _say(answer["target"]))
+		walk.follow(answer["target"], answer["steps"] if answer.get("steps") is Array else [], answer["closing"] if answer.get("closing") is String else "")
 
 
 # ---------------------------------------------------------------- pointing, and going on (walk.gd)
@@ -919,7 +918,10 @@ func _brain_done(whole: String, problem: String) -> void:
 			_note(brain.problem_message(problem), 8.0)
 			return
 		var said: String = tags.push(whole) + tags.end()
-		_next_reply({"say": said.strip_edges(), "target": tags.point if tags.point != "" else null})
+		var plan: Dictionary = Tags.plan_of(whole)              # every click left, when it planned them
+		var steps: Array = plan["steps"]
+		var target: String = tags.point if tags.point != "" else (_find(str(steps[0].get("id", ""))) if steps.size() > 0 else "")
+		_next_reply({"say": said.strip_edges(), "target": target if target != "" else null, "steps": steps, "closing": plan["closing"]})
 		return
 	if asked_for != "ask":
 		return
@@ -999,13 +1001,7 @@ func _show_me() -> void:
 	walk_answer = answer_text
 	walk_clicked = []
 	typed_in = {}
-	# one click and no closing line isn't a plan (an "I'm stuck on my step" answer): ask as it goes
-	walk_plan = answer_plan if answer_plan.size() > 1 or answer_closing != "" else []
-	walk_closing = answer_closing
-	walk_i = 0
-	var first := str(answer_plan[0].get("say", "")) if answer_plan.size() > 0 else ""
-	var label := ("[b]%s[/b] " % (L.t("Step %d of %d:") % [1, walk_plan.size()])) if walk_plan.size() > 1 else "[b]%s[/b] " % L.t("First:")
-	_point(answer_target, (label + first.replace("[", "[lb]")) if first != "" else _say(answer_target))
+	walk.follow(answer_target, answer_plan, answer_closing)
 	if answer_ask != ALONE:
 		app.tell_shown(answer_ask)
 
