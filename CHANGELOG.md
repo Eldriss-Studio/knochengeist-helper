@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 53
+
+- **Settings fits a laptop screen.** The window was about 1,000 px tall, so on a laptop the Save button fell off the screen. Now it is about 350 to 530 px tall. Each explanation moved into the tooltip of its choice, shown when you hover. Model and Effort sit side by side. "Reduce motion" and "Check for updates" share one line under a new "Options" heading. The window shrinks when a tool has fewer choices, such as Copilot. The Godot docs line wraps instead of widening the window.
+
 ## Version 52
 
 - **No more stutter while the course page is running.** The editor used to hitch once a second, because each look at the screen took about 36 ms. A look now takes under half a millisecond.

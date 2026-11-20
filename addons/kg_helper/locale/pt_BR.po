@@ -646,3 +646,6 @@ msgstr "Você usou todo o %s do seu plano. Ele renova %s."
 
 msgid ". Getting the manual for Godot %s…"
 msgstr ". Baixando o manual do Godot %s…"
+
+msgid "Options"
+msgstr "Opções"

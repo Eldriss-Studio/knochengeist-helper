@@ -336,9 +336,6 @@ msgstr ""
 msgid "Model"
 msgstr ""
 
-msgid "Motion"
-msgstr ""
-
 msgid "Next:"
 msgstr ""
 
@@ -367,6 +364,9 @@ msgid "Open a terminal, run %s, and sign in. Then ask again."
 msgstr ""
 
 msgid "Open the course page"
+msgstr ""
+
+msgid "Options"
 msgstr ""
 
 msgid "Opus (strong, uses your limit fast)"
@@ -508,9 +508,6 @@ msgid "Update Knochengeist"
 msgstr ""
 
 msgid "Update to version %s…"
-msgstr ""
-
-msgid "Updates"
 msgstr ""
 
 msgid "Using %s"

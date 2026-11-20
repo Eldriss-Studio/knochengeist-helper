@@ -65,36 +65,46 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 		tool_list.add_item(L.t(Brain.TOOLS[id].LABEL))    # each says the plan it runs on
 	tool_list.select(Brain.TOOLS.keys().find(Brain.tool()))
 	tool_list.item_selected.connect(func(i: int): _pick(Brain.TOOLS.values()[i]))
+	tool_list.tooltip_text = L.t("Answers come from the AI tool you pick. You sign in to it with your own plan.")
 	box.add_child(tool_list)
 	status_box = VBoxContainer.new()
 	status_box.add_theme_constant_override("separation", int(GAP * s))
 	box.add_child(status_box)
-	box.add_child(_quiet(L.t("Answers come from the AI tool you pick. You sign in to it with your own plan.")))
 	if brain:
 		brain.checked.connect(func(state: String, _path: String):
 			tool_state = state
 			if is_instance_valid(status_box):
 				_show_status())
-	box.add_child(_heading(L.t("Model")))
+	# Model and Effort side by side: two short choices, one row
+	var pair := HBoxContainer.new()
+	pair.add_theme_constant_override("separation", int(GAP * 2 * s))
 	model_list = OptionButton.new()
-	box.add_child(model_list)
 	model_hint = _quiet("")
-	box.add_child(model_hint)
-	box.add_child(_heading(L.t("Effort")))
 	effort_list = OptionButton.new()
-	box.add_child(effort_list)
 	effort_hint = _quiet("")
-	box.add_child(effort_hint)
+	for column in [[L.t("Model"), model_list, model_hint], [L.t("Effort"), effort_list, effort_hint]]:
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", int(GAP * s))
+		var heading := _heading(column[0])
+		heading.custom_minimum_size.x = 0
+		col.add_child(heading)
+		col.add_child(column[1])
+		(column[2] as Label).custom_minimum_size.x = (WIDTH / 2.0 - GAP) * s     # half the window: still a width, so it wraps
+		col.add_child(column[2])
+		pair.add_child(col)
+	box.add_child(pair)
 	if docs and docs.state != "off":
 		_docs_section(box, docs)
 	where_heading = _heading("")
 	box.add_child(where_heading)
-	where = _label("")
+	var row := HBoxContainer.new()             # the path, then its two buttons, on one line
+	where = Label.new()
 	where.name = "ToolPath"
-	box.add_child(where)
-	how = _quiet("")
-	box.add_child(how)
-	var row := HBoxContainer.new()
+	where.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	where.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	where.mouse_filter = Control.MOUSE_FILTER_PASS       # its tooltip has the whole path
+	row.add_child(where)
 	var change := Button.new()
 	change.text = L.t("Choose file…")
 	change.pressed.connect(_browse)
@@ -106,18 +116,22 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 		_show_found())
 	row.add_child(automatic)
 	box.add_child(row)
+	how = _quiet("")
+	box.add_child(how)
 	less_motion = CheckBox.new()
 	less_motion.text = L.t("Reduce motion")
 	less_motion.button_pressed = Brain.less_motion()
-	box.add_child(_heading(L.t("Motion")))
-	box.add_child(less_motion)
-	box.add_child(_quiet(L.t("The ghost jumps to where it points instead of flying. It stays still while it thinks.")))
+	less_motion.tooltip_text = L.t("The ghost jumps to where it points instead of flying. It stays still while it thinks.")
 	check_updates = CheckBox.new()
 	check_updates.text = L.t("Check for updates")
 	check_updates.button_pressed = Updates.on()
-	box.add_child(_heading(L.t("Updates")))
-	box.add_child(check_updates)
-	box.add_child(_quiet(L.t("Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it.")))
+	check_updates.tooltip_text = L.t("Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it.")
+	var options := HBoxContainer.new()          # two self-explaining switches, one line; the details are in their tooltips
+	options.add_theme_constant_override("separation", int(GAP * 3 * s))
+	options.add_child(less_motion)
+	options.add_child(check_updates)
+	box.add_child(_heading(L.t("Options")))
+	box.add_child(options)
 	add_child(box)
 	confirmed.connect(_save)
 	_pick(picked)
@@ -199,7 +213,7 @@ func _show_status() -> void:
 		status_box.add_child(bar)
 	for line in lines.slice(1):
 		status_box.add_child(_quiet(line))
-
+	call_deferred("_fit")
 
 func _show_model() -> void:
 	model_list.clear()
@@ -213,11 +227,13 @@ func _show_model() -> void:
 		model_list.select(maxi(0, models.find(picked.model_from(Brain.saved_setting(picked.MODEL_SETTING)))))
 	effort_list.clear()
 	effort_list.visible = not picked.EFFORTS.is_empty()
-	effort_hint.text = L.t(picked.EFFORT_HINT) if picked.EFFORTS.is_empty() else L.t("Lower effort answers sooner. Higher effort thinks longer before it answers.")
+	effort_hint.visible = picked.EFFORTS.is_empty()
+	effort_hint.text = L.t(picked.EFFORT_HINT) if picked.EFFORTS.is_empty() else ""
+	effort_list.tooltip_text = L.t("Lower effort answers sooner. Higher effort thinks longer before it answers.")
 	for level in picked.EFFORTS:
 		effort_list.add_item(L.t(EFFORT_NAMES.get(level, level.capitalize())))
 	effort_list.select(maxi(0, picked.EFFORTS.find(Brain.saved_setting(picked.EFFORT_SETTING))))
-
+	call_deferred("_fit")
 
 func _label(text: String) -> Label:
 	var label := Label.new()
@@ -248,12 +264,14 @@ func _show_found() -> void:
 	automatic.visible = chosen_path != ""
 	if chosen_path != "":
 		where.text = Brain._short(chosen_path)
+		where.tooltip_text = chosen_path
 		how.text = L.t("You chose this file.") if FileAccess.file_exists(chosen_path) else L.t("There's no file at this location. Choose another file, or use Find automatically.")
 		return
 	var at := Brain.find_for(picked)
 	where.text = Brain._short(at) if at != "" else L.t("Not found")
+	where.tooltip_text = at
 	how.text = L.t("Found automatically.") if at != "" else L.t(picked.INSTALL_HINT)
-
+	call_deferred("_fit")
 
 func _browse() -> void:
 	if pick == null:
@@ -298,6 +316,9 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	row.add_child(docs_icon)
 	docs_line = Label.new()
 	docs_line.name = "DocsLine"
+	docs_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART      # a long manual note wraps, not widens the window
+	docs_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	docs_line.custom_minimum_size.x = (WIDTH - 40) * s
 	row.add_child(docs_line)
 	docs_retry = Button.new()
 	docs_retry.name = "DocsRetry"
@@ -315,11 +336,23 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	fill.set_corner_radius_all(int(3 * s))
 	docs_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(docs_bar)
-	box.add_child(_quiet(L.t("The ghost uses these Godot docs to check its answers. They're saved on this computer.")))
+	docs_line.tooltip_text = L.t("The ghost uses these Godot docs to check its answers. They're saved on this computer.")
+	docs_line.mouse_filter = Control.MOUSE_FILTER_PASS
 	docs.changed.connect(func(_state): _show_docs())
 	if docs.manual:
 		docs.manual.changed.connect(func(_state): _show_docs())
 	_show_docs()
+
+
+func _ready() -> void:
+	call_deferred("_fit")                       # once shown, at the size of what it shows
+
+
+# The window fits what it shows now: it shrinks when a picked tool has fewer choices, not only grows.
+func _fit() -> void:
+	if is_inside_tree():
+		size.y = 0
+		reset_size()
 
 
 func _show_docs() -> void:
@@ -338,6 +371,8 @@ func _show_docs() -> void:
 
 
 ## A check of a tool picked before, still running, ends with it.
+	call_deferred("_fit")
+
 func _stop_preview() -> void:
 	if preview:
 		preview.stop_check()
