@@ -127,6 +127,9 @@ msgstr "O Claude Code não inicia"
 msgid "Click to see what's wrong."
 msgstr "Clique para ver o que houve."
 
+msgid "Stop"
+msgstr "Parar"
+
 msgid "Close"
 msgstr "Fechar"
 

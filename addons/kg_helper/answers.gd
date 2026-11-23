@@ -20,6 +20,10 @@ func added(question: String, answer: String, steps: PackedStringArray, model: St
 	return id
 
 
+func stopped(question: String, model: String, version: String) -> void:
+	_update(added(question, "", PackedStringArray(), model, version), func(record: Dictionary): record["stopped"] = true)
+
+
 func rated(id: String, helped: bool, note: String) -> void:
 	_update(id, func(record: Dictionary): record["helped"] = helped; record["note"] = note)
 
@@ -30,7 +34,7 @@ func walk_ended(id: String, how: String) -> void:
 
 ## The last n answers, newest first.
 func recent(n: int) -> Array:
-	var all := _read()
+	var all := _read().filter(func(record): return not record.get("stopped", false))
 	all.reverse()
 	return all.slice(0, n)
 

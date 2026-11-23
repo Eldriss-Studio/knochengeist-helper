@@ -135,6 +135,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 55 | 4.6 and newer |
 | 54 | 4.6 and newer |
 | 53 | 4.6 and newer |
 | 52 | 4.6 and newer |

@@ -55,6 +55,7 @@ const README := "https://github.com/Eldriss-Studio/knochengeist-helper#readme"
 const RELEASES := "https://github.com/Eldriss-Studio/knochengeist-helper/releases"
 const ISSUES := "https://github.com/Eldriss-Studio/knochengeist-helper/issues"
 const ALONE := Walk.ALONE
+const FROM_THE_PAGE := "the course page"
 const CONTRACT := 1              # the version of the messages it speaks; the app refuses another
 
 var url := ""
@@ -93,6 +94,7 @@ var ring: Control                  # around the toolbar ghost, once the plan's l
 var update_to := ""                # a newer version, once the check finds one
 var update_notes := ""
 var asking_about := ""             # what he right-clicked, added to the next question
+var asked_about := ""
 var hello: Control        # the one-time hello under the button
 var ask_box: Control             # Stuck?, asked from here
 var ask_stream: RefCounted
@@ -194,6 +196,9 @@ func _enter_tree() -> void:
 	ask_box.closed.connect(func(): thread.clear())
 	ask_box.rated.connect(func(helped: bool, note: String): answers.rated(answer_record, helped, note))
 	ask_box.closed.connect(func(): asking_about = "")
+	ask_box.stopped.connect(ask_stream.stop)
+	ask_box.stopped.connect(brain.stop)
+	ask_box.stopped.connect(_stopped)
 	EditorInterface.get_base_control().add_child(ask_box)
 	_make_button()
 	updates = Updates.new(int(_version()), (get_script() as Script).resource_path.get_base_dir())
@@ -826,6 +831,7 @@ func _ask(said: String) -> void:
 	ask_words = ""
 	ask_reply = null
 	answer_said = said
+	asked_about = asking_about
 	var earlier := _earlier()
 	if not app_up:
 		brain_for = "ask"
@@ -887,13 +893,21 @@ func _answered(reply: Dictionary) -> void:
 	_state()
 	answer_target = _find(str(answer_plan[0].get("id", ""))) if answer_plan.size() > 0 else ""
 	var steps := PackedStringArray(answer_plan.map(func(step): return str(step.get("say", "")) if step is Dictionary else ""))
-	answer_record = answers.added(answer_said, _plain(answer_text), steps, brain.answered_by if not app_up else "the course page", _version())
+	answer_record = answers.added(answer_said, _plain(answer_text), steps, brain.answered_by if not app_up else FROM_THE_PAGE, _version())
 	thread.append({"question": answer_said, "answer": _plain(answer_text)})
 	_show_up(course_shown)
 	ask_box.answered(_plain(str(reply.get("answer", ""))), places.has(answer_target))
 	if not unchecked.is_empty():
 		ask_box.note(L.t("I couldn't find %s in your Godot %s, so check that name.") % [", ".join(unchecked), _godot_version()])
 	ask_box.position = _under_button(ask_box)
+
+
+func _stopped() -> void:
+	brain_for = ""
+	ask_words = ""
+	ask_reply = null
+	asking_about = asked_about        # asking again sends what it was about too
+	answers.stopped(answer_said, Brain.model() if not app_up else FROM_THE_PAGE, _version())
 
 
 func _brain_piece(piece: String) -> void:

@@ -130,6 +130,9 @@ msgstr "Claude Code no arranca"
 msgid "Click to see what's wrong."
 msgstr "Haz clic para ver qué pasa."
 
+msgid "Stop"
+msgstr "Detener"
+
 msgid "Close"
 msgstr "Cerrar"
 

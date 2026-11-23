@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 55
+
+- **The ghost can now be stopped while it works.** While the ghost thinks or writes an answer, the card now shows a Stop button. Before, the card showed no way out while it worked. Close was hidden, and the only way out was Esc, which closed the card and lost your question. Stop ends the question, both when the AI tool runs on this computer and when the course page answers. The card goes back to the question box with your question still in it, so you can fix it or ask again. Nothing from the stopped answer shows up later. Esc still closes the card.
+
 ## Version 54
 
 - **Walk-throughs no longer wait between clicks.** Two cases made the ghost wait. After Show me in Godot on the course page, the ghost asked the AI what comes next after every click. Each wait took about 5 to 7 seconds. Now the page's answer plans every click up front, as asking inside Godot already did, so each next click shows at once. When a walk meets a screen its plan didn't expect, the ghost asked one click at a time for the rest of the walk. Now one question brings every click left, and the rest needs no more questions.

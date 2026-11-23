@@ -8,6 +8,7 @@ extends "bubble.gd"
 signal asked(said: String)
 signal show_me
 signal closed
+signal stopped
 signal rated(helped: bool, note: String)
 
 const CREAM := Color("fff8e4")
@@ -17,6 +18,8 @@ var field: LineEdit
 var ask_button: Button
 var show_button: Button
 var close_button: Button
+var stop_button: Button
+var for_course := false            # opened with the lesson line, so Stop opens it the same way
 var row: HBoxContainer
 var following := false             # the box under an answer, for a follow-up
 var rate_row: HBoxContainer        # Did this help? Yes / No, under a finished answer
@@ -52,7 +55,9 @@ func _init() -> void:
 	show_button.pressed.connect(func(): show_me.emit())
 	close_button = _button(L.t("Close"), false)
 	close_button.pressed.connect(close)
-	for b in [ask_button, show_button, close_button]:
+	stop_button = _button(L.t("Stop"), false)
+	stop_button.pressed.connect(_stop)
+	for b in [ask_button, show_button, stop_button, close_button]:
 		row.add_child(b)
 	add_child(row)
 	rate_row = HBoxContainer.new()
@@ -140,6 +145,7 @@ func _button(text: String, main: bool) -> Button:
 
 ## Opens ready for a question.
 func open(course: bool) -> void:
+	for_course = course
 	_show("[b]%s[/b]\n%s" % [L.t("Ask the ghost"), L.t("Anything about Godot.")] + (" " + L.t("Leave it empty if you're stuck on your lesson step.") if course else "") + "\n[color=#1c221d99]%s[/color]" % L.t("Enter to ask, Esc to close."), true, false)
 	ask_button.text = L.t("Ask")
 	field.text = ""
@@ -158,12 +164,22 @@ func ask_about(question: String, note: String) -> void:
 func thinking() -> void:
 	_show("", false, false)
 	close_button.visible = false
+	stop_button.visible = true
 	muse()
 
 
 func saying(so_far: String) -> void:
 	_show(so_far, false, false)
 	close_button.visible = false
+	stop_button.visible = true
+
+
+func _stop() -> void:
+	stopped.emit()
+	var question := field.text
+	open(for_course)
+	field.text = question
+	field.caret_column = question.length()
 
 
 func answered(answer: String, can_show: bool) -> void:
@@ -216,6 +232,7 @@ func _show(text: String, asking: bool, can_show: bool) -> void:
 	field.visible = asking
 	ask_button.visible = asking
 	show_button.visible = can_show
+	stop_button.visible = false
 	close_button.visible = true
 	visible = true
 	say(text, 300.0)
