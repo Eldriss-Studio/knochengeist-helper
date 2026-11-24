@@ -39,6 +39,7 @@ const Docs := preload("docs.gd")
 const Screen := preload("screen.gd")
 const App := preload("app.gd")
 const Walk := preload("walk.gd")
+const Hidden := preload("hidden.gd")
 const System := preload("system.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 # Where right-click offers "Ask the ghost about this". The Inspector's spot came in Godot 4.7, so on 4.6 it's left out.
@@ -110,6 +111,7 @@ var ask_words := ""
 var ask_reply = null             # the answer's last line: { ask, answer, steps, closing }, or why it couldn't
 var answer_ask := 0              # the last answer's id and the target it named
 var answer_target := ""
+var answer_reachable := false    # Show me can lead to its first click: on screen, or in a menu, tab or section
 var project := ""
 var ghost: Texture2D
 var note: Control                # a short line under the button: thinking, or done
@@ -683,13 +685,13 @@ func _next_reply(reply: Dictionary) -> void:
 
 
 # A short line under the helper's button, for a few seconds.
-func _note(text: String, seconds: float) -> void:
+func _note(text: String, seconds: float, working := false) -> void:
 	if note and is_instance_valid(note):
 		note.queue_free()
 	note = Bubble.new()
 	note.mascot = ghost
-	if text == "":
-		note.muse()                    # working out the next click
+	if text == "" or working:
+		note.muse(text)                # working out the next click, saying first why when it has a reason
 	else:
 		note.say(text, 250.0)
 	EditorInterface.get_base_control().add_child(note)
@@ -894,7 +896,8 @@ func _answered(reply: Dictionary) -> void:
 	answer_record = answers.added(answer_said, answer_text.strip_edges(), steps, brain.answered_by if not app_up else FROM_THE_PAGE, _version())
 	thread.append({"question": answer_said, "answer": answer_text.strip_edges()})
 	_show_up(course_shown)
-	ask_box.answered(str(reply.get("answer", "")), places.has(answer_target))
+	answer_reachable = places.has(answer_target) or _first_step_hidden()
+	ask_box.answered(str(reply.get("answer", "")), answer_reachable)
 	if not unchecked.is_empty():
 		ask_box.note(L.t("I couldn't find %s in your Godot %s, so check that name.") % [", ".join(unchecked), _godot_version()])
 	ask_box.position = _under_button(ask_box)
@@ -1005,7 +1008,7 @@ func _fill(template: String, values: Dictionary) -> String:
 
 # Words first, then where: he asked to be shown what the answer named.
 func _show_me() -> void:
-	if not places.has(answer_target):
+	if not answer_reachable:
 		return
 	ask_box.close()
 	walk_ask = answer_ask
@@ -1013,9 +1016,17 @@ func _show_me() -> void:
 	walk_answer = answer_text
 	walk_clicked = []
 	typed_in = {}
-	walk.follow(answer_target, answer_plan, answer_closing)
+	if places.has(answer_target):
+		walk.follow(answer_target, answer_plan, answer_closing)
+	else:
+		walk.begin(answer_plan, answer_closing)
 	if answer_ask != ALONE:
 		app.tell_shown(answer_ask)
+
+
+# The plan's first click is somewhere he can be led to: a menu, another tab, a folded section.
+func _first_step_hidden() -> bool:
+	return answer_plan.size() > 0 and not Hidden.way_in(str(answer_plan[0].get("id", ""))).is_empty()
 
 
 # A planned click on today's screen: the thing with that id, give or take capitals and a full stop
@@ -1058,6 +1069,8 @@ func _say(id: String) -> String:
 		"prop": return "[b]%s[/b] " % L.t("This property:") + name
 		"item": return "[b]%s[/b] " % L.t("This one:") + name
 		"field": return "[b]%s[/b] " % L.t("Type here:") + name
+		"menu": return "[b]%s[/b] " % L.t("Open:") + name
+		"tab": return "[b]%s[/b] " % L.t("This tab:") + name
 	return name
 
 

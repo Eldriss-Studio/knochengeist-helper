@@ -132,6 +132,9 @@ msgstr ""
 msgid "Checking a name against your Godot…"
 msgstr ""
 
+msgid "Choose %s > %s in the menu bar at the top of the screen."
+msgstr ""
+
 msgid "Choose file…"
 msgstr ""
 
@@ -279,6 +282,9 @@ msgstr ""
 msgid "High (thinks longest, answers slowest)"
 msgstr ""
 
+msgid "I can't find %s on your screen. I'll look for another way."
+msgstr ""
+
 msgid "I couldn't find %s in your Godot %s, so check that name."
 msgstr ""
 
@@ -378,7 +384,22 @@ msgstr ""
 msgid "Open a terminal, run %s, and sign in. Then ask again."
 msgstr ""
 
+msgid "Open the %s menu."
+msgstr ""
+
+msgid "Open the %s section."
+msgstr ""
+
+msgid "Open the %s tab."
+msgstr ""
+
 msgid "Open the course page"
+msgstr ""
+
+msgid "Open this section."
+msgstr ""
+
+msgid "Open:"
 msgstr ""
 
 msgid "Options"
@@ -514,6 +535,9 @@ msgid "This one:"
 msgstr ""
 
 msgid "This property:"
+msgstr ""
+
+msgid "This tab:"
 msgstr ""
 
 msgid "This week"

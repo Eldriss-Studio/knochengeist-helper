@@ -8,6 +8,7 @@ const L := preload("l10n.gd")
 # each window gets its own ghost. What's on screen comes from screen.gd, through the plugin.
 
 const Pointer := preload("pointer.gd")
+const Hidden := preload("hidden.gd")
 const Tags := preload("tags.gd")
 const Menu := preload("menu.gd")
 const ALONE := -1                # a walk the helper runs itself, with no course app
@@ -34,6 +35,10 @@ var prefilled_for := 0.0         # how long a field the ghost points at has held
 var typed_in := {}               # field id -> what he typed there earlier in this walk
 var next_in := -1.0              # counting down to asking for the next click
 var switching := false
+var leading := false             # the ring is on the way in (a menu, a tab, a section), not the step
+var led := false                 # the step was reached through a way in
+var menu_wait: PopupMenu         # a menu whose item is the step: picking it does the step
+var menu_item := -1
 
 
 func _init(plugin: Node) -> void:
@@ -59,6 +64,7 @@ func _pointer_in(win: Window) -> Control:
 
 func point(id: String, text: String) -> void:
 	stop_pointing()
+	_clear_lead()
 	if h.note and is_instance_valid(h.note):
 		h.note.queue_free()
 	walk_target = id
@@ -71,12 +77,93 @@ func point(id: String, text: String) -> void:
 	var p := _pointer_in(win)
 	p.stays = h.fields.has(id)
 	var thing = (h.nodes[id] as WeakRef).get_ref() if h.nodes.has(id) else null
+	if thing is Control:
+		Hidden.into_view(thing)
 	p.point(h.places[id], text, thing as Control, _row_of(id))
+
+
+# Rings the way to a step's thing that isn't on screen, or the menu item or tab that is the step.
+func _lead(way: Dictionary, step: String) -> void:
+	stop_pointing()
+	_clear_lead()
+	walk_target = ""
+	if way.has("menu"):
+		_wait_for_menu(way["menu"], way["item"])
+	if way.get("native", false):
+		led = true
+		var menu := way["menu"] as PopupMenu
+		h._note(L.t("Choose %s > %s in the menu bar at the top of the screen.") % [way["name"], menu.get_item_text(way["index"])], 60.0)
+		return
+	var kind: String = way["kind"]
+	var is_step := kind == Hidden.ITEM or (kind == Hidden.TAB and step.begins_with("tab:"))
+	leading = not is_step
+	led = led or leading
+	Hidden.show(way)
+	var p := _pointer_in(EditorInterface.get_base_control().get_window())
+	p.stays = kind == Hidden.ITEM               # only picking the item does the step, not any click on the menu
+	p.point(way["place"], _step_label() if is_step else _way_in_label(way))
+
+
+func _step_label() -> String:
+	return "[b]%s[/b] " % (L.t("Step %d of %d:") % [walk_i + 1, walk_plan.size()]) + str(walk_plan[walk_i].get("say", "")).replace("[", "[lb]")
+
+
+func _way_in_label(way: Dictionary) -> String:
+	var named := str(way["name"]).replace("[", "[lb]")
+	var first := "[b]%s[/b] " % L.t("First:")
+	match way["kind"]:
+		Hidden.MENU: return first + L.t("Open the %s menu.") % named
+		Hidden.TAB: return first + L.t("Open the %s tab.") % named
+	return first + (L.t("Open the %s section.") % named if named != "" else L.t("Open this section."))
+
+
+func _wait_for_menu(menu: PopupMenu, item: int) -> void:
+	menu_wait = menu
+	menu_item = item
+	menu_wait.id_pressed.connect(_menu_picked)
+
+
+func _menu_picked(id: int) -> void:
+	if id != menu_item:
+		return                                # another item: not the step
+	if walk_ask == 0:
+		_clear_lead()                         # the walk ended while the menu waited
+		return
+	stop_pointing()
+	_clear_lead()
+	_step_done(str(walk_plan[walk_i].get("id", "")) if walk_i < walk_plan.size() else "")
+
+
+# He did the step: it's added to what he clicked, and the walk looks for the next one.
+func _step_done(called: String) -> void:
+	walk_clicked.append(called)
+	walk_i += 1
+	_count_hidden()
+	walk_tries = 0
+	next_in = SETTLE_S
+
+
+func _clear_lead() -> void:
+	leading = false
+	_stop_menu_wait()
+
+
+func _stop_menu_wait() -> void:
+	if is_instance_valid(menu_wait) and menu_wait.id_pressed.is_connected(_menu_picked):
+		menu_wait.id_pressed.disconnect(_menu_picked)
+	menu_wait = null
+	menu_item = -1
+
+
+func _count_hidden() -> void:
+	if led:
+		led = false
+		h.answers.used(h.answer_record, "hidden")
 
 
 # The row a list target names ("item:MeshInstance3D", "row:Player"), or "" for anything else.
 static func _row_of(id: String) -> String:
-	return id.substr(id.find(":") + 1) if id.begins_with("item:") or id.begins_with("row:") else ""
+	return _name_of(id) if id.begins_with("item:") or id.begins_with("row:") else ""
 
 
 # Takes every ghost down without ending the walk-through.
@@ -93,17 +180,26 @@ func _pointed(clicked: bool, cancelled: bool, gave_up: bool, by_key: bool) -> vo
 		return
 	if walk_ask == 0 or cancelled:
 		walk_ask = 0
+		_clear_lead()
 		return
 	if gave_up:
 		walk_ask = 0
+		_clear_lead()
 		h.answers.walk_ended(h.answer_record, "stopped")
 		h._note(L.t("I'll stop here. Ask me again anytime."), 8.0)
 		return
+	if clicked and leading:
+		leading = false                       # he opened the way in: look again for the step itself
+		walk_tries = 0
+		next_in = SETTLE_S
+		return
+	if clicked and menu_wait:
+		return                                # the menu item's own signal does the step
 	if clicked:
-		walk_clicked.append(str(h.labels.get(walk_target, walk_target)))
-		walk_i += 1
+		_step_done(str(h.labels.get(walk_target, walk_target)))
 		if by_key:
 			h.answers.used(h.answer_record, "keys")
+		return
 	walk_tries = 0
 	next_in = SETTLE_S
 
@@ -153,6 +249,7 @@ func _used_before(id: String) -> bool:
 func _ask_next() -> void:
 	if walk_ask == 0 or (walk_ask != ALONE and not h.app_up):
 		return
+	var missing := ""
 	# the clicks were planned ahead: go straight to the next one when it's where the plan said
 	if walk_plan.size() > 0:
 		if walk_i >= walk_plan.size():
@@ -161,8 +258,14 @@ func _ask_next() -> void:
 			h._note(walk_closing.replace("[", "[lb]") if walk_closing != "" else L.t("That's it."), 7.0)
 			return
 		h._state()
-		var found: String = h._find(str(walk_plan[walk_i].get("id", "")))
+		var step := str(walk_plan[walk_i].get("id", ""))
+		var found: String = h._find(step)
 		var at := walk_i
+		if found == "" and (walk_tries >= LOOKS_BEFORE_SKIPPING_AHEAD or led or walk_clicked.is_empty()):
+			var way := Hidden.way_in(step)
+			if not way.is_empty():
+				_lead(way, step)
+				return
 		# Not at once: right after a click the old screen is still up, and a later step may be on it.
 		if found == "" and walk_tries >= LOOKS_BEFORE_SKIPPING_AHEAD:
 			for j in range(walk_i + 1, walk_plan.size()):
@@ -182,6 +285,7 @@ func _ask_next() -> void:
 		if walk_tries < LOOKS_BEFORE_ASKING:
 			next_in = LOOK_AGAIN_S
 			return
+		missing = _name_of(step)
 		walk_plan = []                 # the plan and the screen disagree: ask as it goes from here
 	if walk_clicked.size() >= WALK_MAX:
 		walk_ask = 0
@@ -198,12 +302,12 @@ func _ask_next() -> void:
 			"clicked": "(nothing yet)" if walk_clicked.is_empty() else "".join(walk_clicked.map(func(c): return "\n- " + str(c))),
 			"screen": h._screen(body, "point"),
 		}))
-		h._note("", 60.0)
+		h._note(_cant_find(missing), 60.0, true)
 		return
 	body["ask"] = walk_ask
 	body["clicked"] = walk_clicked
 	if h.app.ask_next(body):
-		h._note("", 60.0)
+		h._note(_cant_find(missing), 60.0, true)
 	else:
 		walk_ask = 0
 
@@ -220,6 +324,27 @@ func next_came(result: int, code: int, reply) -> void:
 		h._note(L.t("I lost track of where we were. Ask me again with %s.") % Menu.ask_keys(), 6.0)
 		return
 	next_reply(reply)
+
+
+# What he'd call a step's thing: the id without its kind ("Scene > New Scene" for a menu item).
+static func _name_of(id: String) -> String:
+	return id.substr(id.find(":") + 1).trim_suffix(".")
+
+
+# The note while the next click is worked out: "" (the ghost's own working line), or why it's asking.
+func _cant_find(missing: String) -> String:
+	return L.t("I can't find %s on your screen. I'll look for another way.") % missing.replace("[", "[lb]") if missing != "" else ""
+
+
+# A plan whose first step isn't on screen yet: the walk looks for it (and the way to it) at once.
+func begin(plan: Array, closing: String) -> void:
+	walk_plan = plan
+	walk_closing = closing
+	walk_i = 0
+	walk_tries = 0
+	_clear_lead()
+	led = false
+	next_in = 0.0
 
 
 # Points at a plan's first click and goes through the rest without asking: from an answer in Godot,
@@ -254,6 +379,8 @@ func next_reply(reply: Dictionary) -> void:
 		return
 	if on_screen:
 		point(reply["target"], "[b]%s[/b] " % L.t("Next:") + say)
+	elif plan.size() > 0 and not Hidden.way_in(str(plan[0].get("id", ""))).is_empty():
+		begin(plan, closing)                   # its first click is in a menu, a tab or a folded section
 	else:
 		walk_ask = 0
 		h._note(say if say != "" else L.t("That's it."), 7.0)

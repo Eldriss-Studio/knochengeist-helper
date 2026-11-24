@@ -10,6 +10,8 @@ const INK := Color("1c221d")
 const BONE := Color("f1ead6")
 const FRAME := Color("4a5446")
 const OXBLOOD := Color("8a2f28")
+const FIRST_HELD_S := 4.0
+const MUSING_EVERY_S := 2.2
 # What the ghost mutters while it works something out, one after another.
 const MUSINGS := [
 	"Rattling my bones...",
@@ -30,6 +32,8 @@ var framed_for := Vector2.ZERO
 var mascot: Texture2D             # the ghost, bobbing beside the words while it muses
 var musing := false
 var mused := 0.0
+var held := 0.0                   # how long the first line stays before the mutters
+var muttered := 0                 # which mutter shows, counted from muse_from; -1 for the first line
 var muse_from := 0
 var under := 0.0                 # room kept under the words (ask.gd puts its field and buttons there)
 var tallest := INF
@@ -85,12 +89,15 @@ func say(text: String, width := 250.0) -> void:
 	_fit()
 
 
-## Mutters to itself, a new line every couple of seconds, until it has something to say.
-func muse() -> void:
+## Mutters to itself, a new line every couple of seconds, until it has something to say. `first`, when
+## given, is said before the mutters and held long enough to read.
+func muse(first := "") -> void:
 	musing = true
 	mused = 0.0
+	held = FIRST_HELD_S if first != "" else 0.0
+	muttered = -1 if first != "" else 0
 	muse_from = randi() % MUSINGS.size()
-	say(L.t(MUSINGS[muse_from]), wide / s)
+	say(first if first != "" else L.t(MUSINGS[muse_from]), wide / s)
 	musing = true
 
 
@@ -119,10 +126,11 @@ func _process(delta: float) -> void:
 	if not visible:
 		return
 	if musing:
-		var before := int(mused / 2.2)
 		mused += delta
-		if int(mused / 2.2) != before:
-			words.text = L.t(MUSINGS[(muse_from + int(mused / 2.2)) % MUSINGS.size()])
+		var now := int((mused - held) / MUSING_EVERY_S) if mused >= held else muttered
+		if now != muttered:
+			muttered = now
+			words.text = L.t(MUSINGS[(muse_from + now) % MUSINGS.size()])
 	_fit()
 
 

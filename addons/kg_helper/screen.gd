@@ -61,10 +61,7 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 		var found: BaseButton = b
 		if not here.call(found) or (ask_box and ask_box.is_ancestor_of(found)):
 			continue
-		var name := found.tooltip_text.get_slice("\n", 0).strip_edges()
-		if name == "" and found is Button:
-			name = (found as Button).text.strip_edges()
-		name = name.replace("]", ")")
+		var name := button_name(found)
 		if name == "":
 			continue
 		_add(targets, "button:" + name, "the \"%s\" button" % name, _control_place(found), front, found)
@@ -115,6 +112,14 @@ func read(project: String, own_button: Control, ask_box: Control) -> Dictionary:
 		"window": front.title if front != base.get_window() else "",
 		"targets": targets,
 	}
+
+
+## What a button is called: its tooltip's first line, else its text.
+static func button_name(b: BaseButton) -> String:
+	var name := b.tooltip_text.get_slice("\n", 0).strip_edges()
+	if name == "" and b is Button:
+		name = (b as Button).text.strip_edges()
+	return name.replace("]", ")")
 
 
 # Every shown control under `node`, in tree order. A hidden control's children are hidden too, so its

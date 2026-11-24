@@ -685,3 +685,27 @@ msgstr "Não, não ajudou"
 
 msgid "What was wrong (optional)"
 msgstr "O que estava errado (opcional)"
+
+msgid "Open the %s menu."
+msgstr "Abra o menu %s."
+
+msgid "Open the %s tab."
+msgstr "Abra a aba %s."
+
+msgid "Open the %s section."
+msgstr "Abra a seção %s."
+
+msgid "Open this section."
+msgstr "Abra esta seção."
+
+msgid "Choose %s > %s in the menu bar at the top of the screen."
+msgstr "Escolha %s > %s na barra de menus no topo da tela."
+
+msgid "I can't find %s on your screen. I'll look for another way."
+msgstr "Não encontro %s na sua tela. Vou procurar outro jeito."
+
+msgid "Open:"
+msgstr "Abra:"
+
+msgid "This tab:"
+msgstr "Esta aba:"
