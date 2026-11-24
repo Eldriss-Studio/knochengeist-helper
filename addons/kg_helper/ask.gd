@@ -20,6 +20,10 @@ const SELECT_ALL := 1
 const BOTTOM_MARGIN := 14.0
 const CODE_FONT_SIZE := 15
 
+# Godot 4.7 moved the live modes from DisplayServer to AccessibilityServer; the values stayed.
+const LIVE_OFF := 0
+const LIVE_POLITE := 1
+
 const CREAM := Color("fff8e4")
 const ASKING_HINT := "What is a shader? Where do I add a node?"
 
@@ -36,6 +40,9 @@ var note_row: HBoxContainer        # what was wrong, after No
 var note_field: LineEdit
 var codes := PackedStringArray()
 var answer_menu: PopupMenu
+var came_from: Control
+var holding := false
+var ring_of := ""
 
 
 func _init() -> void:
@@ -47,7 +54,7 @@ func _init() -> void:
 	words.selection_enabled = true
 	words.deselect_on_focus_loss_enabled = false   # the right-click menu takes focus, and must still copy the selection
 	words.context_menu_enabled = false              # its own menu writes to the clipboard directly; this one goes through System
-	words.focus_mode = Control.FOCUS_CLICK
+	words.focus_mode = Control.FOCUS_ALL
 	var mono := EditorInterface.get_editor_theme().get_font("source", "EditorFonts") if EditorInterface.get_editor_theme() else null
 	if mono:
 		words.add_theme_font_override("mono_font", mono)
@@ -62,6 +69,7 @@ func _init() -> void:
 	add_child(answer_menu)
 	field = LineEdit.new()
 	field.placeholder_text = L.t(ASKING_HINT)
+	field.accessibility_name = L.t("Your question")
 	var inside := StyleBoxFlat.new()
 	inside.bg_color = CREAM
 	inside.border_color = INK
@@ -99,9 +107,9 @@ func _init() -> void:
 	if _font(450):
 		quiet.add_theme_font_override("font", _font(450))
 	rate_row.add_child(quiet)
-	var helped := _quiet_button(L.t("Yes"))
+	var helped := _quiet_button(L.t("Yes"), L.t("Yes, this helped"))
 	helped.pressed.connect(func(): _rated(true, ""))
-	var not_helped := _quiet_button(L.t("No"))
+	var not_helped := _quiet_button(L.t("No"), L.t("No, this didn't help"))
 	not_helped.pressed.connect(func():
 		rate_row.visible = false
 		note_row.visible = true
@@ -113,6 +121,7 @@ func _init() -> void:
 	note_row = HBoxContainer.new()
 	note_field = LineEdit.new()
 	note_field.placeholder_text = L.t("What was wrong? (optional)")
+	note_field.accessibility_name = L.t("What was wrong (optional)")
 	for state in ["normal", "focus", "read_only"]:
 		note_field.add_theme_stylebox_override(state, field.get_theme_stylebox(state))
 	for color in ["font_color", "font_placeholder_color", "caret_color"]:
@@ -133,11 +142,11 @@ func _init() -> void:
 
 
 # A small text button for the rating, so it never competes with Show me and Close.
-func _quiet_button(text: String) -> Button:
+func _quiet_button(text: String, said: String) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.flat = true
-	b.focus_mode = Control.FOCUS_NONE
+	b.accessibility_name = said
 	b.tooltip_text = L.t("Kept only on this computer")
 	for color in ["font_color", "font_hover_color", "font_pressed_color"]:
 		b.add_theme_color_override(color, Color(INK, 0.65) if color == "font_color" else OXBLOOD)
@@ -151,7 +160,7 @@ func _quiet_button(text: String) -> Button:
 func _button(text: String, main: bool) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.focus_mode = Control.FOCUS_NONE
+	b.accessibility_name = text
 	var box := StyleBoxFlat.new()
 	box.bg_color = OXBLOOD if main else Color(0, 0, 0, 0)
 	box.border_color = OXBLOOD if main else INK
@@ -175,15 +184,18 @@ func _button(text: String, main: bool) -> Button:
 
 ## Opens ready for a question.
 func open(course: bool) -> void:
+	_remember_focus()
 	for_course = course
 	_show("[b]%s[/b]\n%s" % [L.t("Ask the ghost"), L.t("Anything about Godot.")] + (" " + L.t("Leave it empty if you're stuck on your lesson step.") if course else "") + "\n[color=#1c221d99]%s[/color]" % L.t("Enter to ask, Esc to close."), true, false)
 	ask_button.text = L.t("Ask")
+	ask_button.accessibility_name = ask_button.text
 	field.text = ""
 	field.grab_focus()
 
 
 ## Opens with a question already written about what he right-clicked; typing replaces it.
 func ask_about(question: String, note: String) -> void:
+	_remember_focus()
 	if note != "":
 		say("[b]%s[/b]\n%s\n[color=#1c221d99]%s[/color]" % [L.t("Ask the ghost"), note, L.t("Enter to ask, Esc to close.")], 300.0)
 	field.text = question
@@ -195,13 +207,16 @@ func thinking() -> void:
 	_show("", false, false)
 	close_button.visible = false
 	stop_button.visible = true
+	_quiet_until_done()
 	muse()
+	_keep_keyboard()
 
 
 func saying(so_far: String) -> void:
 	_show(_rendered(so_far), false, false)
 	close_button.visible = false
 	stop_button.visible = true
+	_quiet_until_done()
 
 
 func _stop() -> void:
@@ -279,6 +294,7 @@ func _rated(helped: bool, note: String) -> void:
 	say(words.text + "\n[color=#1c221d99]%s[/color]" % L.t("Thanks."), 300.0)
 	show_part(1.0)
 	rated.emit(helped, note.strip_edges())
+	_keep_keyboard()
 
 
 func _hide_rating() -> void:
@@ -291,6 +307,8 @@ func _hide_rating() -> void:
 func failed(why: String) -> void:
 	_show(why, false, false)
 	ask_button.text = L.t("Ask again")
+	ask_button.accessibility_name = ask_button.text
+	_keep_keyboard()
 	ask_button.visible = field.text.strip_edges() != ""
 
 
@@ -298,6 +316,58 @@ func close() -> void:
 	if visible:
 		visible = false
 		closed.emit()
+		holding = false
+		if is_instance_valid(came_from) and came_from.is_visible_in_tree():
+			came_from.grab_focus()
+		came_from = null
+
+
+func _quiet_until_done() -> void:
+	words.set("accessibility_live", LIVE_OFF)
+	words.accessibility_name = L.t("Answer still coming")
+
+
+func _remember_focus() -> void:
+	var had := get_viewport().gui_get_focus_owner()
+	if not holding:
+		came_from = had if had and not is_ancestor_of(had) else null
+	holding = true
+
+
+# Tab and Shift+Tab go round what the card shows, in the order it shows it, and never leave it. The
+# card lays itself out by hand, and in a follow-up its field sits below the rating, so the order
+# isn't the children's.
+func _link_focus() -> void:
+	var ring: Array = []
+	if field.visible and not following:
+		ring.append(field)
+	ring.append(words)
+	for b in row.get_children():
+		if (b as Control).visible:
+			ring.append(b)
+	for part in [rate_row, note_row]:
+		if part.visible:
+			for c in part.get_children():
+				if (c as Control).focus_mode != Control.FOCUS_NONE:
+					ring.append(c)
+	if field.visible and following:
+		ring.append(field)
+	var key := ",".join(ring.map(func(c): return str(c.get_instance_id())))
+	if key == ring_of:
+		return
+	ring_of = key
+	for i in ring.size():
+		var c: Control = ring[i]
+		c.focus_next = c.get_path_to(ring[(i + 1) % ring.size()])
+		c.focus_previous = c.get_path_to(ring[i - 1])
+
+
+# What had the keyboard went away (the field once it asked, a rating button once pressed): the
+# keyboard stays in the card instead of going nowhere.
+func _keep_keyboard() -> void:
+	_fit()
+	if holding and get_viewport().gui_get_focus_owner() == null:
+		words.grab_focus()
 
 
 func _show(text: String, asking: bool, can_show: bool) -> void:
@@ -310,6 +380,8 @@ func _show(text: String, asking: bool, can_show: bool) -> void:
 	stop_button.visible = false
 	close_button.visible = true
 	visible = true
+	words.set("accessibility_live", LIVE_POLITE)
+	words.accessibility_name = L.t("Answer") if not asking else L.t("Ask the ghost")
 	say(text, 300.0)
 	show_part(1.0)
 
@@ -340,6 +412,7 @@ func _fit() -> void:
 	if field.visible and following:
 		field.position = Vector2(pad.x, y)
 		field.size = Vector2(wide, field_h)
+	_link_focus()
 
 
 func _input(event: InputEvent) -> void:

@@ -51,7 +51,7 @@ signal install(tool: GDScript)
 func _init(brain = null, claude_state := "", docs = null) -> void:
 	title = L.t("Knochengeist settings")
 	ok_button_text = L.t("Save")
-	add_cancel_button(L.t("Cancel"))
+	var cancel := add_cancel_button(L.t("Cancel"))
 	s = EditorInterface.get_editor_scale()
 	var box := VBoxContainer.new()
 	box.custom_minimum_size = Vector2(WIDTH, 0) * s
@@ -66,6 +66,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	tool_list.select(Brain.TOOLS.keys().find(Brain.tool()))
 	tool_list.item_selected.connect(func(i: int): _pick(Brain.TOOLS.values()[i]))
 	tool_list.tooltip_text = L.t("Answers come from the AI tool you pick. You sign in to it with your own plan.")
+	tool_list.accessibility_name = L.t("AI tool")
 	box.add_child(tool_list)
 	status_box = VBoxContainer.new()
 	status_box.add_theme_constant_override("separation", int(GAP * s))
@@ -82,6 +83,8 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	model_hint = _quiet("")
 	effort_list = OptionButton.new()
 	effort_hint = _quiet("")
+	model_list.accessibility_name = L.t("Model")
+	effort_list.accessibility_name = L.t("Effort")
 	for column in [[L.t("Model"), model_list, model_hint], [L.t("Effort"), effort_list, effort_hint]]:
 		var col := VBoxContainer.new()
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -133,6 +136,8 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_child(_heading(L.t("Options")))
 	box.add_child(options)
 	add_child(box)
+	for b in [change, automatic, less_motion, check_updates, get_ok_button(), cancel]:
+		_named(b)
 	confirmed.connect(_save)
 	_pick(picked)
 
@@ -187,11 +192,13 @@ func _show_status() -> void:
 	if state == "missing":
 		var install_button := Button.new()
 		install_button.text = L.t("Install…")
+		_named(install_button)
 		install_button.pressed.connect(func(): install.emit(picked))
 		row.add_child(install_button)
 	if state == "signed_out":
 		var button := Button.new()
 		button.text = L.t("Sign in…")
+		_named(button)
 		button.pressed.connect(func(): sign_in.emit(picked))
 		row.add_child(button)
 	if state == "ready" and not lines.is_empty():
@@ -234,6 +241,10 @@ func _show_model() -> void:
 		effort_list.add_item(L.t(EFFORT_NAMES.get(level, level.capitalize())))
 	effort_list.select(maxi(0, picked.EFFORTS.find(Brain.saved_setting(picked.EFFORT_SETTING))))
 	call_deferred("_fit")
+
+func _named(button: Button) -> void:
+	button.accessibility_name = button.text
+
 
 func _label(text: String) -> Label:
 	var label := Label.new()
@@ -323,6 +334,7 @@ func _docs_section(box: VBoxContainer, docs: Node) -> void:
 	docs_retry = Button.new()
 	docs_retry.name = "DocsRetry"
 	docs_retry.text = L.t("Try again")
+	_named(docs_retry)
 	docs_retry.pressed.connect(func(): docs_node.start())
 	row.add_child(docs_retry)
 	box.add_child(row)

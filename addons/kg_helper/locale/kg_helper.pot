@@ -84,6 +84,12 @@ msgstr ""
 msgid "Almost have it..."
 msgstr ""
 
+msgid "Answer"
+msgstr ""
+
+msgid "Answer still coming"
+msgstr ""
+
 msgid "Answers come from the AI tool you pick. You sign in to it with your own plan."
 msgstr ""
 
@@ -303,6 +309,9 @@ msgstr ""
 msgid "Knochengeist helper, version %s.\nAsk anything about Godot with %s. Answers come from your %s, or from the course page when it's running."
 msgstr ""
 
+msgid "Knochengeist menu"
+msgstr ""
+
 msgid "Knochengeist settings"
 msgstr ""
 
@@ -343,6 +352,9 @@ msgid "Next:"
 msgstr ""
 
 msgid "No"
+msgstr ""
+
+msgid "No, this didn't help"
 msgstr ""
 
 msgid "Not found"
@@ -561,6 +573,9 @@ msgstr ""
 msgid "What it sends to %s"
 msgstr ""
 
+msgid "What was wrong (optional)"
+msgstr ""
+
 msgid "What was wrong? (optional)"
 msgstr ""
 
@@ -579,6 +594,9 @@ msgid "With the error."
 msgstr ""
 
 msgid "Yes"
+msgstr ""
+
+msgid "Yes, this helped"
 msgstr ""
 
 msgid "You chose this file."
@@ -600,6 +618,9 @@ msgid "You've used all of your plan's %s. It resets %s."
 msgstr ""
 
 msgid "Your game hit an error. Click me to have it explained."
+msgstr ""
+
+msgid "Your question"
 msgstr ""
 
 msgid "[b]I'm here.[/b] Press %s to ask me anything about Godot, and I'll show you where to click."

@@ -293,7 +293,7 @@ func _make_button() -> void:
 	button.flat = true
 	button.icon = _svg("icon.svg", 21.0)     # the ghost fills about three quarters of its box
 	button.add_theme_constant_override("icon_max_width", int(21 * scale))
-	button.focus_mode = Control.FOCUS_NONE
+	button.accessibility_name = L.t("Knochengeist menu")
 	ring = Ring.new()
 	button.add_child(ring)
 	dot = Control.new()

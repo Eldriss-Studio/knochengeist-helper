@@ -70,7 +70,13 @@ func point(id: String, text: String) -> void:
 	var win: Window = h.wins.get(id, EditorInterface.get_base_control().get_window())
 	var p := _pointer_in(win)
 	p.stays = h.fields.has(id)
-	p.point(h.places[id], text)
+	var thing = (h.nodes[id] as WeakRef).get_ref() if h.nodes.has(id) else null
+	p.point(h.places[id], text, thing as Control, _row_of(id))
+
+
+# The row a list target names ("item:MeshInstance3D", "row:Player"), or "" for anything else.
+static func _row_of(id: String) -> String:
+	return id.substr(id.find(":") + 1) if id.begins_with("item:") or id.begins_with("row:") else ""
 
 
 # Takes every ghost down without ending the walk-through.
@@ -82,7 +88,7 @@ func stop_pointing() -> void:
 	switching = false
 
 
-func _pointed(clicked: bool, cancelled: bool, gave_up: bool) -> void:
+func _pointed(clicked: bool, cancelled: bool, gave_up: bool, by_key: bool) -> void:
 	if switching:
 		return
 	if walk_ask == 0 or cancelled:
@@ -96,6 +102,8 @@ func _pointed(clicked: bool, cancelled: bool, gave_up: bool) -> void:
 	if clicked:
 		walk_clicked.append(str(h.labels.get(walk_target, walk_target)))
 		walk_i += 1
+		if by_key:
+			h.answers.used(h.answer_record, "keys")
 	walk_tries = 0
 	next_in = SETTLE_S
 

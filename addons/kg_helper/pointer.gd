@@ -7,8 +7,9 @@ extends Control
 # takes a click itself. Colors are Knochengeist's own (identity/README.md), so it can't be mistaken
 # for a part of Godot.
 
-## clicked: he clicked the thing. cancelled: he pressed Esc. Neither: the thing went away, or time ran out.
-signal finished(clicked: bool, cancelled: bool, gave_up: bool)
+## clicked: he clicked the thing (by_key: with Enter or Space). cancelled: he pressed Esc. Neither: the
+## thing went away, or time ran out.
+signal finished(clicked: bool, cancelled: bool, gave_up: bool, by_key: bool)
 
 const Bubble := preload("bubble.gd")
 const CANDLE := Color("e3b44a")
@@ -17,6 +18,7 @@ const RING_S := 0.45            # the ring's pen stroke
 const PULSE_S := 0.9            # each of the two pulses after it
 const TYPE_CPS := 40.0          # the label types itself out
 const LONGEST_S := 30.0
+const LIVE_POLITE := 1           # AccessibilityServer's in Godot 4.7, DisplayServer's in 4.6: the same value
 var longest_s := float(OS.get_environment("KG_HELPER_RING_S")) if OS.get_environment("KG_HELPER_RING_S") != "" else LONGEST_S
 
 var ghost: Texture2D
@@ -29,6 +31,9 @@ var start := Vector2.ZERO
 var fly_s := 0.8
 var bubble: Control
 var ring_box: Control            # where the ring is, as a control: what a screen reader (or a test) can find
+var target: WeakRef
+var row := ""
+var handed := false
 var ring_a := PackedVector2Array()
 var ring_b := PackedVector2Array()
 
@@ -40,6 +45,7 @@ func _ready() -> void:
 	s = EditorInterface.get_editor_scale()
 	bubble = Bubble.new()
 	bubble.visible = false
+	bubble.words.set("accessibility_live", LIVE_POLITE)
 	add_child(bubble)
 	ring_box = Control.new()
 	ring_box.name = "GhostRing"
@@ -49,9 +55,13 @@ func _ready() -> void:
 
 
 ## Points at whatever `place` finds, saying `text` beside it.
-func point(place: Callable, text: String) -> void:
+func point(place: Callable, text: String, thing: Control = null, in_row := "") -> void:
+	_let_go()
 	where = place
 	said = text
+	target = weakref(thing) if thing else null
+	row = in_row
+	handed = false
 	t = 0.0
 	start = get_local_mouse_position()
 	var r = _rect()
@@ -71,11 +81,57 @@ func point(place: Callable, text: String) -> void:
 	queue_redraw()
 
 
-func stop(clicked := false, cancelled := false, gave_up := false) -> void:
+func stop(clicked := false, cancelled := false, gave_up := false, by_key := false) -> void:
 	if not visible:
 		return
 	visible = false
-	finished.emit(clicked, cancelled, gave_up)
+	_let_go()
+	finished.emit(clicked, cancelled, gave_up, by_key)
+
+
+func _ringed() -> Control:
+	return target.get_ref() as Control if target else null
+
+
+func _let_go() -> void:
+	var thing := _ringed()
+	if thing is BaseButton and (thing as BaseButton).pressed.is_connected(_pressed):
+		(thing as BaseButton).pressed.disconnect(_pressed)
+
+
+# A button pressed while it's ringed: by a click it already ended in _input, so this is a key.
+func _pressed() -> void:
+	stop(true, false, false, true)
+
+
+# Gives the ringed thing the keyboard, so a screen reader names it and Enter or Space does the step.
+func _hand_keyboard() -> void:
+	handed = true
+	var thing := _ringed()
+	if thing == null or not thing.is_visible_in_tree():
+		return
+	if get_viewport().gui_get_focus_owner() is TextEdit:
+		return                    # he's writing code: a Space or Enter there mustn't press what's ringed
+	if thing.get_window() != get_window():
+		thing.get_window().grab_focus()
+	if thing is Tree:
+		var item := (thing as Tree).get_root()
+		while item and item.get_text(0) != row:
+			item = item.get_next_in_tree()
+		thing.grab_focus()
+		if item:
+			item.select(0)
+			(thing as Tree).scroll_to_item(item)
+		return
+	var takes := thing
+	if thing.focus_mode == Control.FOCUS_NONE:          # an Inspector property: its own editor takes the keys
+		for c in thing.find_children("*", "Control", true, false):
+			if (c as Control).focus_mode == Control.FOCUS_ALL and (c as Control).is_visible_in_tree():
+				takes = c
+				break
+	takes.grab_focus()
+	if thing is BaseButton:
+		(thing as BaseButton).pressed.connect(_pressed)
 
 
 func _rect():
@@ -128,6 +184,8 @@ func _process(delta: float) -> void:
 		return
 	var landed := t - fly_s
 	ring_box.visible = landed > 0.0
+	if landed > 0.0 and not handed:
+		_hand_keyboard()
 	if landed > 0.0:
 		ring_box.position = (r as Rect2).position
 		ring_box.size = (r as Rect2).size
@@ -143,6 +201,14 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		stop(false, true)
+	elif handed and (event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_select")) and not stays and not (_ringed() is BaseButton):
+		# a row or a property: Enter does the step and goes no further, so a dialog's list
+		# doesn't make the thing before the walk's own Create step
+		var has := get_viewport().gui_get_focus_owner()
+		var thing := _ringed()
+		if thing and has and (has == thing or thing.is_ancestor_of(has)):
+			get_viewport().set_input_as_handled()
+			stop(true, false, false, true)
 	elif event is InputEventMouseButton and event.pressed and where.is_valid():
 		var r = where.call()
 		# position, not global_position: a dialog drawn inside the editor's window (single-window mode)

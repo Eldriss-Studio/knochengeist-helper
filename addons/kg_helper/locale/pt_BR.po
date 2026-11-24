@@ -664,3 +664,24 @@ msgstr "Não foi possível acessar o chaveiro deste Mac, então a chave não foi
 
 msgid "This computer has no keychain the helper can use, so the key wasn't saved. Install libsecret-tools (secret-tool), then try again."
 msgstr "Este computador não tem um chaveiro que o assistente possa usar, então a chave não foi guardada. Instale o libsecret-tools (secret-tool) e tente de novo."
+
+msgid "Knochengeist menu"
+msgstr "Menu do Knochengeist"
+
+msgid "Your question"
+msgstr "Sua pergunta"
+
+msgid "Answer"
+msgstr "Resposta"
+
+msgid "Answer still coming"
+msgstr "Resposta a caminho"
+
+msgid "Yes, this helped"
+msgstr "Sim, ajudou"
+
+msgid "No, this didn't help"
+msgstr "Não, não ajudou"
+
+msgid "What was wrong (optional)"
+msgstr "O que estava errado (opcional)"
