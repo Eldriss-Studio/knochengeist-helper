@@ -39,6 +39,7 @@ const Docs := preload("docs.gd")
 const Screen := preload("screen.gd")
 const App := preload("app.gd")
 const Walk := preload("walk.gd")
+const System := preload("system.gd")
 const CHECK_UPDATES_AFTER_S := 5.0
 # Where right-click offers "Ask the ghost about this". The Inspector's spot came in Godot 4.7, so on 4.6 it's left out.
 static func slots() -> Array:
@@ -196,6 +197,8 @@ func _enter_tree() -> void:
 	ask_box.closed.connect(func(): thread.clear())
 	ask_box.rated.connect(func(helped: bool, note: String): answers.rated(answer_record, helped, note))
 	ask_box.closed.connect(func(): asking_about = "")
+	ask_box.copied.connect(func(): if ask_box.following: answers.used(answer_record, "copies"))
+	ask_box.opened.connect(func(_address: String): if ask_box.following: answers.used(answer_record, "links"))
 	ask_box.stopped.connect(ask_stream.stop)
 	ask_box.stopped.connect(brain.stop)
 	ask_box.stopped.connect(_stopped)
@@ -366,7 +369,7 @@ func _chose(id: int) -> void:
 		Menu.SHOW_LOGS:
 			if not FileAccess.file_exists(Brain.log_path()):
 				Brain.log_line("The log was opened before anything went wrong.")
-			OS.shell_open(Brain.log_path())
+			System.open(Brain.log_path())
 		Menu.DEBUG_INFO:
 			_open_debug_info()
 		Menu.ABOUT:
@@ -374,7 +377,7 @@ func _chose(id: int) -> void:
 		Menu.UPDATE:
 			_open_update()
 		Menu.COURSE_PAGE:
-			OS.shell_open(url + "/learn")
+			System.open(url + "/learn")
 
 
 ## Signs in to this tool, or the one in use, in his own setup: Claude Code signs in when it's run,
@@ -490,7 +493,7 @@ func _open_debug_info() -> void:
 	share.toggled.connect(func(on: bool): info.text = base + (_unhelpful_text() if on else ""))
 	box.add_child(share)
 	window.add_child(box)
-	window.confirmed.connect(func(): DisplayServer.clipboard_set(info.text))
+	window.confirmed.connect(func(): System.copy(info.text))
 	EditorInterface.popup_dialog_centered(_closes_itself(window))
 
 
@@ -516,7 +519,7 @@ func _show_past(i: int) -> void:
 	answer_record = str(record.get("id", ""))
 	answer_plan = []
 	thread = [{"question": answer_said, "answer": str(record.get("answer", ""))}]
-	ask_box.answered(str(record.get("answer", "")).replace("[", "[lb]"), false)
+	ask_box.answered(str(record.get("answer", "")).replace("[lb]", "["), false)     # answers kept before version 56 were stored escaped
 	ask_box.position = _under_button(ask_box)
 
 
@@ -862,13 +865,8 @@ func _answer_line(text: String) -> void:
 		ask_reply = message
 		return
 	ask_words += message["say"]
-	ask_box.saying(_plain(ask_words))
+	ask_box.saying(ask_words)
 	ask_box.position = _under_button(ask_box)
-
-
-# The card reads [..] as formatting.
-func _plain(text: String) -> String:
-	return text.strip_edges().replace("[", "[lb]").replace("**", "")
 
 
 func _answer_came(ok: bool, code: int) -> void:
@@ -893,10 +891,10 @@ func _answered(reply: Dictionary) -> void:
 	_state()
 	answer_target = _find(str(answer_plan[0].get("id", ""))) if answer_plan.size() > 0 else ""
 	var steps := PackedStringArray(answer_plan.map(func(step): return str(step.get("say", "")) if step is Dictionary else ""))
-	answer_record = answers.added(answer_said, _plain(answer_text), steps, brain.answered_by if not app_up else FROM_THE_PAGE, _version())
-	thread.append({"question": answer_said, "answer": _plain(answer_text)})
+	answer_record = answers.added(answer_said, answer_text.strip_edges(), steps, brain.answered_by if not app_up else FROM_THE_PAGE, _version())
+	thread.append({"question": answer_said, "answer": answer_text.strip_edges()})
 	_show_up(course_shown)
-	ask_box.answered(_plain(str(reply.get("answer", ""))), places.has(answer_target))
+	ask_box.answered(str(reply.get("answer", "")), places.has(answer_target))
 	if not unchecked.is_empty():
 		ask_box.note(L.t("I couldn't find %s in your Godot %s, so check that name.") % [", ".join(unchecked), _godot_version()])
 	ask_box.position = _under_button(ask_box)
@@ -917,7 +915,7 @@ func _brain_piece(piece: String) -> void:
 	if words == "":
 		return
 	ask_words += words
-	ask_box.saying(_plain(ask_words))
+	ask_box.saying(ask_words)
 	ask_box.position = _under_button(ask_box)
 
 

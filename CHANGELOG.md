@@ -2,6 +2,10 @@
 
 The helper's versions, newest first. The version is the one in `addons/kg_helper/plugin.cfg`.
 
+## Version 56
+
+- **You can now select and copy the ghost's answers.** Drag to select text, press Cmd+C (Ctrl+C outside a Mac), or right-click for a small menu with "Copy" and "Select all". Right-click Copy copies your selection, or the whole answer if nothing is selected. Code blocks now show apart from the text, on a light shade in the editor's code font, with a "Copy" link above each one that copies just that code. Web links in an answer now open in your browser, and bold text now shows bold. A long answer no longer pushes the card off the bottom of the screen: the answer scrolls inside the card, and the follow-up box and buttons stay in view. Before, an answer's text couldn't be selected, copied or clicked, and code blocks showed up as plain lines between three backticks.
+
 ## Version 55
 
 - **The ghost can now be stopped while it works.** While the ghost thinks or writes an answer, the card now shows a Stop button. Before, the card showed no way out while it worked. Close was hidden, and the only way out was Esc, which closed the card and lost your question. Stop ends the question, both when the AI tool runs on this computer and when the course page answers. The card goes back to the question box with your question still in it, so you can fix it or ask again. Nothing from the stopped answer shows up later. Esc still closes the card.

@@ -10,6 +10,15 @@ signal show_me
 signal closed
 signal stopped
 signal rated(helped: bool, note: String)
+signal copied
+signal opened(address: String)
+
+const System := preload("system.gd")
+const Markdown := preload("markdown.gd")
+const COPY_ALL := 0
+const SELECT_ALL := 1
+const BOTTOM_MARGIN := 14.0
+const CODE_FONT_SIZE := 15
 
 const CREAM := Color("fff8e4")
 const ASKING_HINT := "What is a shader? Where do I add a node?"
@@ -25,11 +34,32 @@ var following := false             # the box under an answer, for a follow-up
 var rate_row: HBoxContainer        # Did this help? Yes / No, under a finished answer
 var note_row: HBoxContainer        # what was wrong, after No
 var note_field: LineEdit
+var codes := PackedStringArray()
+var answer_menu: PopupMenu
 
 
 func _init() -> void:
 	super()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	words.mouse_filter = Control.MOUSE_FILTER_STOP
+	words.fit_content = false        # its height is set in _fit, so a long answer scrolls
+	words.scroll_following = true
+	words.selection_enabled = true
+	words.deselect_on_focus_loss_enabled = false   # the right-click menu takes focus, and must still copy the selection
+	words.context_menu_enabled = false              # its own menu writes to the clipboard directly; this one goes through System
+	words.focus_mode = Control.FOCUS_CLICK
+	var mono := EditorInterface.get_editor_theme().get_font("source", "EditorFonts") if EditorInterface.get_editor_theme() else null
+	if mono:
+		words.add_theme_font_override("mono_font", mono)
+	words.add_theme_font_size_override("mono_font_size", int(CODE_FONT_SIZE * s))
+	words.add_theme_color_override("selection_color", Color(OXBLOOD, 0.25))
+	words.gui_input.connect(_words_input)
+	words.meta_clicked.connect(_link_clicked)
+	answer_menu = PopupMenu.new()
+	answer_menu.add_item(L.t("Copy"), COPY_ALL)
+	answer_menu.add_item(L.t("Select all"), SELECT_ALL)
+	answer_menu.id_pressed.connect(_menu_chose)
+	add_child(answer_menu)
 	field = LineEdit.new()
 	field.placeholder_text = L.t(ASKING_HINT)
 	var inside := StyleBoxFlat.new()
@@ -169,7 +199,7 @@ func thinking() -> void:
 
 
 func saying(so_far: String) -> void:
-	_show(so_far, false, false)
+	_show(_rendered(so_far), false, false)
 	close_button.visible = false
 	stop_button.visible = true
 
@@ -183,7 +213,7 @@ func _stop() -> void:
 
 
 func answered(answer: String, can_show: bool) -> void:
-	_show(answer, false, can_show)
+	_show(_rendered(answer), false, can_show)
 	rate_row.visible = true
 	following = true
 	field.placeholder_text = L.t("Ask a follow-up…")
@@ -197,6 +227,51 @@ func note(text: String) -> void:
 	say(words.text + "\n[color=#1c221d99]%s[/color]" % text.replace("[", "[lb]"), 300.0)
 	show_part(1.0)
 	_fit()
+
+
+func _rendered(markdown: String) -> String:
+	var shown := Markdown.render(markdown, L.t("Copy"))
+	codes = shown["codes"]
+	return shown["text"]
+
+
+# The copy keys go through System before the words' own handler, which would write to the clipboard itself.
+func _words_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_copy") and words.get_selected_text() != "":
+		_copy(_without_copy_links(words.get_selected_text()))
+		words.accept_event()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		answer_menu.popup(Rect2i(Vector2i(words.get_screen_position() + event.position), Vector2i.ZERO))
+		words.accept_event()
+
+
+func _menu_chose(id: int) -> void:
+	if id == SELECT_ALL:
+		words.select_all()
+	elif id == COPY_ALL:
+		_copy(_without_copy_links(words.get_selected_text() if words.get_selected_text() != "" else words.get_parsed_text()))
+
+
+# The selection holds each code block's Copy link as a line of its own; the copied text shouldn't.
+func _without_copy_links(text: String) -> String:
+	var lines := Array(text.split("\n"))
+	return "\n".join(lines.filter(func(line): return line != L.t("Copy")))
+
+
+func _link_clicked(meta) -> void:
+	var said := str(meta)
+	if said.begins_with("copy:"):
+		var i := int(said.trim_prefix("copy:"))
+		if i < codes.size():
+			_copy(codes[i])
+	elif said.begins_with("https://") or said.begins_with("http://"):
+		System.open(said)
+		opened.emit(said)
+
+
+func _copy(text: String) -> void:
+	System.copy(text)
+	copied.emit()
 
 
 func _rated(helped: bool, note: String) -> void:
@@ -250,6 +325,7 @@ func _fit() -> void:
 		if rating == note_row:
 			rating.size.x = wide
 	under = (field_h + gap if field.visible else 0.0) + row.size.y + gap + (rating.size.y + gap if rating else 0.0)
+	tallest = get_parent_area_size().y - position.y - BOTTOM_MARGIN * s
 	super()
 	var y := pad.y + words.size.y + gap
 	if field.visible and not following:

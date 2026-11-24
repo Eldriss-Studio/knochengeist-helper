@@ -28,6 +28,11 @@ func rated(id: String, helped: bool, note: String) -> void:
 	_update(id, func(record: Dictionary): record["helped"] = helped; record["note"] = note)
 
 
+## He copied from the answer ("copies") or opened one of its links ("links").
+func used(id: String, how: String) -> void:
+	_update(id, func(record: Dictionary): record[how] = int(record.get(how, 0)) + 1)
+
+
 func walk_ended(id: String, how: String) -> void:
 	_update(id, func(record: Dictionary): record["walk"] = how)
 

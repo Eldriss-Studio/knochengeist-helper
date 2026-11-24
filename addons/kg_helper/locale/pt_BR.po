@@ -130,6 +130,9 @@ msgstr "Clique para ver o que houve."
 msgid "Stop"
 msgstr "Parar"
 
+msgid "Select all"
+msgstr "Selecionar tudo"
+
 msgid "Close"
 msgstr "Fechar"
 

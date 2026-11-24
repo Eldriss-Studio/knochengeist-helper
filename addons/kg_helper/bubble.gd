@@ -32,6 +32,7 @@ var musing := false
 var mused := 0.0
 var muse_from := 0
 var under := 0.0                 # room kept under the words (ask.gd puts its field and buttons there)
+var tallest := INF
 
 
 func _init() -> void:
@@ -102,7 +103,9 @@ func _fit() -> void:
 	var pad := Vector2(14, 10) * s
 	words.position = pad + (Vector2(40 * s, 0) if musing and mascot else Vector2.ZERO)
 	words.size = Vector2(wide, 0)
-	words.size.y = words.get_content_height()
+	var room := maxf(tallest - pad.y * 2.0 - under, 40 * s)
+	words.scroll_active = words.get_content_height() > room
+	words.size.y = minf(words.get_content_height(), room)
 	size = words.size + pad * 2.0 + Vector2(40 * s if musing and mascot else 0.0, under)
 	if musing:
 		size.y = maxf(size.y, 52 * s + under)
