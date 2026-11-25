@@ -18,18 +18,24 @@ const SCHEME := "http://"
 const THIS_COMPUTER := ["localhost", "127.0.0.1", "[::1]"]
 const MAX_OUTPUT_TOKENS := "4000"    # OpenRouter refuses a request that could cost more than the credit left
 const MAX_RETRIES := "3"             # Claude Code's own default retries a closed port for minutes
-# label: Claude's is the Claude Code adapter's SOURCE_LABEL. key: "needed", "optional" or "none". address: "" for one he types. maker: a fixed one, or "from model"
+const MODELS_VAR := "KG_HELPER_MODELS_%s"    # a test's stand-in for where a source lists its models
+# key: "needed", "optional" or "none". models: a fixed list, or where its list is read (a full "url", or a
+# "path" on its address), the JSON array holding it ("list"), each entry's name field ("name"), and the
+# ending a name must have ("ending"); none for one he types. address: "" for one he types. maker: a fixed one, or "from model"
 # for an id that starts with it (google/gemini-2.5-flash). token: what a local server takes for a key.
 const ALL := {
-	CLAUDE: {"label": "", "name": "Claude", "address": "", "key": "none", "model": "", "local": false},
+	CLAUDE: {"name": "Claude", "address": "", "key": "none", "model": "", "local": false},
 	"openrouter": {"label": "OpenRouter", "name": "OpenRouter", "address": "https://openrouter.ai/api", "key": "needed",
-		"model": "baidu/ernie-5.5-flash-preview:free", "local": false, "maker": "from model"},
+		"model": "baidu/ernie-5.5-flash-preview:free", "local": false, "maker": "from model",
+		"models": {"url": "https://openrouter.ai/api/v1/models", "list": "data", "name": "id", "ending": ":free"}},
 	"deepseek": {"label": "DeepSeek", "name": "DeepSeek", "address": "https://api.deepseek.com/anthropic", "key": "needed",
-		"model": "deepseek-flash", "local": false, "maker": "DeepSeek"},
+		"model": "deepseek-flash", "local": false, "maker": "DeepSeek", "models": ["deepseek-flash", "deepseek-v4-pro"]},
 	"ollama": {"label": "Ollama (on this computer)", "name": "Ollama", "address": "http://localhost:11434", "key": "none",
-		"model": "qwen3-coder:30b", "local": true, "token": "ollama"},
+		"model": "qwen3-coder:30b", "local": true, "token": "ollama",
+		"models": {"path": "/api/tags", "list": "models", "name": "name"}},
 	"lmstudio": {"label": "LM Studio (on this computer)", "name": "LM Studio", "address": "http://localhost:1234", "key": "none",
-		"model": "qwen/qwen3-coder-30b", "local": true, "token": "lmstudio"},
+		"model": "qwen/qwen3-coder-30b", "local": true, "token": "lmstudio",
+		"models": {"path": "/v1/models", "list": "data", "name": "id"}},
 	CUSTOM: {"label": "Another address", "name": "", "address": "", "key": "optional", "model": "", "local": false},
 }
 const MAKERS := {"google": "Google", "nvidia": "NVIDIA", "anthropic": "Anthropic", "openai": "OpenAI", "meta-llama": "Meta",
@@ -38,7 +44,7 @@ const MAKERS := {"google": "Google", "nvidia": "NVIDIA", "anthropic": "Anthropic
 # %s is the source's name
 const PROBLEMS := {
 	"no_key": "There's no %s key saved yet. Open Settings in the ghost's menu and add your key.",
-	"no_address": "There's no address saved yet. Open Settings in the ghost's menu and add the address under Answers from.",
+	"no_address": "There's no address saved yet. Open Settings in the ghost's menu and type the address under Another address.",
 	"wrong_key": "%s turned down your key. Check it on its website, then save it again in Settings.",
 	"no_credit": "Your %s account has no credit left for this model. Add credit, or pick a free model in Settings.",
 	"rate_limited": "%s is busy for this model right now. Try again later, or pick another model in Settings.",
@@ -46,6 +52,8 @@ const PROBLEMS := {
 	"not_running": "Nothing answered from %s. Start it, then ask again.",
 }
 const LOCAL_MEMORY := "A good model for this needs about 16 to 24 GB of graphics memory."
+const NOT_RUNNING := "%s isn't answering at %s. Make sure it's running, then open Settings again."
+const LOOKING := "Looking for models…"
 
 
 static func current() -> String:
@@ -111,6 +119,39 @@ static func maker(id: String, for_model: String) -> String:
 		return ""
 	var prefix := for_model.get_slice("/", 0)
 	return MAKERS.get(prefix, prefix.capitalize())
+
+
+## Where its model list is read from, or "" when it has no list to read.
+static func models_url(id: String) -> String:
+	var stand_in := OS.get_environment(MODELS_VAR % id.to_upper())
+	var where = ALL[id].get("models")
+	if stand_in != "" or not where is Dictionary:
+		return stand_in
+	return where["url"] if where.has("url") else address(id) + where["path"]
+
+
+## The models it offers without asking anyone, the default first.
+static func known_models(id: String) -> Array:
+	var known: Array = [default_model(id)] if default_model(id) != "" else []
+	var fixed = ALL[id].get("models")
+	if fixed is Array:
+		for model_name in fixed:
+			if not model_name in known:
+				known.append(model_name)
+	return known
+
+
+static func read_models(id: String, body: String) -> Array:
+	var where = ALL[id].get("models")
+	var said = JSON.parse_string(body)
+	var names: Array = []
+	if not where is Dictionary or not said is Dictionary or not said.get(where["list"]) is Array:
+		return names
+	for model in said[where["list"]]:
+		var model_name = model.get(where["name"]) if model is Dictionary else null
+		if model_name is String and model_name.ends_with(where.get("ending", "")):
+			names.append(model_name)
+	return names
 
 
 static func key_name(id: String) -> String:

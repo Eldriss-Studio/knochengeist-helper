@@ -15,9 +15,9 @@ It answers through your own AI tool (Claude Code, Codex or GitHub Copilot), so i
 - **Godot 4.6 or newer.** The helper is built on 4.7. Each release is checked to load with no errors or warnings on 4.6 and 4.7.
 - **A Mac, Linux or Windows.**
 - **Any editor language.** The helper follows your editor's language: the menu, cards, Settings and messages come in Brazilian Portuguese and Spanish when Godot is set to them, and English otherwise. Translations live in `addons/kg_helper/locale/`; a new language is one `.po` file made from `kg_helper.pot`.
-- **An AI tool you're signed in to**, picked under **AI tool** in Settings. If it isn't installed yet, **Install…** in Settings (or the ghost's menu) runs its own installer in a terminal:
+- **An AI tool you're signed in to**, picked under **AI** in Settings. If it isn't installed yet, **Install…** in Settings (or the ghost's menu) runs its own installer in a terminal:
   - **Claude Code**, with a Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once.
-    - **No Claude plan?** Install Claude Code, then pick another source under **Answers from** in Settings: OpenRouter, DeepSeek, Ollama, LM Studio or another address. You don't sign in to Claude. OpenRouter and DeepSeek need a key, which the helper keeps in your computer's keychain. Ollama and LM Studio need their server running on this computer, and a good model needs about 16 to 24 GB of graphics memory.
+    - **No Claude plan?** Install Claude Code, then pick another source under **AI** in Settings, from the "Online, with a key" or "On this computer" groups: OpenRouter, DeepSeek, Ollama, LM Studio or Another address. You don't sign in to Claude. OpenRouter and DeepSeek need a key, which the helper keeps in your computer's keychain. Ollama and LM Studio need their server running on this computer, and a good model needs about 16 to 24 GB of graphics memory.
   - **Codex**, with a ChatGPT plan. The ChatGPT app for Mac comes with it, and the helper finds it there. Otherwise install it with `curl -fsSL https://chatgpt.com/codex/install.sh | sh` (or `brew install --cask codex`), then run `codex login` once in a terminal.
   - **Copilot**, with any GitHub Copilot plan, Free included. Install it with `curl -fsSL https://gh.io/copilot-install | bash`, `brew install --cask copilot-cli` or `winget install GitHub.Copilot`, then run `copilot login` once in a terminal.
 
@@ -52,9 +52,8 @@ Click the ghost, or open Project > Tools > Knochengeist. The first line says whi
 
 - **Ask the ghost**, with its keys. The keys are a Godot editor shortcut: change them in Editor Settings > Shortcuts, under `knochengeist`, and the menu names whatever you picked.
 - **Settings…**:
-  - **AI tool**: Claude Code, Codex or Copilot, each with the plan it runs on. Picking one checks it at once and says whether it's installed and signed in, with an **Install…** or **Sign in…** button when it isn't.
-  - **Answers from**: with Claude Code, where it sends its questions: Claude (your Claude plan, the default), OpenRouter, DeepSeek, Ollama (on this computer), LM Studio (on this computer) or Another address. OpenRouter and DeepSeek show a **Key** box. It never shows a saved key: it says a key is saved, and **Remove key** removes it. Another address takes an address and an optional key. Ollama and LM Studio show a note about the graphics memory a good model needs.
-  - **Model**: with Claude Code, Sonnet, Fable, Opus or Haiku (Fable and Opus use up your plan's limit faster). With another source in **Answers from**, this becomes a box that takes any model name, and it starts with a default for that source. Codex and Copilot choose their own model, so there's nothing to pick.
+  - **AI**: one list of where answers come from, in groups. **Your plan**: Claude Code (Claude plan), Codex (ChatGPT plan) and Copilot (GitHub Copilot plan). **Online, with a key**: OpenRouter and DeepSeek. **On this computer**: Ollama and LM Studio. **Somewhere else**: Another address. Picking one checks it at once and says whether it's installed and signed in, with an **Install…** or **Sign in…** button when it isn't. OpenRouter and DeepSeek show a **Key** box. It never shows a saved key: it says a key is saved, and **Remove key** removes it. Another address takes an address and an optional key. Ollama and LM Studio show a note about the graphics memory a good model needs. Under OpenRouter, DeepSeek, Ollama, LM Studio and Another address, a quiet line says: "This runs through Claude Code on this computer. You don't need a Claude plan."
+  - **Model**: with Claude Code, Sonnet, Fable, Opus or Haiku (Fable and Opus use up your plan's limit faster). With OpenRouter, DeepSeek, Ollama, LM Studio or Another address, the list comes from the service: OpenRouter's free models, DeepSeek's deepseek-flash and deepseek-v4-pro, the models Ollama has downloaded, or the models LM Studio serves. **Another model…** shows a box to type any model name. If Ollama or LM Studio doesn't answer, the list says so and to make sure it's running, then open Settings again. Codex and Copilot choose their own model, so there's nothing to pick.
   - **Effort**: how long the AI thinks before answering, with Claude Code and Codex. Low (the default) answers soonest; High thinks longest. Copilot decides this itself.
   - **Location**: where the tool is, with **Choose file…** to pick it yourself or **Find automatically**.
   - **Godot docs**, **Motion** (Reduce motion makes the ghost appear where it points instead of flying there) and **Updates** (Check for updates).
@@ -66,7 +65,7 @@ Click the ghost, or open Project > Tools > Knochengeist. The first line says whi
 
 ## What it sends
 
-Before it runs your AI tool for the first time in a project, the helper asks, with this text. It names the tool and company you picked: Claude Code and Anthropic, Codex and OpenAI, or Copilot and GitHub. Here it's shown for Claude Code. With another source under **Answers from**, the text names that service and the model's maker instead, or says the question stays on this computer.
+Before it runs your AI tool for the first time in a project, the helper asks, with this text. It names the tool and company you picked: Claude Code and Anthropic, Codex and OpenAI, or Copilot and GitHub. Here it's shown for Claude Code. With another source under **AI**, the text names that service and the model's maker instead, or says the question stays on this computer.
 
 > To answer, Knochengeist runs the AI tool you picked in Settings, Claude Code, on this computer.
 >
@@ -138,6 +137,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 60 | 4.6 and newer |
 | 59 | 4.6 and newer |
 | 58 | 4.6 and newer |
 | 57 | 4.6 and newer |

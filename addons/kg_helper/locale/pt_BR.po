@@ -796,3 +796,36 @@ msgstr "DeepSeek"
 
 msgid "There's no address saved yet. Open Settings in the ghost's menu and add the address under Answers from."
 msgstr "Ainda não tem nenhum endereço salvo. Abra Configurações no menu do fantasma e adicione o endereço embaixo de Respostas de."
+
+msgid "AI"
+msgstr "IA"
+
+msgid "Your plan"
+msgstr "Seu plano"
+
+msgid "Online, with a key"
+msgstr "Online, com chave"
+
+msgid "On this computer"
+msgstr "Neste computador"
+
+msgid "Somewhere else"
+msgstr "Outro lugar"
+
+msgid "Answers come from the AI you pick. It can be your own plan, an online service with your key, or a model on this computer."
+msgstr "As respostas vêm da IA que você escolher. Pode ser o seu próprio plano, um serviço online com a sua chave ou um modelo neste computador."
+
+msgid "This runs through Claude Code on this computer. You don't need a Claude plan."
+msgstr "Isso funciona com o Claude Code neste computador. Você não precisa de um plano do Claude."
+
+msgid "%s isn't answering at %s. Make sure it's running, then open Settings again."
+msgstr "%s não está respondendo em %s. Confira se ele está rodando e abra as Configurações de novo."
+
+msgid "Looking for models…"
+msgstr "Procurando modelos…"
+
+msgid "Another model…"
+msgstr "Outro modelo…"
+
+msgid "There's no address saved yet. Open Settings in the ghost's menu and type the address under Another address."
+msgstr "Ainda não há nenhum endereço salvo. Abra as Configurações no menu do fantasma e digite o endereço em Outro endereço."

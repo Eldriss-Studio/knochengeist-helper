@@ -286,6 +286,11 @@ static func other_source() -> String:
 	return "" if from == "" or Sources.is_claude(from) else from
 
 
+## The name of what answers, as he picked it: OpenRouter for another source, else the tool.
+static func shown_name() -> String:
+	return Sources.name(other_source()) if other_source() != "" else tool_name()
+
+
 static func answered_from() -> String:
 	return source() if source() != "" else tool()
 

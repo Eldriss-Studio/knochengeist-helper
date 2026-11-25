@@ -21,6 +21,17 @@ const EFFORT_NAMES := {
 	"medium": "Medium",
 	"high": "High (thinks longest, answers slowest)",
 }
+# The one AI list, in groups: each item is a tool and, for Claude Code, where it answers from.
+const GROUPS := [
+	["Your plan", [["claude", "claude"], ["codex", ""], ["copilot", ""]]],
+	["Online, with a key", [["claude", "openrouter"], ["claude", "deepseek"]]],
+	["On this computer", [["claude", "ollama"], ["claude", "lmstudio"]]],
+	["Somewhere else", [["claude", "custom"]]],
+]
+const TOOL := 0                    # in a GROUPS pair and a choices entry: the tool's id or script
+const SOURCE := 1                  # and where Claude Code answers from ("" for the other tools)
+const ANOTHER_MODEL := "Another model…"
+const FETCH_TIMEOUT_S := 10.0
 const MODEL_NAMES := {
 	"sonnet": "Sonnet (suits most questions)",
 	"fable": "Fable (answers best, uses your limit fastest)",
@@ -42,9 +53,13 @@ var preview_state := ""
 var status_box: VBoxContainer      # whether the picked tool is ready, under the list
 var model_hint: Label              # for a tool that picks its own model
 var effort_list: OptionButton
-var source_box: VBoxContainer
-var source_list: OptionButton
+var source_box: VBoxContainer      # what another source needs: its address, key and notes
+var choices: Array = []            # per item of the AI list: [tool, source], or [] for a group heading
 var picked_source := ""            # chosen in the list, saved or not
+var model_choices: Array = []      # per item of the Model list for another source: its name, or "" for Another model…
+var model_note: Label
+var route_note: Label
+var model_fetch: HTTPRequest
 var address_box: LineEdit
 var key_row: HBoxContainer
 var key_box: LineEdit              # takes a new key; never shows the saved one
@@ -73,14 +88,25 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	brain_ref = brain
 	tool_state = claude_state
 	picked = Brain.adapter()
-	box.add_child(_heading(L.t("AI tool")))
+	box.add_child(_heading(L.t("AI")))
 	tool_list = OptionButton.new()
-	for id in Brain.TOOLS:
-		tool_list.add_item(L.t(Brain.TOOLS[id].LABEL))    # each says the plan it runs on
-	tool_list.select(Brain.TOOLS.keys().find(Brain.tool()))
-	tool_list.item_selected.connect(func(i: int): _pick(Brain.TOOLS.values()[i]))
-	tool_list.tooltip_text = L.t("Answers come from the AI tool you pick. You sign in to it with your own plan.")
-	tool_list.accessibility_name = L.t("AI tool")
+	picked_source = Sources.current()
+	for group in GROUPS:
+		var heading: String = group[0]
+		tool_list.add_separator(L.t(heading))
+		choices.append([])
+		for item in group[1]:
+			var tool: GDScript = Brain.TOOLS[item[TOOL]]
+			var source: String = item[SOURCE]
+			tool_list.add_item(L.t(tool.LABEL) if source in ["", Sources.CLAUDE] else Sources.label(source))
+			choices.append([tool, source])
+	tool_list.select(_choice_of(picked, picked_source))
+	tool_list.item_selected.connect(func(i: int):         # a heading can't be picked
+		if choices[i][SOURCE] != "":
+			picked_source = choices[i][SOURCE]
+		_pick(choices[i][TOOL]))
+	tool_list.tooltip_text = L.t("Answers come from the AI you pick. It can be your own plan, an online service with your key, or a model on this computer.")
+	tool_list.accessibility_name = L.t("AI")
 	box.add_child(tool_list)
 	_source_section(box)
 	status_box = VBoxContainer.new()
@@ -99,6 +125,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	effort_list = OptionButton.new()
 	effort_hint = _quiet("")
 	model_list.accessibility_name = L.t("Model")
+	model_list.item_selected.connect(func(_i: int): _show_model_box())
 	effort_list.accessibility_name = L.t("Effort")
 	for column in [[L.t("Model"), model_list, model_hint], [L.t("Effort"), effort_list, effort_hint]]:
 		var col := VBoxContainer.new()
@@ -112,6 +139,9 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 			model_box = LineEdit.new()
 			model_box.accessibility_name = L.t("Model")
 			col.add_child(model_box)
+			model_note = _quiet("")
+			model_note.custom_minimum_size.x = (WIDTH / 2.0 - GAP) * s
+			col.add_child(model_note)
 		(column[2] as Label).custom_minimum_size.x = (WIDTH / 2.0 - GAP) * s     # half the window: still a width, so it wraps
 		col.add_child(column[2])
 		pair.add_child(col)
@@ -248,18 +278,21 @@ func _show_status() -> void:
 
 func _show_model() -> void:
 	model_list.clear()
-	var models: Array = [] if _other_source() else picked.MODELS
-	model_box.visible = _other_source()
+	model_note.visible = false
+	if model_fetch:
+		model_fetch.cancel_request()
 	if _other_source():
-		model_box.placeholder_text = Sources.default_model(picked_source)
-		model_box.text = Sources.model(picked_source)
-	model_list.visible = not models.is_empty()
-	model_hint.visible = models.is_empty() and not _other_source()
-	model_hint.text = L.t(picked.MODEL_HINT) if models.is_empty() else ""
-	for id in models:
-		model_list.add_item(L.t(MODEL_NAMES.get(id, id.capitalize())))     # each says what it's for, in the list itself
-	if not models.is_empty():
-		model_list.select(maxi(0, models.find(picked.model_from(Brain.saved_setting(picked.MODEL_SETTING)))))
+		_show_source_models()
+	else:
+		var models: Array = picked.MODELS
+		model_box.visible = false
+		model_list.visible = not models.is_empty()
+		model_hint.visible = models.is_empty()
+		model_hint.text = L.t(picked.MODEL_HINT) if models.is_empty() else ""
+		for id in models:
+			model_list.add_item(L.t(MODEL_NAMES.get(id, id.capitalize())))     # each says what it's for, in the list itself
+		if not models.is_empty():
+			model_list.select(maxi(0, models.find(picked.model_from(Brain.saved_setting(picked.MODEL_SETTING)))))
 	effort_list.clear()
 	effort_list.visible = not picked.EFFORTS.is_empty()
 	effort_hint.visible = picked.EFFORTS.is_empty()
@@ -270,22 +303,82 @@ func _show_model() -> void:
 	effort_list.select(maxi(0, picked.EFFORTS.find(Brain.saved_setting(picked.EFFORT_SETTING))))
 	call_deferred("_fit")
 
+# Another source's models: the ones it offers without asking and the saved one, then Another model…; then
+# what its list answers.
+func _show_source_models() -> void:
+	model_hint.visible = false
+	model_list.visible = true
+	model_choices = [""]
+	var saved := Sources.model(picked_source)
+	_add_models(Sources.known_models(picked_source) + [saved], saved)
+	model_box.text = saved
+	model_box.placeholder_text = Sources.default_model(picked_source)
+	_show_model_box()
+	_ask_for_models(Sources.models_url(picked_source))
+
+
+func _ask_for_models(url: String) -> void:
+	if url == "":
+		return
+	if model_fetch == null:
+		model_fetch = HTTPRequest.new()
+		model_fetch.timeout = FETCH_TIMEOUT_S
+		add_child(model_fetch)
+		model_fetch.request_completed.connect(_models_came)
+	model_note.text = L.t(Sources.LOOKING)
+	model_note.visible = true
+	if model_fetch.request(url) != OK:
+		_models_came(HTTPRequest.RESULT_CANT_CONNECT, 0, PackedStringArray(), PackedByteArray())
+
+
+func _models_came(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if not _other_source():
+		return
+	model_note.visible = false
+	if result != HTTPRequest.RESULT_SUCCESS or code != HTTPClient.RESPONSE_OK:
+		if Sources.is_local(picked_source):
+			model_note.text = L.t(Sources.NOT_RUNNING) % [Sources.name(picked_source), Sources.address(picked_source)]
+			model_note.visible = true
+		return
+	var kept_model: String = model_choices[model_list.selected] if model_list.selected >= 0 else ""
+	_add_models(Sources.read_models(picked_source, body.get_string_from_utf8()), kept_model)
+	call_deferred("_fit")
+
+
+# Adds these models once each, before Another model… ("" in model_choices), and keeps this one picked.
+func _add_models(model_names: Array, kept: String) -> void:
+	for model_name in model_names:
+		if not model_name in model_choices:
+			model_choices.insert(model_choices.size() - 1, model_name)
+	model_list.clear()
+	for model_choice in model_choices:
+		model_list.add_item(model_choice if model_choice != "" else L.t(ANOTHER_MODEL))
+	model_list.select(model_choices.find(kept))
+
+
+func _show_model_box() -> void:
+	model_box.visible = _other_source() and model_list.selected >= 0 and model_choices[model_list.selected] == ""
+
+
+func _typed_model() -> String:
+	if model_list.selected >= 0 and model_choices[model_list.selected] != "":
+		return model_choices[model_list.selected]
+	return model_box.text.strip_edges()
+
+
+# The AI list's item for this tool and source; Claude's own plan when nothing matches (never a heading).
+func _choice_of(tool: GDScript, source: String) -> int:
+	for i in choices.size():
+		if not choices[i].is_empty() and choices[i][TOOL] == tool and (tool != Brain.Claude or choices[i][SOURCE] == source):
+			return i
+	return 1
+
+
 func _source_section(box: VBoxContainer) -> void:
 	source_box = VBoxContainer.new()
 	source_box.add_theme_constant_override("separation", int(GAP * s))
-	source_box.add_child(_heading(L.t("Answers from")))
-	source_list = OptionButton.new()
-	source_list.accessibility_name = L.t("Answers from")
-	for id in Sources.ALL:
-		source_list.add_item(L.t(Brain.Claude.SOURCE_LABEL) if Sources.is_claude(id) else Sources.label(id))
-	picked_source = Sources.current()
-	source_list.select(Sources.ALL.keys().find(picked_source))
-	source_list.item_selected.connect(func(i: int):
-		picked_source = Sources.ALL.keys()[i]
-		_show_source()
-		_show_status()
-		_show_model())
-	source_box.add_child(source_list)
+	route_note = _quiet(L.t(Brain.Claude.THROUGH_CLAUDE_CODE))
+	source_box.add_child(route_note)
 	address_box = LineEdit.new()
 	address_box.placeholder_text = L.t("Its address, like http://localhost:4000")
 	address_box.accessibility_name = L.t("Address")
@@ -315,8 +408,8 @@ func _other_source() -> bool:
 
 
 func _show_source() -> void:
-	source_box.visible = picked == Brain.Claude
 	var other := _other_source()
+	source_box.visible = other
 	address_box.visible = other and Sources.typed_address(picked_source)
 	key_row.visible = other and Sources.takes_key(picked_source)
 	key_note.visible = key_row.visible
@@ -394,7 +487,7 @@ func _save() -> void:
 	if picked == Brain.Claude:
 		settings.set_setting(Sources.SETTING, picked_source)
 	if _other_source():
-		var typed := model_box.text.strip_edges()
+		var typed := _typed_model()
 		settings.set_setting(Sources.MODEL_SETTING % picked_source, "" if typed == Sources.default_model(picked_source) else typed)
 		if Sources.typed_address(picked_source):
 			settings.set_setting(Sources.ADDRESS_SETTING, address_box.text.strip_edges())
@@ -482,11 +575,10 @@ func _show_docs() -> void:
 	docs_bar.indeterminate = state == "building" and docs_node.reading == 0.0
 	docs_bar.value = docs_node.reading
 	set_process(state == "building")
+	call_deferred("_fit")
 
 
 ## A check of a tool picked before, still running, ends with it.
-	call_deferred("_fit")
-
 func _stop_preview() -> void:
 	if preview:
 		preview.stop_check()

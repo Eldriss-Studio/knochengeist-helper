@@ -83,7 +83,8 @@ static func short_path(path: String) -> String:
 
 ## The line that says what's answering. `tool_name` names another tool than the one in use (Settings).
 static func state(course_up: bool, claude: String, tool_name := "") -> String:
-	return L.t("Using the course page") if course_up else L.t(LINES.get(claude, LINES["checking"])) % (tool_name if tool_name != "" else Brain.tool_name())
+	var named := tool_name if tool_name != "" else (Brain.shown_name() if claude == "ready" else Brain.tool_name())
+	return L.t("Using the course page") if course_up else L.t(LINES.get(claude, LINES["checking"])) % named
 
 
 static func can_answer(course_up: bool, claude: String) -> bool:

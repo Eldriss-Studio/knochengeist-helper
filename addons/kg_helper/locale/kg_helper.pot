@@ -18,6 +18,9 @@ msgstr ""
 msgid "%s is installed. Your first question checks that you're signed in."
 msgstr ""
 
+msgid "%s isn't answering at %s. Make sure it's running, then open Settings again."
+msgstr ""
+
 msgid "%s isn't at the file you chose"
 msgstr ""
 
@@ -84,7 +87,7 @@ msgstr ""
 msgid "A key is saved in this computer's keychain. Paste a new one to replace it."
 msgstr ""
 
-msgid "AI tool"
+msgid "AI"
 msgstr ""
 
 msgid "API key"
@@ -111,16 +114,16 @@ msgstr ""
 msgid "Another address"
 msgstr ""
 
+msgid "Another model…"
+msgstr ""
+
 msgid "Answer"
 msgstr ""
 
 msgid "Answer still coming"
 msgstr ""
 
-msgid "Answers come from the AI tool you pick. You sign in to it with your own plan."
-msgstr ""
-
-msgid "Answers from"
+msgid "Answers come from the AI you pick. It can be your own plan, an online service with your key, or a model on this computer."
 msgstr ""
 
 msgid "Anything about Godot."
@@ -169,9 +172,6 @@ msgid "Choose file…"
 msgstr ""
 
 msgid "Choose the %s file"
-msgstr ""
-
-msgid "Claude (your Claude plan)"
 msgstr ""
 
 msgid "Claude Code (Claude plan)"
@@ -399,6 +399,9 @@ msgstr ""
 msgid "Looking for %s…"
 msgstr ""
 
+msgid "Looking for models…"
+msgstr ""
+
 msgid "Low (answers soonest)"
 msgstr ""
 
@@ -438,7 +441,13 @@ msgstr ""
 msgid "Ollama (on this computer)"
 msgstr ""
 
+msgid "On this computer"
+msgstr ""
+
 msgid "Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."
+msgstr ""
+
+msgid "Online, with a key"
 msgstr ""
 
 msgid "Open a terminal and install %s from %s. Then ask again."
@@ -537,6 +546,9 @@ msgstr ""
 msgid "Signed in to %s"
 msgstr ""
 
+msgid "Somewhere else"
+msgstr ""
+
 msgid "Sonnet (suits most questions)"
 msgstr ""
 
@@ -594,7 +606,7 @@ msgstr ""
 msgid "There's no %s key saved yet. Open Settings in the ghost's menu and add your key."
 msgstr ""
 
-msgid "There's no address saved yet. Open Settings in the ghost's menu and add the address under Answers from."
+msgid "There's no address saved yet. Open Settings in the ghost's menu and type the address under Another address."
 msgstr ""
 
 msgid "There's no file at this location. Choose another file, or use Find automatically."
@@ -613,6 +625,9 @@ msgid "This one:"
 msgstr ""
 
 msgid "This property:"
+msgstr ""
+
+msgid "This runs through Claude Code on this computer. You don't need a Claude plan."
 msgstr ""
 
 msgid "This tab:"
@@ -726,6 +741,9 @@ msgid "Your game hit an error. Click me to have it explained."
 msgstr ""
 
 msgid "Your key is kept in this computer's keychain, never in Godot's settings."
+msgstr ""
+
+msgid "Your plan"
 msgstr ""
 
 msgid "Your question"
