@@ -6,7 +6,7 @@
 
 You're in the Godot editor, you can't find where something lives or how to make it, and the docs are in another window. Knochengeist puts a ghost in the editor's toolbar. Ask it in plain words, read the answer as it's written, then press Show me and it flies to each thing to click, in order, until it's done.
 
-It answers through your own AI tool (Claude Code, Codex or GitHub Copilot), so it has no account, key or server of its own.
+It answers through your own AI tool (Claude Code, Codex or GitHub Copilot), so it has no account or server of its own. Claude Code can also answer through OpenRouter, DeepSeek or a model on your computer, with a key you keep in your computer's keychain.
 
 <p align="center"><img src="media/strip.png" alt="1, Ask: Option+G, or right-click a node, a file or some code. 2, Read: the answer appears as it's written. 3, Follow: the ghost flies to each thing to click, in order." width="100%"></p>
 
@@ -17,6 +17,7 @@ It answers through your own AI tool (Claude Code, Codex or GitHub Copilot), so i
 - **Any editor language.** The helper follows your editor's language: the menu, cards, Settings and messages come in Brazilian Portuguese and Spanish when Godot is set to them, and English otherwise. Translations live in `addons/kg_helper/locale/`; a new language is one `.po` file made from `kg_helper.pot`.
 - **An AI tool you're signed in to**, picked under **AI tool** in Settings. If it isn't installed yet, **Install…** in Settings (or the ghost's menu) runs its own installer in a terminal:
   - **Claude Code**, with a Claude plan. Install it from [claude.com/claude-code](https://claude.com/claude-code), then open a terminal, type `claude` and sign in once.
+    - **No Claude plan?** Install Claude Code, then pick another source under **Answers from** in Settings: OpenRouter, DeepSeek, Ollama, LM Studio or another address. You don't sign in to Claude. OpenRouter and DeepSeek need a key, which the helper keeps in your computer's keychain. Ollama and LM Studio need their server running on this computer, and a good model needs about 16 to 24 GB of graphics memory.
   - **Codex**, with a ChatGPT plan. The ChatGPT app for Mac comes with it, and the helper finds it there. Otherwise install it with `curl -fsSL https://chatgpt.com/codex/install.sh | sh` (or `brew install --cask codex`), then run `codex login` once in a terminal.
   - **Copilot**, with any GitHub Copilot plan, Free included. Install it with `curl -fsSL https://gh.io/copilot-install | bash`, `brew install --cask copilot-cli` or `winget install GitHub.Copilot`, then run `copilot login` once in a terminal.
 
@@ -52,7 +53,8 @@ Click the ghost, or open Project > Tools > Knochengeist. The first line says whi
 - **Ask the ghost**, with its keys. The keys are a Godot editor shortcut: change them in Editor Settings > Shortcuts, under `knochengeist`, and the menu names whatever you picked.
 - **Settings…**:
   - **AI tool**: Claude Code, Codex or Copilot, each with the plan it runs on. Picking one checks it at once and says whether it's installed and signed in, with an **Install…** or **Sign in…** button when it isn't.
-  - **Model**: with Claude Code, Sonnet, Fable, Opus or Haiku (Fable and Opus use up your plan's limit faster). Codex and Copilot choose their own model, so there's nothing to pick.
+  - **Answers from**: with Claude Code, where it sends its questions: Claude (your Claude plan, the default), OpenRouter, DeepSeek, Ollama (on this computer), LM Studio (on this computer) or Another address. OpenRouter and DeepSeek show a **Key** box. It never shows a saved key: it says a key is saved, and **Remove key** removes it. Another address takes an address and an optional key. Ollama and LM Studio show a note about the graphics memory a good model needs.
+  - **Model**: with Claude Code, Sonnet, Fable, Opus or Haiku (Fable and Opus use up your plan's limit faster). With another source in **Answers from**, this becomes a box that takes any model name, and it starts with a default for that source. Codex and Copilot choose their own model, so there's nothing to pick.
   - **Effort**: how long the AI thinks before answering, with Claude Code and Codex. Low (the default) answers soonest; High thinks longest. Copilot decides this itself.
   - **Location**: where the tool is, with **Choose file…** to pick it yourself or **Find automatically**.
   - **Godot docs**, **Motion** (Reduce motion makes the ghost appear where it points instead of flying there) and **Updates** (Check for updates).
@@ -64,7 +66,7 @@ Click the ghost, or open Project > Tools > Knochengeist. The first line says whi
 
 ## What it sends
 
-Before it runs your AI tool for the first time in a project, the helper asks, with this text. It names the tool and company you picked: Claude Code and Anthropic, Codex and OpenAI, or Copilot and GitHub. Here it's shown for Claude Code.
+Before it runs your AI tool for the first time in a project, the helper asks, with this text. It names the tool and company you picked: Claude Code and Anthropic, Codex and OpenAI, or Copilot and GitHub. Here it's shown for Claude Code. With another source under **Answers from**, the text names that service and the model's maker instead, or says the question stays on this computer.
 
 > To answer, Knochengeist runs the AI tool you picked in Settings, Claude Code, on this computer.
 >
@@ -112,6 +114,7 @@ On the card, when you reach your plan's limit:
 - **Claude Code:** "You've used all of your Claude plan's weekly limit. It resets in…". Wait until then. The ghost warns you once when you're close.
 - **Codex:** "You've reached your ChatGPT plan's usage limit for Codex. Try again later."
 - **Copilot:** "You've used all of your Copilot plan for now. Wait a bit, then ask again."
+- **Another source** (Claude Code answering through OpenRouter, DeepSeek and the rest): the card names the service and says what to do. It says when there's no key saved yet, when the service turned down your key, when your account has no credit left for the model, when the model is busy, when the service doesn't know the model name in Settings, and when nothing answered at the address (start Ollama or LM Studio, then ask again).
 
 And for any tool, **"That didn't work"**: press Ask again. If it keeps happening, open **Show log** to see what the tool said, and use **Copy debug info…** when you report it.
 
@@ -135,6 +138,7 @@ If you're taking a Knochengeist course and its course page is running on this co
 
 | Helper version | Godot |
 |---|---|
+| 59 | 4.6 and newer |
 | 58 | 4.6 and newer |
 | 57 | 4.6 and newer |
 | 56 | 4.6 and newer |

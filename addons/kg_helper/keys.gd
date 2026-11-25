@@ -10,15 +10,19 @@ extends RefCounted
 const SERVICE := "Knochengeist"
 const SECRET_VAR := "KG_HELPER_SECRET"
 const NAME_VAR := "KG_HELPER_KEY_NAME"
+const SERVICE_VAR := "KG_HELPER_KEY_SERVICE"
+const TESTS_VAR := "KG_HELPER_KEYS_FOR"     # a test's own corner of a keychain the tests share (Linux, Windows)
 const SECURITY := "/usr/bin/security"
+const POWERSHELL := "System32/WindowsPowerShell/v1.0/powershell.exe"     # never whatever PATH finds first
+const WINDOWS_FOLDER := "C:/Windows"         # where SystemRoot points when it isn't set
 const L := preload("l10n.gd")
 const Brain := preload("brain.gd")
-const NAME_SHAPE := "^[a-z0-9-]+$"      # a key's name goes into a keychain command line, so nothing else is allowed
-const LINUX_SAVE := """printf %s "$KG_HELPER_SECRET" | secret-tool store --label="Knochengeist $KG_HELPER_KEY_NAME" service Knochengeist account "$KG_HELPER_KEY_NAME"
+const NAME_SHAPE := "^[a-z0-9-]+\\z"      # a key's name goes into a keychain command line, so nothing else is allowed
+const LINUX_SAVE := """printf %s "$KG_HELPER_SECRET" | secret-tool store --label="$KG_HELPER_KEY_SERVICE $KG_HELPER_KEY_NAME" service "$KG_HELPER_KEY_SERVICE" account "$KG_HELPER_KEY_NAME"
 """
 # The key goes to `security -i` on its input, as hex (-X), so it is never on a command line
 const MAC_SAVE := """k=""; [ -n "$KG_HELPER_KEYCHAIN" ] && k="\\"$KG_HELPER_KEYCHAIN\\""
-printf 'add-generic-password -U -s Knochengeist -a "%s" -X %s %s\\n' "$KG_HELPER_KEY_NAME" "$KG_HELPER_SECRET" "$k" | /usr/bin/security -i"""
+printf 'add-generic-password -U -s "%s" -a "%s" -X %s %s\\n' "$KG_HELPER_KEY_SERVICE" "$KG_HELPER_KEY_NAME" "$KG_HELPER_SECRET" "$k" | /usr/bin/security -i"""
 
 
 ## Whether this computer has a keychain the helper can use.
@@ -28,7 +32,7 @@ static func available() -> bool:
 			var chain := OS.get_environment("KG_HELPER_KEYCHAIN")     # a test keychain, so tests never touch the real one
 			return FileAccess.file_exists(SECURITY) and (chain == "" or FileAccess.file_exists(chain))
 		"Windows":
-			return _run("where.exe", ["powershell.exe"])["code"] == 0
+			return FileAccess.file_exists(_powershell_path())
 		_:
 			return _sh("command -v secret-tool >/dev/null")["code"] == 0
 
@@ -61,13 +65,13 @@ static func read(name: String) -> String:
 	var ran: Dictionary
 	match OS.get_name():
 		"macOS":
-			ran = _run(SECURITY, _in_keychain(["find-generic-password", "-s", SERVICE, "-a", name, "-w"]))
+			ran = _run(SECURITY, _in_keychain(["find-generic-password", "-s", _service(), "-a", name, "-w"]))
 			return ran["out"].trim_suffix("\n") if ran["code"] == 0 else ""
 		"Windows":
 			ran = _with_secret(name, "", func(): return _powershell("read"))
 			return Marshalls.base64_to_utf8(ran["out"].strip_edges()) if ran["code"] == 0 and ran["out"].strip_edges() != "" else ""
 		_:
-			ran = _run("secret-tool", ["lookup", "service", SERVICE, "account", name])
+			ran = _run("secret-tool", ["lookup", "service", _service(), "account", name])
 			return ran["out"] if ran["code"] == 0 else ""
 
 
@@ -77,12 +81,17 @@ static func remove(name: String) -> bool:
 		return true
 	match OS.get_name():
 		"macOS":
-			_run(SECURITY, _in_keychain(["delete-generic-password", "-s", SERVICE, "-a", name]))
+			_run(SECURITY, _in_keychain(["delete-generic-password", "-s", _service(), "-a", name]))
 		"Windows":
 			_with_secret(name, "", func(): return _powershell("remove"))
 		_:
-			_run("secret-tool", ["clear", "service", SERVICE, "account", name])
+			_run("secret-tool", ["clear", "service", _service(), "account", name])
 	return read(name) == ""
+
+
+static func _service() -> String:
+	var tests := OS.get_environment(TESTS_VAR)
+	return SERVICE + "-" + tests if RegEx.create_from_string(NAME_SHAPE).search(tests) else SERVICE
 
 
 # A test keychain, when one is named, so tests never touch the real one.
@@ -103,9 +112,11 @@ static func _missing() -> String:
 static func _with_secret(name: String, secret: String, work: Callable) -> Dictionary:
 	OS.set_environment(NAME_VAR, name)
 	OS.set_environment(SECRET_VAR, secret)
+	OS.set_environment(SERVICE_VAR, _service())
 	var ran: Dictionary = work.call()
 	OS.unset_environment(SECRET_VAR)
 	OS.unset_environment(NAME_VAR)
+	OS.unset_environment(SERVICE_VAR)
 	return ran
 
 
@@ -151,7 +162,7 @@ public static class KgCred {
   public static bool Remove(string t) { return CredDelete(t, 1, 0); }
 }
 '@
-$target = 'Knochengeist:' + $env:KG_HELPER_KEY_NAME
+$target = $env:KG_HELPER_KEY_SERVICE + ':' + $env:KG_HELPER_KEY_NAME
 switch ('%s') {
   'save' { if (-not [KgCred]::Save($target, $env:KG_HELPER_SECRET)) { exit 1 } }
   'read' { $k = [KgCred]::Read($target); if ($k -eq $null) { exit 1 }; [Console]::Out.Write([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($k))) }
@@ -159,4 +170,9 @@ switch ('%s') {
 }
 """ % action
 	var encoded := Marshalls.raw_to_base64(script.to_utf16_buffer())
-	return _run("powershell.exe", ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded])
+	return _run(_powershell_path(), ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded])
+
+
+static func _powershell_path() -> String:
+	var root := OS.get_environment("SystemRoot")
+	return (root if root != "" else WINDOWS_FOLDER).path_join(POWERSHELL)

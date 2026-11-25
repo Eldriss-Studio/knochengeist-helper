@@ -12,10 +12,10 @@ static func path() -> String:
 
 
 ## Starts a record for an answer and returns its id.
-func added(question: String, answer: String, steps: PackedStringArray, model: String, version: String) -> String:
+func added(question: String, answer: String, steps: PackedStringArray, model: String, version: String, source := "") -> String:
 	var id := "%d-%d" % [Time.get_unix_time_from_system(), randi() % 100000]
 	var all := _read()
-	all.append({"id": id, "time": Time.get_datetime_string_from_system(), "question": question, "answer": answer, "steps": Array(steps), "model": model, "version": version, "helped": null, "note": "", "walk": ""})
+	all.append({"id": id, "time": Time.get_datetime_string_from_system(), "question": question, "answer": answer, "steps": Array(steps), "model": model, "source": source, "version": version, "helped": null, "note": "", "walk": ""})
 	_write(all.slice(max(0, all.size() - KEPT)))
 	return id
 

@@ -443,7 +443,7 @@ static func _on_path(app: String) -> String:
 func _run_claude(system: String, prompt: String) -> void:
 	var claude := Brain.find_claude()
 	var settings := EditorInterface.get_editor_settings()
-	if not FileAccess.file_exists(claude) or settings.get_project_metadata("knochengeist", "claude_allowed", "") == claude:
+	if not FileAccess.file_exists(claude) or settings.get_project_metadata("knochengeist", "claude_allowed", "") == Brain.consent_key():
 		brain.ask(system, prompt)          # with no Claude Code, the brain says how to install it
 		return
 	if is_instance_valid(consent_window):
@@ -458,7 +458,7 @@ func _run_claude(system: String, prompt: String) -> void:
 	window.cancel_button_text = L.t("Don't allow")
 	window.min_size = Vector2i(460, 0) * EditorInterface.get_editor_scale()
 	window.confirmed.connect(func():
-		settings.set_project_metadata("knochengeist", "claude_allowed", Brain.find_claude())
+		settings.set_project_metadata("knochengeist", "claude_allowed", Brain.consent_key())
 		var still_wanted := ask_box.visible if asked_for == "ask" else walk_ask != 0
 		if still_wanted:
 			brain.ask(system, prompt))
@@ -893,7 +893,7 @@ func _answered(reply: Dictionary) -> void:
 	_state()
 	answer_target = _find(str(answer_plan[0].get("id", ""))) if answer_plan.size() > 0 else ""
 	var steps := PackedStringArray(answer_plan.map(func(step): return str(step.get("say", "")) if step is Dictionary else ""))
-	answer_record = answers.added(answer_said, answer_text.strip_edges(), steps, brain.answered_by if not app_up else FROM_THE_PAGE, _version())
+	answer_record = answers.added(answer_said, answer_text.strip_edges(), steps, brain.answered_by if not app_up else FROM_THE_PAGE, _version(), Brain.answered_from() if not app_up else FROM_THE_PAGE)
 	thread.append({"question": answer_said, "answer": answer_text.strip_edges()})
 	_show_up(course_shown)
 	answer_reachable = places.has(answer_target) or _first_step_hidden()

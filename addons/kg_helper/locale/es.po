@@ -409,8 +409,8 @@ msgstr "No hay ningún archivo en esta ubicación. Elige otro archivo, o usa Bus
 msgid "This week"
 msgstr "Esta semana"
 
-msgid "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\nEach question goes to {company}, with your account. It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
-msgstr "Para responder, Knochengeist ejecuta la herramienta de IA que elegiste en Ajustes, {tool}, en esta computadora.\n\nCada pregunta va a {company}, con tu cuenta. Envía:\n• tu pregunta\n• el nombre del archivo de la escena abierta y el nodo seleccionado\n• los nombres de lo que hay en tu pantalla en Godot: botones, nodos del panel Escena, archivos y carpetas de las listas, propiedades del Inspector y sugerencias en los cuadros de texto\n• durante un recorrido guiado, dónde hiciste clic y lo que escribiste en los cuadros que señaló\n• cuando preguntas por algo en lo que hiciste clic derecho: su nombre, o el código que seleccionaste\n• en una pregunta de seguimiento, tus últimas preguntas y respuestas de esa conversación\n• cuando tu pregunta menciona algo de Godot, sus páginas de la referencia de clases de tu propio Godot\n• cuando preguntas por un error de tu juego: su texto y las líneas del script que lo rodean\n\nNunca envía tu contraseña ni tu inicio de sesión, y no envía nada más.\n\nAparte, una vez al día le pregunta a GitHub si hay una versión nueva del complemento (puedes desactivarlo en Ajustes), y una vez por cada versión de Godot descarga el manual de Godot desde GitHub."
+msgid "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\n{goes_to} It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+msgstr "Para responder, Knochengeist ejecuta en este equipo la herramienta de IA que elegiste en Ajustes, {tool}.\n\n{goes_to} Envía:\n• tu pregunta\n• el nombre del archivo de la escena abierta y el nodo seleccionado\n• los nombres de lo que hay en tu pantalla de Godot: botones, nodos del panel Escena, archivos y carpetas en las listas, propiedades del Inspector y pistas en los cuadros de texto\n• durante un recorrido guiado, lo que pulsaste y escribiste en los cuadros que señaló\n• cuando preguntas por algo en lo que hiciste clic derecho: su nombre, o el código que seleccionaste\n• en una pregunta de seguimiento, tus últimas preguntas y respuestas de esa conversación\n• cuando tu pregunta nombra algo de Godot, sus páginas de referencia de tu propio Godot\n• cuando preguntas por un error de tu juego: su texto y las líneas del script que lo rodean\n\nNunca envía tu contraseña ni tu inicio de sesión, y no envía nada más.\n\nPor separado, una vez al día pregunta a GitHub si hay un ayudante más nuevo (puedes desactivarlo en Ajustes), y una vez por versión de Godot descarga el manual de Godot desde GitHub."
 
 msgid "Try again"
 msgstr "Inténtalo de nuevo"
@@ -709,3 +709,90 @@ msgstr "Abre:"
 
 msgid "This tab:"
 msgstr "Esta pestaña:"
+
+msgid "Claude (your Claude plan)"
+msgstr "Claude (tu plan de Claude)"
+
+msgid "Ollama (on this computer)"
+msgstr "Ollama (en este equipo)"
+
+msgid "LM Studio (on this computer)"
+msgstr "LM Studio (en este equipo)"
+
+msgid "Another address"
+msgstr "Otra dirección"
+
+msgid "the address in Settings"
+msgstr "la dirección en Ajustes"
+
+msgid "There's no %s key saved yet. Open Settings in the ghost's menu and add your key."
+msgstr "Todavía no hay una clave de %s guardada. Abre Ajustes en el menú del fantasma y añade tu clave."
+
+msgid "%s turned down your key. Check it on its website, then save it again in Settings."
+msgstr "%s rechazó tu clave. Revísala en su sitio web y vuelve a guardarla en Ajustes."
+
+msgid "Your %s account has no credit left for this model. Add credit, or pick a free model in Settings."
+msgstr "Tu cuenta de %s no tiene más crédito para este modelo. Añade crédito o elige un modelo gratis en Ajustes."
+
+msgid "%s is busy for this model right now. Try again later, or pick another model in Settings."
+msgstr "%s está ocupado con este modelo ahora mismo. Inténtalo más tarde o elige otro modelo en Ajustes."
+
+msgid "%s doesn't know the model set in Settings. Check its name, then save it again."
+msgstr "%s no conoce el modelo indicado en Ajustes. Revisa su nombre y vuelve a guardarlo."
+
+msgid "Nothing answered from %s. Start it, then ask again."
+msgstr "No respondió nada desde %s. Ponlo en marcha y vuelve a preguntar."
+
+msgid "A good model for this needs about 16 to 24 GB of graphics memory."
+msgstr "Un buen modelo para esto necesita unos 16 a 24 GB de memoria gráfica."
+
+msgid "Each question goes to {company}, with your account."
+msgstr "Cada pregunta va a {company}, con tu cuenta."
+
+msgid "Each question goes to {source}, with your key, and on to the model's maker, {maker}."
+msgstr "Cada pregunta va a {source}, con tu clave, y de ahí a quien hizo el modelo, {maker}."
+
+msgid "Each question goes to {source}."
+msgstr "Cada pregunta va a {source}."
+
+msgid "Each question stays on this computer: {source} answers it."
+msgstr "Cada pregunta se queda en este equipo: la responde {source}."
+
+msgid "%s is installed. Questions go to %s."
+msgstr "%s está instalado. Las preguntas van a %s."
+
+msgid "Answers from"
+msgstr "Respuestas de"
+
+msgid "Its address, like http://localhost:4000"
+msgstr "Su dirección, como http://localhost:4000"
+
+msgid "Address"
+msgstr "Dirección"
+
+msgid "Remove key"
+msgstr "Quitar clave"
+
+msgid "Paste your %s key"
+msgstr "Pega tu clave de %s"
+
+msgid "Its key, if it needs one"
+msgstr "Su clave, si la necesita"
+
+msgid "%s key"
+msgstr "Clave de %s"
+
+msgid "A key is saved in this computer's keychain. Paste a new one to replace it."
+msgstr "Hay una clave guardada en el llavero de este equipo. Pega una nueva para reemplazarla."
+
+msgid "Your key is kept in this computer's keychain, never in Godot's settings."
+msgstr "Tu clave se guarda en el llavero de este equipo, nunca en los ajustes de Godot."
+
+msgid "OpenRouter"
+msgstr "OpenRouter"
+
+msgid "DeepSeek"
+msgstr "DeepSeek"
+
+msgid "There's no address saved yet. Open Settings in the ghost's menu and add the address under Answers from."
+msgstr "Todavía no hay ninguna dirección guardada. Abre Ajustes en el menú del fantasma y añade la dirección debajo de Respuestas de."

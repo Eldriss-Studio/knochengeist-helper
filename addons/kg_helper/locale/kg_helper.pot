@@ -6,6 +6,15 @@ msgstr ""
 msgid "%s didn't use your sign-in for this question, though it says you're signed in. Knochengeist may need an update. Show log has the details."
 msgstr ""
 
+msgid "%s doesn't know the model set in Settings. Check its name, then save it again."
+msgstr ""
+
+msgid "%s is busy for this model right now. Try again later, or pick another model in Settings."
+msgstr ""
+
+msgid "%s is installed. Questions go to %s."
+msgstr ""
+
 msgid "%s is installed. Your first question checks that you're signed in."
 msgstr ""
 
@@ -21,6 +30,9 @@ msgstr ""
 msgid "%s isn't signed in. Click the ghost and choose Sign in to %s… from its menu. Then ask again."
 msgstr ""
 
+msgid "%s key"
+msgstr ""
+
 msgid "%s location"
 msgstr ""
 
@@ -34,6 +46,9 @@ msgid "%s sent an answer Knochengeist can't read yet. Update Knochengeist, or op
 msgstr ""
 
 msgid "%s to ask."
+msgstr ""
+
+msgid "%s turned down your key. Check it on its website, then save it again in Settings."
 msgstr ""
 
 msgid "%s wasn't run. Ask again to allow it."
@@ -63,6 +78,12 @@ msgstr ""
 msgid "5-hour limit"
 msgstr ""
 
+msgid "A good model for this needs about 16 to 24 GB of graphics memory."
+msgstr ""
+
+msgid "A key is saved in this computer's keychain. Paste a new one to replace it."
+msgstr ""
+
 msgid "AI tool"
 msgstr ""
 
@@ -75,6 +96,9 @@ msgstr ""
 msgid "About Knochengeist"
 msgstr ""
 
+msgid "Address"
+msgstr ""
+
 msgid "Allow"
 msgstr ""
 
@@ -84,6 +108,9 @@ msgstr ""
 msgid "Almost have it..."
 msgstr ""
 
+msgid "Another address"
+msgstr ""
+
 msgid "Answer"
 msgstr ""
 
@@ -91,6 +118,9 @@ msgid "Answer still coming"
 msgstr ""
 
 msgid "Answers come from the AI tool you pick. You sign in to it with your own plan."
+msgstr ""
+
+msgid "Answers from"
 msgstr ""
 
 msgid "Anything about Godot."
@@ -139,6 +169,9 @@ msgid "Choose file…"
 msgstr ""
 
 msgid "Choose the %s file"
+msgstr ""
+
+msgid "Claude (your Claude plan)"
 msgstr ""
 
 msgid "Claude Code (Claude plan)"
@@ -231,6 +264,9 @@ msgstr ""
 msgid "Counting my ribs..."
 msgstr ""
 
+msgid "DeepSeek"
+msgstr ""
+
 msgid "Did this help?"
 msgstr ""
 
@@ -238,6 +274,18 @@ msgid "Don't allow"
 msgstr ""
 
 msgid "Drifting through the manual..."
+msgstr ""
+
+msgid "Each question goes to {company}, with your account."
+msgstr ""
+
+msgid "Each question goes to {source}, with your key, and on to the model's maker, {maker}."
+msgstr ""
+
+msgid "Each question goes to {source}."
+msgstr ""
+
+msgid "Each question stays on this computer: {source} answers it."
 msgstr ""
 
 msgid "Effort"
@@ -303,6 +351,12 @@ msgstr ""
 msgid "Install…"
 msgstr ""
 
+msgid "Its address, like http://localhost:4000"
+msgstr ""
+
+msgid "Its key, if it needs one"
+msgstr ""
+
 msgid "Kept only on this computer"
 msgstr ""
 
@@ -325,6 +379,9 @@ msgid "Knochengeist updated"
 msgstr ""
 
 msgid "Knochengeist: %s."
+msgstr ""
+
+msgid "LM Studio (on this computer)"
 msgstr ""
 
 msgid "Last model: %s"
@@ -375,6 +432,12 @@ msgstr ""
 msgid "Not signed in to %s"
 msgstr ""
 
+msgid "Nothing answered from %s. Start it, then ask again."
+msgstr ""
+
+msgid "Ollama (on this computer)"
+msgstr ""
+
 msgid "Once a day, Knochengeist checks GitHub for a new version. If there is one, it shows in the ghost's menu. Nothing installs unless you choose it."
 msgstr ""
 
@@ -402,10 +465,16 @@ msgstr ""
 msgid "Open:"
 msgstr ""
 
+msgid "OpenRouter"
+msgstr ""
+
 msgid "Options"
 msgstr ""
 
 msgid "Opus (strong, uses your limit fast)"
+msgstr ""
+
+msgid "Paste your %s key"
 msgstr ""
 
 msgid "Peering through the walls..."
@@ -430,6 +499,9 @@ msgid "Reduce motion"
 msgstr ""
 
 msgid "Reload"
+msgstr ""
+
+msgid "Remove key"
 msgstr ""
 
 msgid "Report a problem"
@@ -519,6 +591,12 @@ msgstr ""
 msgid "The update didn't download, so nothing changed. Try again later."
 msgstr ""
 
+msgid "There's no %s key saved yet. Open Settings in the ghost's menu and add your key."
+msgstr ""
+
+msgid "There's no address saved yet. Open Settings in the ghost's menu and add the address under Answers from."
+msgstr ""
+
 msgid "There's no file at this location. Choose another file, or use Find automatically."
 msgstr ""
 
@@ -543,7 +621,7 @@ msgstr ""
 msgid "This week"
 msgstr ""
 
-msgid "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\nEach question goes to {company}, with your account. It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+msgid "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\n{goes_to} It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
 msgstr ""
 
 msgid "Try again"
@@ -641,7 +719,13 @@ msgstr ""
 msgid "You've used all of your plan's %s. It resets %s."
 msgstr ""
 
+msgid "Your %s account has no credit left for this model. Add credit, or pick a free model in Settings."
+msgstr ""
+
 msgid "Your game hit an error. Click me to have it explained."
+msgstr ""
+
+msgid "Your key is kept in this computer's keychain, never in Godot's settings."
 msgstr ""
 
 msgid "Your question"
@@ -668,6 +752,9 @@ msgid "in about an hour"
 msgstr ""
 
 msgid "line %d of %s"
+msgstr ""
+
+msgid "the address in Settings"
 msgstr ""
 
 msgid "tomorrow"

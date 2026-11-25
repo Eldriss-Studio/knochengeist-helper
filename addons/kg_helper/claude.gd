@@ -4,10 +4,13 @@ extends RefCounted
 # asked, and how its stream-json answer reads. The brain asks whichever tool is picked the same way.
 
 const Finder := preload("finder.gd")
+const Sources := preload("sources.gd")
+const Keys := preload("keys.gd")
 
 const ID := "claude"
 const NAME := "Claude Code"
 const LABEL := "Claude Code (Claude plan)"
+const SOURCE_LABEL := "Claude (your Claude plan)"     # first in Settings' Answers from list
 const COMPANY := "Anthropic"
 const PATH_SETTING := "knochengeist/claude_path"
 const MODEL_SETTING := "knochengeist/model"
@@ -58,14 +61,18 @@ static func login_args(path: String) -> PackedStringArray:
 	return PackedStringArray([path])          # it signs in when it's run
 
 
-## The sign-in check's answer from `auth status` JSON on stdout. Signed out only when it says so
-## ({"loggedIn": false}); any other failure means it won't start.
-## No extra environment: it runs with the person's own.
 static func process_env() -> Dictionary:
-	return {}
+	var source := Sources.current()
+	return Sources.env(source, Keys.read(Sources.key_name(source)) if Sources.takes_key(source) else "")
 
 
+## The sign-in check's answer from `auth status` JSON on stdout. Signed out only when it says so
+## ({"loggedIn": false}); any other failure means it won't start. Another source needs no sign-in.
 static func check_state(brain, exit_code: int, said: String, _also: String) -> String:
+	if not Sources.is_claude(Sources.current()):
+		brain.auth_method = ""
+		brain.plan_name = ""
+		return "ready"
 	var status = JSON.parse_string(said)
 	brain.auth_method = str(status.get("authMethod", "")) if status is Dictionary else ""
 	brain.plan_name = _plan_name(status) if status is Dictionary else ""
@@ -112,6 +119,8 @@ static func read(brain, event: Dictionary) -> bool:
 			brain.add_text(delta["text"])
 	elif type == "assistant" and event.get("error") == "authentication_failed":
 		brain.auth_failed = true
+	elif type == "assistant" and event.get("error") == "rate_limit":
+		brain.hit_limit = true
 	elif type == "system" and event.get("subtype") == "api_retry":
 		brain.hit_limit = brain.hit_limit or event.get("error") == "rate_limit"
 		brain.billing_failed = brain.billing_failed or event.get("error") == "billing_error"

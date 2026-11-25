@@ -6,11 +6,15 @@ const L := preload("l10n.gd")
 const Brain := preload("brain.gd")
 const Updates := preload("updates.gd")
 const Menu := preload("menu.gd")
+const Sources := preload("sources.gd")
+const Keys := preload("keys.gd")
 const WIDTH := 440.0
 const GAP := 6
 const QUIET := Color(1, 1, 1, 0.7)
 const CANDLE := Color("e3b44a")
 const UNCHECKED_SIGN_IN := "%s is installed. Your first question checks that you're signed in."
+const SOURCE_READY := "%s is installed. Questions go to %s."
+const SOURCE_NEEDS_NO_SIGN_IN := ["ready", "signed_out"]     # Claude Code's own sign-in doesn't matter for another source
 const STATUS_WORDS := {"ready": "Signed in to %s", "signed_out": "Not signed in to %s", "checking": "Checking %s…"}
 const EFFORT_NAMES := {
 	"low": "Low (answers soonest)",
@@ -38,6 +42,16 @@ var preview_state := ""
 var status_box: VBoxContainer      # whether the picked tool is ready, under the list
 var model_hint: Label              # for a tool that picks its own model
 var effort_list: OptionButton
+var source_box: VBoxContainer
+var source_list: OptionButton
+var picked_source := ""            # chosen in the list, saved or not
+var address_box: LineEdit
+var key_row: HBoxContainer
+var key_box: LineEdit              # takes a new key; never shows the saved one
+var key_note: Label
+var remove_key: Button
+var memory_note: Label
+var model_box: LineEdit
 var effort_hint: Label             # for a tool that decides how long it thinks
 var where_heading: Label
 var less_motion: CheckBox
@@ -68,6 +82,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	tool_list.tooltip_text = L.t("Answers come from the AI tool you pick. You sign in to it with your own plan.")
 	tool_list.accessibility_name = L.t("AI tool")
 	box.add_child(tool_list)
+	_source_section(box)
 	status_box = VBoxContainer.new()
 	status_box.add_theme_constant_override("separation", int(GAP * s))
 	box.add_child(status_box)
@@ -93,6 +108,10 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 		heading.custom_minimum_size.x = 0
 		col.add_child(heading)
 		col.add_child(column[1])
+		if column[1] == model_list:
+			model_box = LineEdit.new()
+			model_box.accessibility_name = L.t("Model")
+			col.add_child(model_box)
 		(column[2] as Label).custom_minimum_size.x = (WIDTH / 2.0 - GAP) * s     # half the window: still a width, so it wraps
 		col.add_child(column[2])
 		pair.add_child(col)
@@ -136,7 +155,7 @@ func _init(brain = null, claude_state := "", docs = null) -> void:
 	box.add_child(_heading(L.t("Options")))
 	box.add_child(options)
 	add_child(box)
-	for b in [change, automatic, less_motion, check_updates, get_ok_button(), cancel]:
+	for b in [change, automatic, less_motion, check_updates, remove_key, get_ok_button(), cancel]:
 		_named(b)
 	confirmed.connect(_save)
 	_pick(picked)
@@ -158,6 +177,7 @@ func _pick(tool: GDScript) -> void:
 		preview.check()
 	chosen_path = Brain.saved_setting(picked.PATH_SETTING)
 	where_heading.text = L.t("%s location") % picked.NAME
+	_show_source()
 	_show_status()
 	_show_model()
 	_show_found()
@@ -179,6 +199,10 @@ func _show_status() -> void:
 	if state == "ready" and not picked.CHECKS_SIGN_IN:
 		text = L.t(UNCHECKED_SIGN_IN)
 	text = text % tool_name if text != "" else Menu.state(false, state, tool_name)
+	if _other_source() and state in SOURCE_NEEDS_NO_SIGN_IN:
+		state = "ready"
+		text = L.t(SOURCE_READY) % [tool_name, Sources.name(picked_source)]
+		lines = PackedStringArray()
 	var row := HBoxContainer.new()
 	var icon := TextureRect.new()
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
@@ -206,7 +230,7 @@ func _show_status() -> void:
 	status_box.add_child(row)
 	if state != "ready":
 		return
-	var usage: String = source.usage_line()
+	var usage: String = "" if _other_source() else source.usage_line()
 	if usage != "":
 		var bar := ProgressBar.new()
 		bar.max_value = 1.0
@@ -224,9 +248,13 @@ func _show_status() -> void:
 
 func _show_model() -> void:
 	model_list.clear()
-	var models: Array = picked.MODELS
+	var models: Array = [] if _other_source() else picked.MODELS
+	model_box.visible = _other_source()
+	if _other_source():
+		model_box.placeholder_text = Sources.default_model(picked_source)
+		model_box.text = Sources.model(picked_source)
 	model_list.visible = not models.is_empty()
-	model_hint.visible = models.is_empty()
+	model_hint.visible = models.is_empty() and not _other_source()
 	model_hint.text = L.t(picked.MODEL_HINT) if models.is_empty() else ""
 	for id in models:
 		model_list.add_item(L.t(MODEL_NAMES.get(id, id.capitalize())))     # each says what it's for, in the list itself
@@ -241,6 +269,67 @@ func _show_model() -> void:
 		effort_list.add_item(L.t(EFFORT_NAMES.get(level, level.capitalize())))
 	effort_list.select(maxi(0, picked.EFFORTS.find(Brain.saved_setting(picked.EFFORT_SETTING))))
 	call_deferred("_fit")
+
+func _source_section(box: VBoxContainer) -> void:
+	source_box = VBoxContainer.new()
+	source_box.add_theme_constant_override("separation", int(GAP * s))
+	source_box.add_child(_heading(L.t("Answers from")))
+	source_list = OptionButton.new()
+	source_list.accessibility_name = L.t("Answers from")
+	for id in Sources.ALL:
+		source_list.add_item(L.t(Brain.Claude.SOURCE_LABEL) if Sources.is_claude(id) else Sources.label(id))
+	picked_source = Sources.current()
+	source_list.select(Sources.ALL.keys().find(picked_source))
+	source_list.item_selected.connect(func(i: int):
+		picked_source = Sources.ALL.keys()[i]
+		_show_source()
+		_show_status()
+		_show_model())
+	source_box.add_child(source_list)
+	address_box = LineEdit.new()
+	address_box.placeholder_text = L.t("Its address, like http://localhost:4000")
+	address_box.accessibility_name = L.t("Address")
+	address_box.text = Brain.saved_setting(Sources.ADDRESS_SETTING)
+	source_box.add_child(address_box)
+	key_row = HBoxContainer.new()
+	key_box = LineEdit.new()
+	key_box.secret = true
+	key_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	key_row.add_child(key_box)
+	remove_key = Button.new()
+	remove_key.text = L.t("Remove key")
+	remove_key.pressed.connect(func():
+		Keys.remove(Sources.key_name(picked_source))
+		_show_source())
+	key_row.add_child(remove_key)
+	source_box.add_child(key_row)
+	key_note = _quiet("")
+	source_box.add_child(key_note)
+	memory_note = _quiet(L.t(Sources.LOCAL_MEMORY))
+	source_box.add_child(memory_note)
+	box.add_child(source_box)
+
+
+func _other_source() -> bool:
+	return picked == Brain.Claude and not Sources.is_claude(picked_source)
+
+
+func _show_source() -> void:
+	source_box.visible = picked == Brain.Claude
+	var other := _other_source()
+	address_box.visible = other and Sources.typed_address(picked_source)
+	key_row.visible = other and Sources.takes_key(picked_source)
+	key_note.visible = key_row.visible
+	memory_note.visible = other and Sources.is_local(picked_source)
+	if key_row.visible:
+		var named := Sources.name(picked_source)
+		key_box.placeholder_text = L.t("Paste your %s key") % named if Sources.needs_key(picked_source) else L.t("Its key, if it needs one")
+		key_box.accessibility_name = L.t("%s key") % named
+		var saved := Keys.read(Sources.key_name(picked_source)) != ""
+		key_note.text = L.t("A key is saved in this computer's keychain. Paste a new one to replace it.") if saved else L.t("Your key is kept in this computer's keychain, never in Godot's settings.")
+		remove_key.visible = saved
+	call_deferred("_fit")
+
 
 func _named(button: Button) -> void:
 	button.accessibility_name = button.text
@@ -300,8 +389,21 @@ func _browse() -> void:
 func _save() -> void:
 	var settings := EditorInterface.get_editor_settings()
 	settings.set_setting(picked.PATH_SETTING, chosen_path)
-	if not picked.MODELS.is_empty():
+	if not picked.MODELS.is_empty() and not _other_source():
 		settings.set_setting(picked.MODEL_SETTING, picked.MODELS[model_list.selected])
+	if picked == Brain.Claude:
+		settings.set_setting(Sources.SETTING, picked_source)
+	if _other_source():
+		var typed := model_box.text.strip_edges()
+		settings.set_setting(Sources.MODEL_SETTING % picked_source, "" if typed == Sources.default_model(picked_source) else typed)
+		if Sources.typed_address(picked_source):
+			settings.set_setting(Sources.ADDRESS_SETTING, address_box.text.strip_edges())
+		var key := key_box.text.strip_edges()
+		key_box.text = ""
+		if key != "":
+			var why := Keys.save(Sources.key_name(picked_source), key)
+			if why != "":
+				EditorInterface.get_editor_toaster().push_toast(why, EditorToaster.SEVERITY_WARNING)
 	if not picked.EFFORTS.is_empty():
 		settings.set_setting(picked.EFFORT_SETTING, picked.EFFORTS[effort_list.selected])
 	settings.set_setting(Brain.TOOL_SETTING, picked.ID)

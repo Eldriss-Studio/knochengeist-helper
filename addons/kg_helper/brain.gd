@@ -21,7 +21,13 @@ const PROBLEMS := {
 	"billing": "%s reports a billing problem with your account. Check your plan on its website.",
 }
 
-const DISCLOSURE := "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\nEach question goes to {company}, with your account. It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+const DISCLOSURE := "To answer, Knochengeist runs the AI tool you picked in Settings, {tool}, on this computer.\n\n{goes_to} It sends:\n• your question\n• the open scene's file name and the selected node\n• the names of what's on your screen in Godot: buttons, nodes in the Scene dock, files and folders in lists, Inspector properties and hints in text boxes\n• during a walk-through, what you clicked and typed in the boxes it pointed at\n• when you ask about something you right-clicked: its name, or the code you selected\n• in a follow-up, your last few questions and answers in that conversation\n• when your question names something in Godot, its reference pages from your own Godot\n• when you ask about an error from your game: its text and the script lines around it\n\nIt never sends your password or sign-in, and it sends nothing else.\n\nSeparately, once a day it asks GitHub whether a newer helper is out (turn that off in Settings), and once per Godot version it downloads Godot's manual from GitHub."
+const GOES_TO := "Each question goes to {company}, with your account."
+const GOES_TO_SOURCE := "Each question goes to {source}, with your key, and on to the model's maker, {maker}."
+const GOES_TO_ADDRESS := "Each question goes to {source}."
+const GOES_TO_LOCAL := "Each question stays on this computer: {source} answers it."
+const CONSENT_JOIN := "|"
+const SIGN_IN_PROBLEMS := ["signed_out", "login_skipped", "limit", "billing"]   # a plan's problems, which another source can't have
 const GIVE_UP_S := 120.0
 const SHELL_GIVE_UP_S := 8.0
 const CHECK_GIVE_UP_S := 15.0
@@ -39,6 +45,8 @@ const NEWLINE := 10
 const Claude := preload("claude.gd")
 const Codex := preload("codex.gd")
 const Copilot := preload("copilot.gd")
+const Sources := preload("sources.gd")
+const Keys := preload("keys.gd")
 # Every AI tool the helper can answer through, by id. To add one (Copilot CLI, Cursor CLI…): copy
 # codex.gd, give it every name below, add it here, and give its tests a stand-in like fake-codex.ts.
 # A test checks each tool here has the whole surface.
@@ -267,7 +275,33 @@ static func _when(resets_at: float) -> String:
 	return L.t("in %d days") % floori(left / 86400.0) if floori(left / 86400.0) > 1 else L.t("tomorrow")
 
 
+## Where Claude Code answers from, when it's the tool in use; "" for the other tools.
+static func source() -> String:
+	return Sources.current() if adapter() == Claude else ""
+
+
+## The source Claude Code answers from when it isn't Claude itself; "" otherwise.
+static func other_source() -> String:
+	var from := source()
+	return "" if from == "" or Sources.is_claude(from) else from
+
+
+static func answered_from() -> String:
+	return source() if source() != "" else tool()
+
+
+## Consent for Claude keeps its old shape, the tool's file, so it holds across this update; another
+## source's also covers where its questions go, so changing any of them asks again.
+static func consent_key() -> String:
+	var from := other_source()
+	if from == "":
+		return find_claude()
+	return CONSENT_JOIN.join([find_claude(), from, Sources.address(from), Sources.model(from)])
+
+
 static func problem_text(problem: String) -> String:
+	if other_source() != "" and Sources.PROBLEMS.has(problem):
+		return Sources.problem_text(other_source(), problem)
 	if adapter().PROBLEMS.has(problem):
 		return L.t(adapter().PROBLEMS[problem])
 	var said := L.t(PROBLEMS.get(problem, PROBLEMS["failed"]))
@@ -276,7 +310,20 @@ static func problem_text(problem: String) -> String:
 
 ## What a question sends, and to whom, for the tool in use.
 static func disclosure() -> String:
-	return L.t(DISCLOSURE).format({"tool": tool_name(), "company": company()})
+	return L.t(DISCLOSURE).format({"tool": tool_name(), "goes_to": _goes_to()})
+
+
+static func _goes_to() -> String:
+	var from := other_source()
+	if from == "":
+		return L.t(GOES_TO).format({"company": company()})
+	var named := Sources.name(from)
+	if Sources.is_local(from):
+		return L.t(GOES_TO_LOCAL).format({"source": named})
+	var made_by := Sources.maker(from, Sources.model(from))
+	if made_by == "":
+		return L.t(GOES_TO_ADDRESS).format({"source": named})
+	return L.t(GOES_TO_SOURCE).format({"source": named, "maker": made_by})
 
 
 ## The tool this brain checks: the one in use, or one Settings shows before it's saved.
@@ -415,8 +462,16 @@ func debug_info(helper_version: String) -> String:
 		"%s: %s" % [tool_name(), claude if claude != "" else "not found"],
 		"%s version: %s" % [tool_name(), version],
 		"Signed in with: %s" % (auth_method if auth_method != "" else "unknown"),
+		"Answers from: %s" % _answers_from_line(),
 		"State: %s" % state,
 	])
+
+
+static func _answers_from_line() -> String:
+	var from := other_source()
+	if from == "":
+		return company()
+	return "%s, %s, model %s" % [Sources.name(from), Sources.address(from), Sources.model(from)]
 
 
 # A path in his home folder is written with ~, so a log or debug info he shares doesn't carry his name.
@@ -459,6 +514,11 @@ func ask(system: String, prompt: String) -> void:
 		return
 	file.store_string(system)
 	file.close()
+	var from := other_source()
+	var lacking := "" if from == "" else Sources.missing(from, Keys.read(Sources.key_name(from)) if Sources.needs_key(from) else "")
+	if lacking != "":
+		_finish.call_deferred(lacking, question)
+		return
 	var before := _set_env(adapter().process_env())
 	var started: Dictionary = adapter().start(self, claude, dir, asked, prompt, model())
 	_set_env(before)                      # the child copied its environment when it started
@@ -583,9 +643,19 @@ func poll(delta: float) -> void:
 	elif problem == "failed" and text.strip_edges() == "" and unknown_lines != "":   # no answer, and lines it didn't know: likely a newer format
 		problem = "unknown"
 		said_wrong += unknown_lines
+	if failed and other_source() != "":
+		problem = _source_problem(problem)
 	if problem != "":
 		log_line("A question ended: %s (%s %s, sign-in %s). It said: %s" % [problem, tool_name(), ran_version if ran_version != "" else "?", ran_key_source if ran_key_source != "" else "?", said_wrong.strip_edges().replace("\n", " ")])
 	_end(problem)
+
+
+# Another source's refusal is about its key, credit or server, never a Claude sign-in or plan.
+func _source_problem(problem: String) -> String:
+	var refused := Sources.refusal(said_wrong, {"auth_failed": auth_failed, "hit_limit": hit_limit, "billing_failed": billing_failed})
+	if refused != "":
+		return refused
+	return "failed" if problem in SIGN_IN_PROBLEMS else problem
 
 
 # Read even when unused: a full pipe would stall the tool.
