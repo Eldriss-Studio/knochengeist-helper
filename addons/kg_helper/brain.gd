@@ -368,10 +368,12 @@ func _check_sign_in(claude: String) -> void:
 
 func _start_check(claude: String, args: Array, step: String) -> void:
 	var started := {}
+	var before := _set_env(adapter().process_env())   # the check sees what a question will: an address from the shell would hide his plan
 	if OS.get_name() == "Windows" and claude.get_extension().to_lower() in ["cmd", "bat"]:
 		started = OS.execute_with_pipe("cmd.exe", PackedStringArray(["/d", "/c", claude] + args), false)
 	else:
 		started = OS.execute_with_pipe(claude, PackedStringArray(args), false)
+	_set_env(before)
 	check_err = started.get("stderr")
 	check_waited = 0.0
 	if started.is_empty():

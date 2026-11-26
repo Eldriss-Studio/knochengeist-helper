@@ -18,6 +18,11 @@ const SCHEME := "http://"
 const THIS_COMPUTER := ["localhost", "127.0.0.1", "[::1]"]
 const MAX_OUTPUT_TOKENS := "4000"    # OpenRouter refuses a request that could cost more than the credit left
 const MAX_RETRIES := "3"             # Claude Code's own default retries a closed port for minutes
+# What sends Claude Code somewhere other than Anthropic: another source sets these, and Claude takes
+# away any its shell set. ANTHROPIC_API_KEY isn't here: a key he set himself is his own Anthropic account.
+const ADDRESS_VAR := "ANTHROPIC_BASE_URL"
+const TOKEN_VAR := "ANTHROPIC_AUTH_TOKEN"
+const MODEL_VARS := ["ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL"]
 const MODELS_VAR := "KG_HELPER_MODELS_%s"    # a test's stand-in for where a source lists its models
 # key: "needed", "optional" or "none". models: a fixed list, or where its list is read (a full "url", or a
 # "path" on its address), the JSON array holding it ("list"), each entry's name field ("name"), and the
@@ -167,15 +172,20 @@ static func missing(id: String, key: String) -> String:
 	return ""
 
 
-## What Claude Code's run gets, only for that run: nothing for Claude, which uses his sign-in.
+## What Claude Code's run gets, only for that run. For Claude, the address, token and models Godot's
+## shell may have set are taken away (null unsets them), so Claude means his own sign-in and plan.
 static func env(id: String, key := "") -> Dictionary:
+	var vars := {ADDRESS_VAR: null, TOKEN_VAR: null}
+	for name in MODEL_VARS:
+		vars[name] = null
 	if is_claude(id):
-		return {}
-	var asked := model(id)
-	var token: String = key if key != "" else ALL[id].get("token", NO_TOKEN)
-	return {"ANTHROPIC_BASE_URL": address(id), "ANTHROPIC_AUTH_TOKEN": token, "ANTHROPIC_API_KEY": "",
-		"ANTHROPIC_DEFAULT_SONNET_MODEL": asked, "ANTHROPIC_DEFAULT_HAIKU_MODEL": asked, "ANTHROPIC_DEFAULT_OPUS_MODEL": asked,
-		"CLAUDE_CODE_MAX_OUTPUT_TOKENS": MAX_OUTPUT_TOKENS, "CLAUDE_CODE_MAX_RETRIES": MAX_RETRIES}
+		return vars
+	vars[ADDRESS_VAR] = address(id)
+	vars[TOKEN_VAR] = key if key != "" else ALL[id].get("token", NO_TOKEN)
+	for name in MODEL_VARS:
+		vars[name] = model(id)
+	vars.merge({"ANTHROPIC_API_KEY": "", "CLAUDE_CODE_MAX_OUTPUT_TOKENS": MAX_OUTPUT_TOKENS, "CLAUDE_CODE_MAX_RETRIES": MAX_RETRIES})
+	return vars
 
 
 ## The refusal a failed run means, from what Claude Code said and the signs it gave in its events
